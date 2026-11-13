@@ -4,56 +4,226 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1115" media="(prefers-color-scheme: dark)">
 <title>GT Peso Materiali</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-  /* Colori provvisori dello scheletro: contrasto da verificare in Fase 2. */
+  /* Un solo colore d'accento. Contrasti misurati: testo >= 7:1, bordi dei controlli >= 3:1. */
   :root {
+    color-scheme: light dark;
     --bg: #ffffff;
-    --fg: #14171a;
-    --muted: #4b5560;
-    --line: #c9d1d9;
-    --accent: #0a58ca;
+    --card: #f1f4f8;
+    --fg: #12161b;
+    --muted: #3c4650;
+    --line: #69747f;
+    --accent: #0a4aa6;
+    --accfg: #ffffff;
+    --err: #8f0f08;
+    --tint: rgba(10, 74, 166, 0.12);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0e1013;
-      --fg: #f2f4f6;
-      --muted: #aab4bf;
-      --line: #3a424b;
-      --accent: #7db2ff;
+      --bg: #0e1115;
+      --card: #171c22;
+      --fg: #f3f5f7;
+      --muted: #c2cad3;
+      --line: #8793a0;
+      --accent: #8db8ff;
+      --accfg: #0e1115;
+      --err: #ffb3ad;
+      --tint: rgba(141, 184, 255, 0.16);
     }
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
   body {
     margin: 0;
     background: var(--bg);
     color: var(--fg);
     font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-variant-numeric: tabular-nums;
-    -webkit-text-size-adjust: 100%;
   }
-  main {
+  .colonna {
     max-width: 480px;
     margin: 0 auto;
-    padding: 16px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
   }
-  h1 { font-size: 1.4rem; margin: 0 0 8px; color: var(--accent); }
-  p { margin: 0 0 12px; }
+  h1 { font-size: 1.35rem; line-height: 1.2; margin: 16px 0 4px; }
+  h2 { font-size: 1.05rem; margin: 0 0 8px; color: var(--accent); }
+  h3 { font-size: 1rem; margin: 16px 0 6px; }
+  section { margin: 20px 0; }
+  p { margin: 0 0 8px; }
+  a { color: var(--accent); }
+  .piccolo { font-size: 0.9rem; color: var(--muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  /* barra con il peso, sempre visibile mentre si scrive */
+  .barra {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg);
+    border-bottom: 2px solid var(--accent);
+  }
+  .barra .colonna { display: flex; align-items: baseline; gap: 8px; min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
+  .barra strong { font-size: 1.15rem; white-space: nowrap; }
+  .barra span { flex: 1; min-width: 0; font-size: 0.9rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* controlli: tutti con bersaglio di almeno 48 px */
+  input[type="text"], select {
+    width: 100%;
+    min-height: 48px;
+    padding: 8px 12px;
+    font: inherit;
+    color: var(--fg);
+    background: var(--bg);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+  }
+  select { width: auto; min-width: 88px; }
+  input[aria-invalid="true"] { border-color: var(--err); }
+  label { display: block; font-weight: 600; margin-bottom: 4px; }
+
+  /* ricerca del materiale */
+  .cerca { position: relative; }
+  .elenco {
+    list-style: none; margin: 4px 0 0; padding: 0;
+    max-height: 55vh; overflow: auto; -webkit-overflow-scrolling: touch;
+    border: 2px solid var(--line); border-radius: 10px; background: var(--bg);
+  }
+  .elenco .fam { padding: 8px 12px; font-size: 0.85rem; font-weight: 700; color: var(--accent); background: var(--card); position: sticky; top: 0; }
+  .elenco .voce { min-height: 52px; padding: 8px 12px; cursor: pointer; border-top: 1px solid var(--line); }
+  .elenco .voce[aria-selected="true"], .elenco .voce:hover { background: var(--tint); }
+  .elenco .voce b { display: block; font-weight: 600; }
+  .elenco .voce small { display: block; color: var(--muted); font-size: 0.85rem; }
+  .elenco .nulla { padding: 12px; color: var(--muted); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 12px; }
+  .card p { margin-bottom: 6px; }
+  details { margin-top: 8px; }
+  summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+  .avviso { padding: 8px 10px; border-left: 4px solid var(--accent); background: var(--tint); border-radius: 4px; }
+  table.comp { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+  table.comp td { padding: 4px 6px; border-top: 1px solid var(--line); }
+  table.comp td:last-child { text-align: right; }
+  ul.fonti { padding-left: 18px; margin: 4px 0; }
+  ul.fonti li { margin-bottom: 8px; font-size: 0.92rem; }
+  ul.fonti a { display: inline-block; min-height: 44px; line-height: 44px; }
+
+  /* forme */
+  .forme { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .forma {
+    position: relative; display: flex; align-items: center; justify-content: center; text-align: center;
+    min-height: 48px; padding: 8px 10px; margin: 0; font-weight: 600;
+    border: 2px solid var(--line); border-radius: 10px; cursor: pointer;
+  }
+  .forma input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .forma.attiva { background: var(--accent); color: var(--accfg); border-color: var(--accent); }
+  .forma:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .disegno { margin: 12px 0 4px; }
+  .disegno svg { display: block; width: 100%; height: auto; max-height: 190px; }
+  .sez { fill: var(--tint); stroke: var(--fg); stroke-width: 2; stroke-linejoin: round; }
+  .tr { fill: none; stroke: var(--fg); stroke-width: 1.4; stroke-dasharray: 4 3; }
+  .q { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+  .qt { fill: var(--accent); font-size: 14px; font-weight: 700; font-family: inherit; }
+
+  /* dimensioni */
+  .riga-unita { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .riga-unita label { margin: 0; }
+  .campo { margin-bottom: 4px; }
+  .interp { min-height: 1.5em; margin: 4px 0 8px; font-size: 0.92rem; color: var(--muted); }
+  .interp.errore { color: var(--err); font-weight: 600; }
+
+  /* risultato */
+  .peso-box { background: var(--card); border: 2px solid var(--accent); border-radius: 12px; padding: 14px 12px; }
+  .peso-box .etichetta { margin: 0; font-weight: 600; }
+  .grande { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 12px; }
+  .grande output { font-size: clamp(2.6rem, 13vw, 3.6rem); font-weight: 700; line-height: 1.1; }
+  .stato { margin: 6px 0 0; color: var(--muted); }
+  .dettagli dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+  .dettagli dt { color: var(--muted); }
+  .dettagli dd { margin: 0; text-align: right; font-weight: 600; }
+  ol.passaggi { margin: 4px 0; padding-left: 22px; }
+  ol.passaggi li { margin-bottom: 6px; font-size: 0.95rem; overflow-wrap: anywhere; }
+  .dicitura { margin-top: 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-weight: 600; }
+
   footer {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 0.85rem;
+    max-width: 480px; margin: 24px auto 0;
+    padding: 12px max(16px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem;
   }
 </style>
 </head>
 <body>
-<main>
+<div class="barra" id="barra" hidden>
+  <div class="colonna"><strong id="barra-peso"></strong><span id="barra-testo"></span></div>
+</div>
+
+<main class="colonna">
   <h1>Peso teorico dei materiali</h1>
-  <p>Scheletro del progetto: interfaccia in costruzione.</p>
+  <noscript><p class="avviso">Serve JavaScript per calcolare il peso.</p></noscript>
+
+  <section aria-labelledby="t-materiale">
+    <h2 id="t-materiale">Materiale</h2>
+    <div class="cerca">
+      <label for="q">Cerca per nome o designazione</label>
+      <input id="q" type="text" role="combobox" aria-expanded="false" aria-controls="elenco" aria-autocomplete="list"
+             autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search"
+             placeholder="C45, 1.4301, 7075, Ti-6Al-4V…">
+      <ul id="elenco" class="elenco" role="listbox" aria-label="Materiali" hidden></ul>
+    </div>
+    <div id="scheda" class="card" hidden></div>
+  </section>
+
+  <section aria-labelledby="t-forma">
+    <h2 id="t-forma">Forma</h2>
+    <div id="forme" class="forme" role="radiogroup" aria-labelledby="t-forma"></div>
+    <div id="disegno" class="disegno"></div>
+    <p id="avviso-forma" class="avviso" hidden></p>
+  </section>
+
+  <section aria-labelledby="t-dimensioni">
+    <h2 id="t-dimensioni">Dimensioni</h2>
+    <div class="riga-unita">
+      <label for="unita-lung">Unità di lunghezza</label>
+      <select id="unita-lung">
+        <option value="mm" selected>mm</option>
+        <option value="cm">cm</option>
+        <option value="m">m</option>
+        <option value="in">in (pollici)</option>
+      </select>
+    </div>
+    <div id="campi"></div>
+    <div class="campo">
+      <label for="pezzi">Pezzi</label>
+      <input id="pezzi" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" value="1" aria-describedby="i-pezzi">
+      <p class="interp" id="i-pezzi" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-risultato">
+    <h2 id="t-risultato">Risultato</h2>
+    <div class="peso-box">
+      <p class="etichetta" id="peso-etichetta">Peso teorico</p>
+      <div class="grande">
+        <output id="peso-grande" aria-live="polite">–</output>
+        <label class="sr-only" for="unita-peso">Unità di peso</label>
+        <select id="unita-peso">
+          <option value="kg" selected>kg</option>
+          <option value="g">g</option>
+          <option value="t">t</option>
+          <option value="lb">lb</option>
+          <option value="oz">oz</option>
+        </select>
+      </div>
+      <p class="stato" id="peso-stato"></p>
+      <p class="stato" id="peso-intervallo" hidden></p>
+    </div>
+    <div id="dettagli" class="dettagli" hidden></div>
+    <p class="dicitura">Peso teorico da densità nominale, senza tolleranze né raggi.</p>
+  </section>
 </main>
 <footer id="footer"></footer>
 
@@ -2207,15 +2377,616 @@
 
 <script>
 // ENGINE:INIZIO
-// Il motore di calcolo viene scritto nella Fase 2.
+// Motore di calcolo: funzioni pure, nessun accesso alla pagina.
+// I test (tests/calc.test.mjs) eseguono esattamente questo blocco, estratto da index.html.
+const Motore = (function () {
+  'use strict';
+
+  // Tutto si converte in mm; V in mm³ → cm³ (÷1000); massa(g) = V(cm³) × ρ(g/cm³).
+  const LUNGHEZZA_MM = { mm: 1, cm: 10, m: 1000, in: 25.4 };
+  const MASSA_G = { g: 1, kg: 1000, t: 1e6, lb: 453.59237, oz: 28.349523125 };
+  const MAX_DIM_MM = 1e8;      // 100 km: oltre è quasi certamente un errore di digitazione
+  const MAX_VOLUME_MM3 = 1e24;
+  const MAX_PEZZI = 1e9;
+  const NNBSP = ' ';
+
+  const MSG_POSITIVO = 'Il valore deve essere maggiore di zero.';
+  const MSG_NUMERO = 'Scrivi un numero, per esempio 25,4 oppure 25.4.';
+  const MSG_SEPARATORI = 'Usa un solo separatore decimale (punto o virgola), senza separatori di migliaia.';
+  const MSG_GRANDE = 'Il valore è troppo grande.';
+  const MSG_PEZZI = 'I pezzi sono un numero intero maggiore di zero.';
+
+  // Il punto e la virgola sono sempre separatori decimali; niente separatori di migliaia.
+  function interpretaNumero(testo) {
+    const t = String(testo === null || testo === undefined ? '' : testo).trim();
+    if (t === '') return { stato: 'vuoto' };
+    if (/^-[0-9]*[.,]?[0-9]*$/.test(t) && /[0-9]/.test(t)) return { stato: 'errore', messaggio: MSG_POSITIVO };
+    if (/^[0-9.,]+$/.test(t) && /[.,].*[.,]/.test(t)) return { stato: 'errore', messaggio: MSG_SEPARATORI };
+    if (!/^[0-9]*[.,]?[0-9]*$/.test(t) || !/[0-9]/.test(t)) return { stato: 'errore', messaggio: MSG_NUMERO };
+    const valore = Number(t.replace(',', '.'));
+    if (!Number.isFinite(valore)) return { stato: 'errore', messaggio: MSG_NUMERO };
+    return { stato: 'ok', valore: valore };
+  }
+
+  // Formattazione deterministica con virgola decimale; mai NaN a schermo.
+  function formatta(x, cifre, gruppi) {
+    if (typeof x !== 'number' || !Number.isFinite(x)) return '–';
+    if (x === 0) return '0';
+    const n = cifre || 6;
+    let s = String(Number(x.toPrecision(n)));
+    if (/e/i.test(s)) {
+      const dec = Math.min(20, Math.max(0, n - 1 - Math.floor(Math.log10(Math.abs(x)))));
+      s = Number(x.toPrecision(n)).toFixed(dec);
+      if (s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    }
+    let intero = s.split('.')[0];
+    const dec = s.split('.')[1];
+    if (gruppi) {
+      const neg = intero[0] === '-';
+      const cifreInt = neg ? intero.slice(1) : intero;
+      if (cifreInt.length >= 5) intero = (neg ? '-' : '') + cifreInt.replace(/\B(?=(\d{3})+(?!\d))/g, NNBSP);
+    }
+    return dec ? intero + ',' + dec : intero;
+  }
+
+  const f6 = function (x) { return formatta(x, 6); };
+
+  const FORME = {
+    tonda: {
+      nome: 'Barra tonda',
+      campi: [['D', 'Diametro D'], ['L', 'Lunghezza L']],
+      formula: 'V = π/4 · D² · L',
+      volume: function (v) { return Math.PI / 4 * v.D * v.D * v.L; },
+      sostituzione: function (v) { return 'π/4 · ' + f6(v.D) + '² · ' + f6(v.L); }
+    },
+    quadro: {
+      nome: 'Quadro',
+      campi: [['a', 'Lato a'], ['L', 'Lunghezza L']],
+      formula: 'V = a² · L',
+      volume: function (v) { return v.a * v.a * v.L; },
+      sostituzione: function (v) { return f6(v.a) + '² · ' + f6(v.L); }
+    },
+    esagono: {
+      nome: 'Esagono',
+      campi: [['S', 'Apertura di chiave S'], ['L', 'Lunghezza L']],
+      formula: 'V = √3/2 · S² · L',
+      volume: function (v) { return Math.sqrt(3) / 2 * v.S * v.S * v.L; },
+      sostituzione: function (v) { return '√3/2 · ' + f6(v.S) + '² · ' + f6(v.L); }
+    },
+    piatto: {
+      nome: 'Piatto / lastra',
+      campi: [['a', 'Lato a'], ['b', 'Lato b'], ['L', 'Lunghezza L']],
+      formula: 'V = a · b · L',
+      volume: function (v) { return v.a * v.b * v.L; },
+      sostituzione: function (v) { return f6(v.a) + ' · ' + f6(v.b) + ' · ' + f6(v.L); }
+    },
+    tubo: {
+      nome: 'Tubo tondo',
+      campi: [['De', 'Diametro esterno De'], ['s', 'Spessore s'], ['L', 'Lunghezza L']],
+      formula: 'V = π/4 · (De² − (De − 2s)²) · L',
+      volume: function (v) {
+        const di = v.De - 2 * v.s;
+        return Math.PI / 4 * (v.De * v.De - di * di) * v.L;
+      },
+      sostituzione: function (v) {
+        return 'π/4 · (' + f6(v.De) + '² − (' + f6(v.De) + ' − 2·' + f6(v.s) + ')²) · ' + f6(v.L);
+      },
+      vincoli: function (v) {
+        return 2 * v.s < v.De ? [] : [{ campo: 's', messaggio: 'Lo spessore è troppo grande: serve 2·s minore di De, altrimenti il tubo non ha foro.' }];
+      }
+    },
+    tuboq: {
+      nome: 'Tubo quadro / rettangolare',
+      campi: [['a', 'Lato a'], ['b', 'Lato b'], ['s', 'Spessore s'], ['L', 'Lunghezza L']],
+      formula: 'V = (a · b − (a − 2s) · (b − 2s)) · L',
+      volume: function (v) { return (v.a * v.b - (v.a - 2 * v.s) * (v.b - 2 * v.s)) * v.L; },
+      sostituzione: function (v) {
+        return '(' + f6(v.a) + ' · ' + f6(v.b) + ' − (' + f6(v.a) + ' − 2·' + f6(v.s) + ') · (' + f6(v.b) + ' − 2·' + f6(v.s) + ')) · ' + f6(v.L);
+      },
+      vincoli: function (v) {
+        return 2 * v.s < Math.min(v.a, v.b) ? [] : [{ campo: 's', messaggio: 'Lo spessore è troppo grande: serve 2·s minore del lato più corto, altrimenti il tubo non ha foro.' }];
+      },
+      avviso: 'Calcolo con spigoli vivi: i raggi del tubo reale non sono considerati.'
+    },
+    sfera: {
+      nome: 'Sfera',
+      campi: [['D', 'Diametro D']],
+      formula: 'V = π/6 · D³',
+      volume: function (v) { return Math.PI / 6 * v.D * v.D * v.D; },
+      sostituzione: function (v) { return 'π/6 · ' + f6(v.D) + '³'; }
+    },
+    volume: {
+      nome: 'Volume noto',
+      campi: [['V', 'Volume V']],
+      formula: 'V inserito direttamente',
+      cubo: true,
+      volume: function (v) { return v.V; }
+    }
+  };
+  const ORDINE_FORME = ['tonda', 'quadro', 'esagono', 'piatto', 'tubo', 'tuboq', 'sfera', 'volume'];
+
+  function convertiMassa(valore, da, a) { return valore * MASSA_G[da] / MASSA_G[a]; }
+  function convertiLunghezza(valore, da, a) { return valore * LUNGHEZZA_MM[da] / LUNGHEZZA_MM[a]; }
+
+  // Calcola il peso a partire dai testi digitati. Restituisce sempre un oggetto:
+  //   campi[id] = { stato: 'vuoto' | 'ok' | 'errore', valore, mm, messaggio }
+  //   pezzi     = idem
+  //   completo  = vero se si può calcolare; risultato = oggetto con numeri e passaggi, oppure null.
+  function valuta(ing) {
+    const forma = FORME[ing.forma];
+    if (!forma) return { campi: {}, pezzi: { stato: 'vuoto' }, completo: false, mancanti: [], conErrori: [], risultato: null };
+    const unita = LUNGHEZZA_MM[ing.unitaLunghezza] ? ing.unitaLunghezza : 'mm';
+    const unitaPeso = MASSA_G[ing.unitaPeso] ? ing.unitaPeso : 'kg';
+    const fL = LUNGHEZZA_MM[unita];
+    const testi = ing.testi || {};
+    const campi = {};
+    const mm = {};
+    const mancanti = [];
+    const conErrori = [];
+
+    forma.campi.forEach(function (c) {
+      const id = c[0];
+      let r = interpretaNumero(testi[id]);
+      if (r.stato === 'ok') {
+        if (!(r.valore > 0)) {
+          r = { stato: 'errore', messaggio: MSG_POSITIVO };
+        } else {
+          const m = forma.cubo ? r.valore * fL * fL * fL : r.valore * fL;
+          if (!(m <= (forma.cubo ? MAX_VOLUME_MM3 : MAX_DIM_MM))) r = { stato: 'errore', messaggio: MSG_GRANDE };
+          else { r.mm = m; mm[id] = m; }
+        }
+      }
+      campi[id] = r;
+    });
+    let tutti = forma.campi.every(function (c) { return campi[c[0]].stato === 'ok'; });
+    if (tutti && forma.vincoli) {
+      forma.vincoli(mm).forEach(function (e) {
+        campi[e.campo] = { stato: 'errore', messaggio: e.messaggio, valore: campi[e.campo].valore };
+        tutti = false;
+      });
+    }
+    forma.campi.forEach(function (c) {
+      if (campi[c[0]].stato === 'vuoto') mancanti.push(c[0]);
+      if (campi[c[0]].stato === 'errore') conErrori.push(c[0]);
+    });
+
+    // pezzi: intero >= 1
+    let pezzi = interpretaNumero(ing.pezzi);
+    if (pezzi.stato === 'ok' && !(Number.isInteger(pezzi.valore) && pezzi.valore >= 1 && pezzi.valore <= MAX_PEZZI)) {
+      pezzi = { stato: 'errore', messaggio: MSG_PEZZI };
+    }
+    if (pezzi.stato === 'vuoto') mancanti.push('pezzi');
+    if (pezzi.stato === 'errore') conErrori.push('pezzi');
+
+    const rho = ing.densita;
+    const densitaOk = typeof rho === 'number' && Number.isFinite(rho) && rho > 0;
+    const completo = tutti && pezzi.stato === 'ok' && densitaOk;
+    const out = { campi: campi, pezzi: pezzi, completo: completo, mancanti: mancanti, conErrori: conErrori, densitaMancante: !densitaOk, risultato: null };
+    if (!completo) return out;
+
+    const volumeMm3 = forma.volume(mm);
+    if (!(volumeMm3 > 0) || !Number.isFinite(volumeMm3)) {
+      out.completo = false;
+      out.errore = 'Il volume risulta nullo o non calcolabile: controlla le dimensioni.';
+      return out;
+    }
+    const n = pezzi.valore;
+    const volumeCm3 = volumeMm3 / 1000;
+    const massaUnitG = volumeCm3 * rho;
+    const massaTotG = massaUnitG * n;
+    const pesoUnit = massaUnitG / MASSA_G[unitaPeso];
+    const pesoTot = massaTotG / MASSA_G[unitaPeso];
+    if (![volumeCm3, massaUnitG, massaTotG, pesoUnit, pesoTot].every(Number.isFinite)) {
+      out.completo = false;
+      out.errore = 'Il risultato è troppo grande per essere calcolato.';
+      return out;
+    }
+
+    const fv = function (x) { return formatta(x, 9, true); };
+    const passaggi = [];
+    passaggi.push('Formula: ' + forma.formula);
+    if (forma.cubo) {
+      passaggi.push('V = ' + f6(campi.V.valore) + ' ' + unita + '³ = ' + fv(volumeMm3) + ' mm³');
+    } else {
+      const dim = forma.campi.map(function (c) {
+        const id = c[0];
+        return unita === 'mm' ? id + ' = ' + f6(mm[id]) : id + ' = ' + f6(campi[id].valore) + ' ' + unita + ' = ' + f6(mm[id]) + ' mm';
+      }).join(' · ');
+      passaggi.push('Dimensioni: ' + dim);
+      passaggi.push('V = ' + forma.sostituzione(mm) + ' = ' + fv(volumeMm3) + ' mm³');
+    }
+    passaggi.push('V = ' + fv(volumeMm3) + ' mm³ ÷ 1000 = ' + f6(volumeCm3) + ' cm³');
+    passaggi.push('Massa = V × ρ = ' + f6(volumeCm3) + ' cm³ × ' + f6(rho) + ' g/cm³ = ' + f6(massaUnitG) + ' g');
+    if (unitaPeso !== 'g') {
+      passaggi.push('Peso unitario = ' + f6(massaUnitG) + ' g ÷ ' + formatta(MASSA_G[unitaPeso], 9) + ' g/' + unitaPeso + ' = ' + f6(pesoUnit) + ' ' + unitaPeso);
+    }
+    if (n > 1) {
+      passaggi.push('Totale = ' + f6(pesoUnit) + ' ' + unitaPeso + ' × ' + f6(n) + ' pezzi = ' + f6(pesoTot) + ' ' + unitaPeso);
+    }
+
+    const r = {
+      forma: ing.forma, nomeForma: forma.nome, unitaLunghezza: unita, unitaPeso: unitaPeso,
+      volume_mm3: volumeMm3, volume_cm3: volumeCm3,
+      densita: rho, pezzi: n,
+      massa_unitaria_g: massaUnitG, massa_totale_g: massaTotG,
+      peso_unitario: pesoUnit, peso_totale: pesoTot,
+      passaggi: passaggi,
+      avvisi: forma.avviso ? [forma.avviso] : []
+    };
+    // con le letture estreme di densità (se i documenti discordano)
+    const iv = ing.densitaIntervallo;
+    if (Array.isArray(iv) && iv.length === 2 && iv.every(function (x) { return typeof x === 'number' && x > 0; })) {
+      r.peso_totale_min = volumeCm3 * iv[0] * n / MASSA_G[unitaPeso];
+      r.peso_totale_max = volumeCm3 * iv[1] * n / MASSA_G[unitaPeso];
+    }
+    out.risultato = r;
+    return out;
+  }
+
+  return {
+    LUNGHEZZA_MM: LUNGHEZZA_MM, MASSA_G: MASSA_G, FORME: FORME, ORDINE_FORME: ORDINE_FORME,
+    interpretaNumero: interpretaNumero, formatta: formatta,
+    convertiMassa: convertiMassa, convertiLunghezza: convertiLunghezza, valuta: valuta
+  };
+})();
 // ENGINE:FINE
 </script>
 
 <script>
 (function () {
-  var db = JSON.parse(document.getElementById('db-materiali').textContent);
-  document.getElementById('footer').textContent =
-    'DB v' + db.meta.versione + ' · ' + db.meta.data;
+  'use strict';
+  const DB = JSON.parse(document.getElementById('db-materiali').textContent);
+  const $ = function (id) { return document.getElementById(id); };
+  const f = Motore.formatta;
+  const esc = function (s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+  };
+  const stato = { materiale: null, forma: 'tonda', testi: {}, unitaL: 'mm', unitaP: 'kg', pezzi: '1' };
+  const COMPOSIZIONE_PARZIALE = 'Composizione parziale: solo gli elementi riportati dal documento.';
+
+  $('footer').textContent = 'DB v' + DB.meta.versione + ' · ' + DB.meta.data;
+
+  // ------------------------------------------------------------------ ricerca del materiale
+  function norm(s) {
+    return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ø/g, 'o').replace(/[^a-z0-9]/g, '');
+  }
+  function normAlt(s) {
+    return norm(String(s).toLowerCase().replace(/ö|ø/g, 'oe').replace(/ä/g, 'ae').replace(/ü/g, 'ue').replace(/ß/g, 'ss'));
+  }
+  const indice = DB.materiali.map(function (m) {
+    const d = m.designazioni;
+    const termini = [m.id, m.nome, d.EN, d.WNr, d.UNI, d.AISI_SAE, d.DIN, m.famiglia].concat(d.altre || []);
+    String(m.nome_commerciale || '').split(/[;,]/).forEach(function (x) { termini.push(x); });
+    const tutti = termini.map(norm).concat(termini.map(normAlt)).filter(Boolean);
+    return { m: m, termini: tutti.filter(function (t, i) { return tutti.indexOf(t) === i; }) };
+  });
+  function punteggio(e, tokens) {
+    let totale = 0;
+    for (let i = 0; i < tokens.length; i++) {
+      let migliore = 0;
+      for (let k = 0; k < e.termini.length; k++) {
+        const t = e.termini[k];
+        const p = t === tokens[i] ? 3 : t.indexOf(tokens[i]) === 0 ? 2 : t.indexOf(tokens[i]) >= 0 ? 1 : 0;
+        if (p > migliore) migliore = p;
+      }
+      if (migliore === 0) return 0;
+      totale += migliore;
+    }
+    return totale;
+  }
+  function cerca(testo) {
+    const tokens = String(testo).split(/\s+/).map(norm).filter(Boolean);
+    if (!tokens.length) return indice.map(function (e) { return { m: e.m, p: 1 }; });
+    return indice.map(function (e) { return { m: e.m, p: punteggio(e, tokens) }; }).filter(function (x) { return x.p > 0; });
+  }
+  function riassunto(m) {
+    const d = m.designazioni;
+    const v = [];
+    if (d.EN) v.push('EN ' + d.EN);
+    if (d.WNr) v.push('W.Nr. ' + d.WNr);
+    if (d.UNI) v.push('UNI ' + d.UNI);
+    if (d.AISI_SAE) v.push('AISI/SAE ' + d.AISI_SAE);
+    if (d.DIN) v.push('DIN ' + d.DIN);
+    return v.slice(0, 3).join(' · ');
+  }
+
+  let visibili = [];
+  let attivo = -1;
+  function aperto() { return !$('elenco').hidden; }
+  function chiudiElenco() { $('elenco').hidden = true; $('q').setAttribute('aria-expanded', 'false'); $('q').removeAttribute('aria-activedescendant'); attivo = -1; }
+  function mostraElenco() {
+    const q = $('q').value;
+    const risultati = cerca(stato.materiale && q === stato.materiale.nome ? '' : q);
+    visibili = [];
+    let h = '';
+    const gruppi = DB.meta.famiglie.map(function (fam, idx) {
+      const voci = risultati.filter(function (x) { return x.m.famiglia === fam; })
+        .sort(function (a, b) { return b.p - a.p || a.m.nome.localeCompare(b.m.nome, 'it'); });
+      return { fam: fam, idx: idx, voci: voci, max: voci.length ? voci[0].p : 0 };
+    }).filter(function (g) { return g.voci.length; }) // le famiglie senza voci restano nascoste
+      .sort(function (a, b) { return b.max - a.max || a.idx - b.idx; });
+    gruppi.forEach(function (g) {
+      h += '<li class="fam" role="presentation">' + esc(g.fam) + '</li>';
+      g.voci.forEach(function (x) {
+        const i = visibili.length;
+        visibili.push(x.m);
+        h += '<li class="voce" role="option" id="o-' + i + '" data-i="' + i + '" aria-selected="false"><b>' + esc(x.m.nome) + '</b><small>' + esc(riassunto(x.m)) + '</small></li>';
+      });
+    });
+    if (!visibili.length) h = '<li class="nulla" role="presentation">Nessun materiale trovato. Prova con un\'altra designazione.</li>';
+    $('elenco').innerHTML = h;
+    $('elenco').hidden = false;
+    $('q').setAttribute('aria-expanded', 'true');
+    attivo = -1;
+  }
+  function evidenzia(i) {
+    attivo = i;
+    const voci = $('elenco').querySelectorAll('.voce');
+    voci.forEach(function (el, k) { el.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+    if (i >= 0 && voci[i]) {
+      $('q').setAttribute('aria-activedescendant', voci[i].id);
+      voci[i].scrollIntoView({ block: 'nearest' });
+    } else { $('q').removeAttribute('aria-activedescendant'); }
+  }
+  function scegli(m) {
+    stato.materiale = m;
+    $('q').value = m.nome;
+    chiudiElenco();
+    $('q').blur();
+    renderScheda();
+    aggiorna();
+  }
+  $('q').addEventListener('input', function () {
+    if (stato.materiale && $('q').value !== stato.materiale.nome) { stato.materiale = null; renderScheda(); aggiorna(); }
+    mostraElenco();
+  });
+  $('q').addEventListener('focus', function () { $('q').select(); mostraElenco(); });
+  $('q').addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!aperto()) mostraElenco();
+      if (!visibili.length) return;
+      evidenzia(e.key === 'ArrowDown' ? (attivo + 1) % visibili.length : (attivo - 1 + visibili.length) % visibili.length);
+    } else if (e.key === 'Enter') {
+      if (aperto()) {
+        e.preventDefault();
+        if (attivo >= 0) scegli(visibili[attivo]); else if (visibili.length === 1) scegli(visibili[0]);
+      }
+    } else if (e.key === 'Escape') { chiudiElenco(); }
+  });
+  $('elenco').addEventListener('mousedown', function (e) { e.preventDefault(); });
+  $('elenco').addEventListener('click', function (e) {
+    const li = e.target.closest('.voce');
+    if (li) scegli(visibili[Number(li.dataset.i)]);
+  });
+  document.addEventListener('click', function (e) {
+    if (aperto() && !e.target.closest('.cerca')) chiudiElenco();
+  });
+
+  // ------------------------------------------------------------------ scheda del materiale
+  function nomeElemento(k) { return k === 'Altri_ciascuno' ? 'Altri (ciascuno)' : k === 'Altri_totale' ? 'Altri (totale)' : k; }
+  function valoreElemento(x) {
+    if (x === 'resto') return 'resto';
+    let s;
+    if (x.min !== undefined && x.max !== undefined) s = f(x.min) + '–' + f(x.max) + ' %';
+    else if (x.max !== undefined) s = 'max ' + f(x.max) + ' %';
+    else s = 'min ' + f(x.min) + ' %';
+    return x.nota ? s + ' (' + x.nota + ')' : s;
+  }
+  function composizioneHTML(c) {
+    if (c.tipo === 'elemento') return '<p>Elemento puro: <strong>' + esc(c.simbolo) + '</strong>. <span class="piccolo">' + esc(c.riferimento || '') + '</span></p>';
+    let h = '<p class="piccolo">' + esc(c.riferimento) + '</p>';
+    if (c.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';
+    h += '<table class="comp"><tbody>';
+    Object.keys(c.elementi).forEach(function (k) { h += '<tr><td>' + esc(nomeElemento(k)) + '</td><td>' + esc(valoreElemento(c.elementi[k])) + '</td></tr>'; });
+    h += '</tbody></table>';
+    if (c.nota) h += '<p class="piccolo">' + esc(c.nota) + '</p>';
+    return h;
+  }
+  const UNITA_EQUIVALENTI = ['g/cm³', 'kg/dm³', 'Mg/m³'];
+  function lettura(r) {
+    const v = String(r.valore).replace('.', ',');
+    if (/^non indicata/.test(r.unita)) return v + ' (unità non indicata nel documento)';
+    return v + ' ' + r.unita + (UNITA_EQUIVALENTI.indexOf(r.unita) >= 0 ? '' : ' = ' + f(r.g_cm3) + ' g/cm³');
+  }
+  function paginaDensita(rif) {
+    const x = /densita (p\. [\d,]+|\(pagina web\))/.exec(rif);
+    return x ? ', ' + x[1].replace('p. ', 'pag. ').replace('(pagina web)', 'pagina web') : '';
+  }
+  function fontiHTML(fonti, soloDensita) {
+    const righe = fonti.filter(function (x) { return !soloDensita || x.densita_letta; }).map(function (x) {
+      let s = '<li><strong>' + esc(x.emittente) + '</strong>, ' + esc(x.ruolo) + ' — ' + esc(x.documento) + '.';
+      if (soloDensita) s += ' Densità letta: ' + x.densita_letta.map(lettura).map(esc).join('; ') + esc(paginaDensita(x.riferimento)) + '.';
+      else s += ' Riferimenti: ' + esc(x.riferimento) + '.';
+      return s + ' <a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Apri il documento</a></li>';
+    });
+    return '<ul class="fonti">' + righe.join('') + '</ul>';
+  }
+  function renderScheda() {
+    const m = stato.materiale;
+    const box = $('scheda');
+    if (!m) { box.hidden = true; box.innerHTML = ''; return; }
+    const d = m.designazioni;
+    const des = [['EN', d.EN], ['W.Nr.', d.WNr], ['UNI', d.UNI], ['AISI/SAE', d.AISI_SAE], ['DIN', d.DIN]]
+      .filter(function (x) { return x[1]; }).map(function (x) { return esc(x[0] + ' ' + x[1]); });
+    const iv = m.densita_intervallo_g_cm3;
+    let h = '<p><strong>' + esc(m.nome) + '</strong><br><span class="piccolo">' + esc(m.famiglia) + '</span></p>';
+    if (des.length) h += '<p class="piccolo">Designazioni: ' + des.join(' · ') + '</p>';
+    if (d.altre && d.altre.length) h += '<p class="piccolo">Altre: ' + d.altre.map(esc).join(' · ') + '</p>';
+    if (m.nome_commerciale) h += '<p class="piccolo">Nome commerciale: ' + esc(m.nome_commerciale) + '</p>';
+    h += '<p>Densità nominale: <strong>' + f(m.densita_g_cm3) + ' g/cm³</strong>' + (iv ? ' (letture dei documenti: ' + f(iv[0]) + '–' + f(iv[1]) + ')' : '') + '</p>';
+    if (m.composizione.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';
+    h += '<details><summary>Composizione chimica</summary>' + composizioneHTML(m.composizione) + '</details>';
+    h += '<details><summary>Fonti dei dati (' + m.fonti.length + ')</summary>' + fontiHTML(m.fonti, false) + '</details>';
+    box.innerHTML = h;
+    box.hidden = false;
+  }
+
+  // ------------------------------------------------------------------ forma e schema
+  function hq(x1, x2, y, t) {
+    return '<path class="q" d="M' + x1 + ' ' + y + 'H' + x2 + 'M' + x1 + ' ' + (y - 5) + 'V' + (y + 5) + 'M' + x2 + ' ' + (y - 5) + 'V' + (y + 5) + '"/>' +
+      '<text class="qt" x="' + (x1 + x2) / 2 + '" y="' + (y + 17) + '" text-anchor="middle">' + t + '</text>';
+  }
+  function vq(x, y1, y2, t) {
+    return '<path class="q" d="M' + x + ' ' + y1 + 'V' + y2 + 'M' + (x - 5) + ' ' + y1 + 'H' + (x + 5) + 'M' + (x - 5) + ' ' + y2 + 'H' + (x + 5) + '"/>' +
+      '<text class="qt" x="' + (x - 9) + '" y="' + ((y1 + y2) / 2 + 5) + '" text-anchor="end">' + t + '</text>';
+  }
+  function fianco(h, tratteggi) {
+    const y2 = 70 + h / 2;
+    let s = '<rect class="sez" x="175" y="' + (70 - h / 2) + '" width="110" height="' + h + '"/>';
+    (tratteggi || []).forEach(function (dy) { s += '<path class="tr" d="M175 ' + (70 + dy) + 'H285"/>'; });
+    return s + hq(175, 285, y2 + 14, 'L');
+  }
+  const DISEGNI = {
+    tonda: '<circle class="sez" cx="85" cy="70" r="40"/>' + hq(45, 125, 124, 'D') + fianco(80),
+    quadro: '<rect class="sez" x="45" y="30" width="80" height="80"/>' + hq(45, 125, 124, 'a') + fianco(80),
+    esagono: '<polygon class="sez" points="131,70 108,109.8 62,109.8 39,70 62,30.2 108,30.2"/>' + vq(24, 30.2, 109.8, 'S') + fianco(80),
+    piatto: '<rect class="sez" x="37" y="48" width="96" height="44"/>' + hq(37, 133, 124, 'a') + vq(24, 48, 92, 'b') + fianco(44),
+    tubo: '<path class="sez" fill-rule="evenodd" d="M43 70a42 42 0 1 0 84 0a42 42 0 1 0 -84 0zM59 70a26 26 0 1 0 52 0a26 26 0 1 0 -52 0z"/>' +
+      hq(43, 127, 124, 'De') + '<path class="q" d="M111 70H127M111 65V75M127 65V75"/><text class="qt" x="135" y="75">s</text>' + fianco(84, [-26, 26]),
+    tuboq: '<path class="sez" fill-rule="evenodd" d="M39 40H131V100H39ZM53 54H117V86H53Z"/>' + hq(39, 131, 124, 'a') + vq(24, 40, 100, 'b') +
+      '<path class="q" d="M117 70H131M117 65V75M131 65V75"/><text class="qt" x="139" y="75">s</text>' + fianco(60, [-16, 16]),
+    sfera: '<circle class="sez" cx="150" cy="68" r="48"/><path class="tr" d="M102 68a48 14 0 0 0 96 0"/>' + hq(102, 198, 124, 'D'),
+    volume: '<polygon class="sez" points="105,55 165,55 165,110 105,110"/><polygon class="sez" points="105,55 125,38 185,38 165,55"/>' +
+      '<polygon class="sez" points="165,55 185,38 185,93 165,110"/><text class="qt" x="135" y="90" text-anchor="middle" style="font-size:24px">V</text>'
+  };
+  function renderForme() {
+    const box = $('forme');
+    box.textContent = '';
+    Motore.ORDINE_FORME.forEach(function (id) {
+      const lab = document.createElement('label');
+      lab.className = 'forma' + (id === stato.forma ? ' attiva' : '');
+      lab.innerHTML = '<input type="radio" name="forma" value="' + id + '"' + (id === stato.forma ? ' checked' : '') + '><span>' + esc(Motore.FORME[id].nome) + '</span>';
+      box.appendChild(lab);
+    });
+  }
+  function renderDisegno() {
+    const forma = Motore.FORME[stato.forma];
+    $('disegno').innerHTML = '<svg viewBox="0 0 300 150" role="img" aria-label="Schema: ' + esc(forma.nome) + ', quote ' +
+      esc(forma.campi.map(function (c) { return c[0]; }).join(', ')) + '">' + DISEGNI[stato.forma] + '</svg>';
+    const av = $('avviso-forma');
+    av.hidden = !forma.avviso;
+    av.textContent = forma.avviso || '';
+  }
+  $('forme').addEventListener('change', function (e) {
+    if (e.target.name !== 'forma') return;
+    stato.forma = e.target.value;
+    $('forme').querySelectorAll('.forma').forEach(function (l) { l.classList.toggle('attiva', l.querySelector('input').checked); });
+    renderDisegno();
+    renderCampi();
+    aggiorna();
+  });
+
+  // ------------------------------------------------------------------ dimensioni
+  function unitaCampo(id) { return id === 'V' ? stato.unitaL + '³' : stato.unitaL; }
+  function renderCampi() {
+    const box = $('campi');
+    box.textContent = '';
+    Motore.FORME[stato.forma].campi.forEach(function (c) {
+      const id = c[0];
+      const d = document.createElement('div');
+      d.className = 'campo';
+      d.innerHTML = '<label for="c-' + id + '">' + esc(c[1]) + ' <span data-un="' + id + '">(' + esc(unitaCampo(id)) + ')</span></label>' +
+        '<input id="c-' + id + '" data-campo="' + id + '" type="text" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" ' +
+        'value="' + esc(stato.testi[id] || '') + '" aria-describedby="i-' + id + '">' +
+        '<p class="interp" id="i-' + id + '" aria-live="polite"></p>';
+      box.appendChild(d);
+    });
+  }
+  $('campi').addEventListener('input', function (e) {
+    if (!e.target.dataset.campo) return;
+    stato.testi[e.target.dataset.campo] = e.target.value;
+    aggiorna();
+  });
+  $('unita-lung').addEventListener('change', function () {
+    stato.unitaL = $('unita-lung').value;
+    document.querySelectorAll('[data-un]').forEach(function (el) { el.textContent = '(' + unitaCampo(el.dataset.un) + ')'; });
+    aggiorna();
+  });
+  $('pezzi').addEventListener('input', function () { stato.pezzi = $('pezzi').value; aggiorna(); });
+  $('unita-peso').addEventListener('change', function () { stato.unitaP = $('unita-peso').value; aggiorna(); });
+
+  // ------------------------------------------------------------------ risultato
+  function dettagliHTML(m, r) {
+    const u = r.unitaPeso;
+    const iv = m.densita_intervallo_g_cm3;
+    const nDoc = m.fonti.filter(function (x) { return x.densita_letta; }).length;
+    let h = '<h3>Pesi e volume</h3><dl>' +
+      '<dt>Peso unitario</dt><dd>' + f(r.peso_unitario, 6) + ' ' + u + '</dd>' +
+      '<dt>Pezzi</dt><dd>' + r.pezzi + '</dd>' +
+      '<dt>Peso totale</dt><dd>' + f(r.peso_totale, 6) + ' ' + u + '</dd>' +
+      '<dt>Volume (un pezzo)</dt><dd>' + f(r.volume_cm3, 6) + ' cm³</dd>' +
+      '<dt></dt><dd>= ' + f(r.volume_mm3, 9, true) + ' mm³</dd></dl>';
+    h += '<h3>Densità usata</h3><p><strong>' + f(m.densita_g_cm3) + ' g/cm³</strong> — ' +
+      (iv ? 'valore nominale: punto medio delle letture dei documenti.' : 'letture dei documenti concordi.') + '</p>';
+    if (iv) {
+      h += '<p>Intervallo delle letture: ' + f(iv[0]) + '–' + f(iv[1]) + ' g/cm³. ' + esc(m.nota_intervallo) +
+        ' Con le letture estreme il peso totale sarebbe tra ' + f(r.peso_totale_min, 6) + ' e ' + f(r.peso_totale_max, 6) + ' ' + u + '.</p>';
+    }
+    if (nDoc === 1) h += '<p class="avviso">Una sola fonte di densità.</p>';
+    h += fontiHTML(m.fonti, true);
+    h += '<h3>Formula e passaggi</h3><ol class="passaggi">' + r.passaggi.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>';
+    r.avvisi.forEach(function (a) { h += '<p class="avviso">' + esc(a) + '</p>'; });
+    return h;
+  }
+  function renderRisultato(v, m) {
+    const r = v.risultato;
+    const stT = $('peso-stato');
+    if (!r) {
+      $('peso-grande').textContent = '–';
+      $('peso-etichetta').textContent = 'Peso teorico';
+      $('peso-intervallo').hidden = true;
+      $('dettagli').hidden = true;
+      $('dettagli').innerHTML = '';
+      $('barra').hidden = true;
+      const manca = [];
+      if (!m) manca.push('scegli il materiale');
+      if (v.mancanti.length) manca.push('inserisci ' + v.mancanti.map(function (id) { return id === 'pezzi' ? 'i pezzi' : id; }).join(', '));
+      if (v.conErrori.length) manca.push('correggi i campi segnalati');
+      if (v.errore) manca.push(v.errore.replace(/\.$/, ''));
+      stT.textContent = manca.length ? manca.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) + '.' : '';
+      return;
+    }
+    const u = r.unitaPeso;
+    $('peso-grande').textContent = f(r.peso_totale, 5);
+    $('peso-etichetta').textContent = r.pezzi > 1 ? 'Peso totale (' + r.pezzi + ' pezzi)' : 'Peso teorico';
+    stT.textContent = r.pezzi > 1 ? 'Peso unitario: ' + f(r.peso_unitario, 5) + ' ' + u : '';
+    const iv = $('peso-intervallo');
+    if (r.peso_totale_min !== undefined) {
+      iv.hidden = false;
+      iv.textContent = 'Densità nominale: con le letture dei documenti il peso va da ' + f(r.peso_totale_min, 5) + ' a ' + f(r.peso_totale_max, 5) + ' ' + u + '.';
+    } else { iv.hidden = true; }
+    $('barra-peso').textContent = f(r.peso_totale, 5) + ' ' + u;
+    $('barra-testo').textContent = m.nome + ' · ' + r.nomeForma;
+    $('barra').hidden = false;
+    $('dettagli').hidden = false;
+    $('dettagli').innerHTML = dettagliHTML(m, r);
+  }
+  function aggiorna() {
+    const m = stato.materiale;
+    const v = Motore.valuta({
+      forma: stato.forma, testi: stato.testi, unitaLunghezza: stato.unitaL, pezzi: stato.pezzi,
+      densita: m ? m.densita_g_cm3 : null, densitaIntervallo: m ? m.densita_intervallo_g_cm3 : null, unitaPeso: stato.unitaP
+    });
+    function interpretazione(id, r, unita, ctrl) {
+      const el = $('i-' + id);
+      const inp = $(ctrl);
+      if (!el || !inp) return;
+      if (r.stato === 'ok') { el.className = 'interp'; el.textContent = '= ' + f(r.valore, 7) + (unita ? ' ' + unita : ''); inp.removeAttribute('aria-invalid'); }
+      else if (r.stato === 'errore') { el.className = 'interp errore'; el.textContent = r.messaggio; inp.setAttribute('aria-invalid', 'true'); }
+      else { el.className = 'interp'; el.textContent = ''; inp.removeAttribute('aria-invalid'); }
+    }
+    Motore.FORME[stato.forma].campi.forEach(function (c) { interpretazione(c[0], v.campi[c[0]], unitaCampo(c[0]), 'c-' + c[0]); });
+    const p = v.pezzi;
+    interpretazione('pezzi', p, p.stato === 'ok' ? (p.valore === 1 ? 'pezzo' : 'pezzi') : '', 'pezzi');
+    renderRisultato(v, m);
+  }
+
+  renderForme();
+  renderDisegno();
+  renderCampi();
+  renderScheda();
+  aggiorna();
 })();
 </script>
 </body>

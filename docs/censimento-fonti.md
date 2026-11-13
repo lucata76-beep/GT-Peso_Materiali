@@ -122,6 +122,25 @@ Per ogni voce: documenti da leggere. «Seconda fonte» serve a rilevare discorda
     - Special Metals – https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-718.pdf
     - Una copia mirror del documento (aerospacemetals.com) esiste: non ammessa.
 
+## Controllo di raggiungibilità (2026-11-13)
+
+Richiesta HTTP dei soli primi 2 KB, contenuto scartato: serve solo a sapere se l'URL esiste.
+
+- **PDF raggiungibile:**
+  - Lucefin, solo su `www.lucefin.com`: `wp-content/files_mf/<id>.pdf` (42CrMo4, 100Cr6, S355J2, 1.4301, 1.4401, 1.4542, 1.2344, 1.2379) e `wp-content/uploads/2025/01/ENG-*.pdf` (16MnCr5, 11SMnPb30)
+  - Swiss Steel (`www.` reindirizza a `swisssteel-group.com`; il server a volte chiude la connessione: ritentare con pause)
+  - Ovako (16MnCr5 e S355J2 in PDF; 100Cr6 solo pagina HTML)
+  - Saarstahl C45, thyssenkrupp 42CrMo4, Special Metals Inconel 718, Aubert & Duval 2024, ATI Ti-6Al-4V, Diehl (EN e DE)
+- **Solo pagina HTML raggiungibile:** Böhler K110, ATI CP2, Indium (stagno), Goodfellow (stagno), Rolled Alloys (radice con `www`).
+- **URL del censimento non più validi:**
+  - Lucefin su `lucefin.com` senza `www` (404): l'host senza `www` non serve
+  - BGH 1.4542 (404)
+  - Fagersta/Marcegaglia 17-4PH (404)
+  - Wieland: tutti i PDF trovati danno 404, la home risponde: gli indirizzi attuali vanno cercati dal sito
+  - Böhler: i PDF W302 vengono reindirizzati alla home: le schede vanno cercate dalla pagina prodotto
+- **Aperam:** HTTP 403 dal sito al client automatico.
+- **Bloccati dal proxy:** `rolledalloys.com` senza `www` (il PDF grado 2 è su questo nome); Aurubis (`www.aurubis.fi` reindirizza a `www.aurubis.com/finland/…`). Da aggiungere: `rolledalloys.com`, `www.aurubis.com`.
+
 ## Host necessari (24 individuati, nomi esatti, nessun wildcard)
 
 La richiesta dell'ambiente accetta al massimo 20 host. Prima richiesta: 20 host. Rinviati (seconde fonti,

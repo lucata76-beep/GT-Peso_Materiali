@@ -1,0 +1,7 @@
+jsPDF 4.2.1 (licenza MIT, vedi LICENSE-jspdf.txt)
+File: jspdf.umd.min.js (non modificato)
+Origine: pacchetto npm "jspdf@4.2.1" (npm pack), 2026-11-13.
+Integrità del pacchetto: sha512-YyAXyvnmjTbR4bHQRLzex3CuINCDlQnBqoSYyjJwTP2x9jDLuKDzy7aKUl0hgx3uhcl7xzg32agn5vlie6HIlQ==
+  (identica a quella dichiarata dal registro npm: npm view jspdf@4.2.1 dist.integrity)
+sha256 di jspdf.umd.min.js: e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54
+Uso: caricato solo al clic su "Salva scheda PDF".

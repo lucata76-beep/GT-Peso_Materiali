@@ -7,12 +7,21 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const CAMPI_FONTE = ['densita', 'composizione', 'designazioni', 'nome_commerciale'];
+const CAMPI_FONTE = ['densita', 'composizione', 'designazioni', 'nome_commerciale', 'tag', 'alias'];
 const CHIAVI_DESIGNAZIONI = ['EN', 'WNr', 'UNI', 'AISI_SAE', 'DIN'];
 const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
 const RE_ID = /^[a-z0-9][a-z0-9.\-]*$/;
 const RE_HASH = /^[0-9a-f]{16}$/;
+// Ruoli ammessi per i dati (densità, composizione, designazioni, nome commerciale, tag)
 const RE_RUOLO = /^(produttore|fornitore|riferimento scientifico)/;
+// Ruoli ammessi SOLO per gli alias (mai per i dati numerici): distributori, fornitori di lavorazioni, tesi e articoli tecnici
+const RE_RUOLO_ALIAS = /^(distributore|fornitore di lavorazioni|tesi o articolo tecnico)/;
+// Aggregatori e copie: mai fonte, nemmeno per gli alias
+const AGGREGATORI = ['wikipedia.org', 'scribd.com', 'matweb.com', 'makeitfrom.com', 'totalmateria.com', 'xometry.com', 'xometry.pro', 'xometry.eu',
+  'xometry.asia', 'mfgrobots.com', 'compraco.com.br', 'alloyfyi.com', 'steelestores.com', 'appluslaboratories.com', 'globalfastener.com',
+  'slideshare.net', 'academia.edu', 'studocu.com', 'pdfcoffee.com', 'vdocuments.mx'];
+const hostDi = (url) => { try { return new URL(url).hostname.toLowerCase(); } catch { return ''; } };
+const eAggregatore = (url) => { const h = hostDi(url); return AGGREGATORI.some((a) => h === a || h.endsWith('.' + a)); };
 
 /** Estrae e interpreta il blocco DB:INIZIO … DB:FINE da un testo HTML. */
 export function estraiDb(html) {
@@ -41,6 +50,10 @@ export function validaDb(db) {
   if (!eStr(meta.versione) || !meta.versione) err('meta', 'versione mancante');
   if (!RE_DATA.test(meta.data ?? '')) err('meta', 'data non in formato AAAA-MM-GG');
   if (!Array.isArray(meta.famiglie) || meta.famiglie.length === 0) err('meta', 'famiglie mancanti');
+  if (!Array.isArray(meta.tag) || meta.tag.length === 0 || meta.tag.some((t) => !eStr(t) || !t.trim()) || new Set(meta.tag).size !== meta.tag.length) {
+    err('meta', 'tag: vocabolario mancante, con voci vuote o duplicate');
+  }
+  const vocabolario = new Set(Array.isArray(meta.tag) ? meta.tag : []);
   if (!Array.isArray(db.materiali)) {
     err('db', 'materiali non è un array');
     return { errori, avvisi };
@@ -83,7 +96,13 @@ export function validaDb(db) {
       if (idFonti.has(f.id)) err(id, `fonte ${fid} duplicata`);
       idFonti.add(f.id);
       for (const k of ['emittente', 'documento', 'riferimento']) if (!eStr(f[k]) || !f[k]) err(id, `fonte ${fid}: ${k} mancante`);
-      if (!eStr(f.ruolo) || !RE_RUOLO.test(f.ruolo)) err(id, `fonte ${fid}: ruolo non ammesso (ammessi: produttore, fornitore, riferimento scientifico; i distributori non sono fonte ammessa)`);
+      const ruoloDati = eStr(f.ruolo) && RE_RUOLO.test(f.ruolo);
+      const ruoloAlias = eStr(f.ruolo) && RE_RUOLO_ALIAS.test(f.ruolo);
+      if (!ruoloDati && !ruoloAlias) err(id, `fonte ${fid}: ruolo non ammesso (per i dati: produttore, fornitore, riferimento scientifico; per i soli alias anche distributore, fornitore di lavorazioni, tesi o articolo tecnico)`);
+      if (ruoloAlias && !(Array.isArray(f.campi) && f.campi.length === 1 && f.campi[0] === 'alias')) {
+        err(id, `fonte ${fid}: con ruolo «${f.ruolo}» la fonte può servire solo per gli alias, mai per densità, composizione o altri dati`);
+      }
+      if (eAggregatore(f.url)) err(id, `fonte ${fid}: gli aggregatori e le copie (${hostDi(f.url)}) non sono mai fonte`);
       if (!eStr(f.url) || !/^https:\/\/\S+$/.test(f.url)) err(id, `fonte ${fid}: url https mancante`);
       if (!RE_HASH.test(f.sha256 ?? '')) err(id, `fonte ${fid}: sha256 (16 caratteri esadecimali) mancante`);
       if (!Array.isArray(f.campi) || f.campi.length === 0 || f.campi.some((c) => !CAMPI_FONTE.includes(c))) err(id, `fonte ${fid}: campi non validi`);
@@ -108,6 +127,64 @@ export function validaDb(db) {
     if (haDesignazioni && !coperti.has('designazioni')) err(id, 'ci sono designazioni ma nessuna fonte le copre');
     if (v.nome_commerciale && !coperti.has('nome_commerciale')) err(id, 'nome_commerciale senza fonte che lo verifichi (deve restare vuoto)');
     if (!v.nome_commerciale && coperti.has('nome_commerciale')) avvisi.push(`[${id}] una fonte dichiara nome_commerciale ma il campo è vuoto`);
+
+    // tag di trattamento/uso: ogni tag ha prove (documento + pagina + frase) da fonti ammesse per i dati
+    const fontePerId = new Map(fonti.map((f) => [f.id, f]));
+    if (!Array.isArray(v.tag)) err(id, 'tag deve essere un array (anche vuoto)');
+    const tagVoce = new Set();
+    const fontiCitateDaTag = new Set();
+    for (const t of Array.isArray(v.tag) ? v.tag : []) {
+      if (!eStr(t?.tag) || !vocabolario.has(t.tag)) { err(id, `tag «${t?.tag}» fuori dal vocabolario`); continue; }
+      if (tagVoce.has(t.tag)) err(id, `tag «${t.tag}» duplicato`);
+      tagVoce.add(t.tag);
+      if (!Array.isArray(t.prove) || t.prove.length === 0) { err(id, `tag «${t.tag}» senza prove (documento, pagina, frase)`); continue; }
+      for (const p of t.prove) {
+        const f = fontePerId.get(p?.fonte);
+        if (!f) { err(id, `tag «${t.tag}»: la fonte ${p?.fonte} non è tra le fonti della voce`); continue; }
+        fontiCitateDaTag.add(f.id);
+        if (!f.campi?.includes('tag')) err(id, `tag «${t.tag}»: la fonte ${f.id} non dichiara il campo «tag»`);
+        if (!(eStr(f.ruolo) && RE_RUOLO.test(f.ruolo))) err(id, `tag «${t.tag}»: la fonte ${f.id} ha ruolo «${f.ruolo}», non ammesso per i tag`);
+        if (!(p.pagina === null || (Number.isInteger(p.pagina) && p.pagina >= 1))) err(id, `tag «${t.tag}»: pagina non valida nella prova di ${f.id}`);
+        if (!eStr(p.estratto) || p.estratto.trim().length < 5) err(id, `tag «${t.tag}»: frase (estratto) mancante nella prova di ${f.id}`);
+        if (t.tag === 'da tempra' && !/HRC/.test(p.estratto ?? '')) err(id, `tag «da tempra»: ogni prova deve riportare la durezza HRC dopo tempra (${f.id})`);
+      }
+    }
+    for (const f of fonti) if (f.campi?.includes('tag') && !fontiCitateDaTag.has(f.id)) err(id, `fonte ${f.id} dichiara «tag» ma nessun tag la cita`);
+
+    // alias gergali o storici: da produttore, oppure da almeno 2 documenti di emittenti indipendenti («alias non da produttore»)
+    if (!Array.isArray(v.alias)) err(id, 'alias deve essere un array (anche vuoto)');
+    const fontiCitateDaAlias = new Set();
+    const nomiAlias = new Set();
+    for (const a of Array.isArray(v.alias) ? v.alias : []) {
+      if (!eStr(a?.alias) || !a.alias.trim()) { err(id, 'alias vuoto'); continue; }
+      const chiave = a.alias.trim().toLowerCase();
+      if (nomiAlias.has(chiave)) err(id, `alias «${a.alias}» duplicato`);
+      nomiAlias.add(chiave);
+      if (!['produttore', 'non da produttore'].includes(a.origine)) err(id, `alias «${a.alias}»: origine deve essere «produttore» o «non da produttore»`);
+      const fa = (Array.isArray(a.fonti) ? a.fonti : []).map((x) => fontePerId.get(x));
+      if (fa.length === 0 || fa.some((f) => !f)) { err(id, `alias «${a.alias}»: fonti mancanti o non presenti tra le fonti della voce`); continue; }
+      for (const f of fa) {
+        fontiCitateDaAlias.add(f.id);
+        if (!f.campi?.includes('alias')) err(id, `alias «${a.alias}»: la fonte ${f.id} non dichiara il campo «alias»`);
+      }
+      const daProduttore = fa.filter((f) => /^produttore/.test(f.ruolo ?? ''));
+      if (a.origine === 'produttore' && daProduttore.length === 0) err(id, `alias «${a.alias}»: origine «produttore» ma nessuna fonte di produttore`);
+      if (a.origine === 'non da produttore') {
+        if (daProduttore.length > 0) err(id, `alias «${a.alias}»: c'è un documento di produttore, l'origine deve essere «produttore»`);
+        const emittenti = new Set(fa.map((f) => (f.emittente ?? '').trim().toLowerCase()));
+        if (fa.length < 2 || emittenti.size < 2) err(id, `alias «${a.alias}»: senza produttore servono almeno 2 documenti di emittenti indipendenti`);
+      }
+      if (!Array.isArray(a.prove) || a.prove.length === 0) { err(id, `alias «${a.alias}» senza prove (documento, pagina, frase)`); continue; }
+      const citate = new Set();
+      for (const p of a.prove) {
+        if (!a.fonti.includes(p?.fonte)) err(id, `alias «${a.alias}»: prova con fonte ${p?.fonte} non elencata tra le fonti dell'alias`);
+        else citate.add(p.fonte);
+        if (!(p.pagina === null || (Number.isInteger(p.pagina) && p.pagina >= 1))) err(id, `alias «${a.alias}»: pagina non valida`);
+        if (!eStr(p.estratto) || p.estratto.trim().length < 5) err(id, `alias «${a.alias}»: frase (estratto) mancante`);
+      }
+      for (const fid of a.fonti) if (!citate.has(fid)) err(id, `alias «${a.alias}»: la fonte ${fid} non ha prove`);
+    }
+    for (const f of fonti) if (f.campi?.includes('alias') && !fontiCitateDaAlias.has(f.id)) err(id, `fonte ${f.id} dichiara «alias» ma nessun alias la cita`);
 
     // densità
     if (!eNum(v.densita_g_cm3) || v.densita_g_cm3 <= 0 || v.densita_g_cm3 > 25) err(id, 'densita_g_cm3 deve essere un numero > 0 (e ≤ 25)');
@@ -187,6 +264,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const perFamiglia = {};
   for (const v of db.materiali) perFamiglia[v.famiglia] = (perFamiglia[v.famiglia] ?? 0) + 1;
   const nFonti = db.materiali.reduce((s, v) => s + v.fonti.length, 0);
-  console.log(`DB OK: versione ${db.meta.versione} del ${db.meta.data}, ${db.materiali.length} voci, ${nFonti} riferimenti a fonti.`);
+  const nTag = db.materiali.reduce((s, v) => s + v.tag.length, 0);
+  const nAlias = db.materiali.reduce((s, v) => s + v.alias.length, 0);
+  console.log(`DB OK: versione ${db.meta.versione} del ${db.meta.data}, ${db.materiali.length} voci, ${nFonti} riferimenti a fonti, ${nTag} tag, ${nAlias} alias.`);
   for (const f of db.meta.famiglie) if (perFamiglia[f]) console.log(`  ${f}: ${perFamiglia[f]}`);
 }

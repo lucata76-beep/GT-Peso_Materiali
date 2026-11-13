@@ -5,34 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e1115" media="(prefers-color-scheme: dark)">
-<title>GT Peso Materiali</title>
+<meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)">
+<title>GT-Peso_Materiali</title>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
-  /* Un solo colore d'accento. Contrasti misurati: testo >= 7:1, bordi dei controlli >= 3:1. */
+  /* Marchio: la sfumatura della scritta GT (giallo → arancio → rosso) è l'unico colore d'accento.
+     Nessuna tinta del logo regge come testo su fondo chiaro (giallo 1,5:1, arancio 2,7:1 su bianco):
+     lì la sfumatura serve solo per riempimenti e bordi, il testo d'accento è un marrone-arancio scuro.
+     Su fondo scuro il testo può usare il tratto giallo → arancio chiaro (>= 9,2:1).
+     Contrasti misurati dal collaudo: testo >= 7:1, bordi dei controlli >= 3:1. */
   :root {
     color-scheme: light dark;
+    --g1: #fccc3c; --g2: #e4843c; --g3: #c43620;
+    --sfumatura: linear-gradient(90deg, var(--g1), var(--g2), var(--g3));
+    --riempimento: linear-gradient(135deg, #fccc3c, #f5a83a);
+    --su-riempimento: #1a1008;
+    --tg1: #8a3000; --tg2: #8a3000;
     --bg: #ffffff;
-    --card: #f1f4f8;
-    --fg: #12161b;
-    --muted: #3c4650;
-    --line: #69747f;
-    --accent: #0a4aa6;
-    --accfg: #ffffff;
-    --err: #8f0f08;
-    --tint: rgba(10, 74, 166, 0.12);
+    --card: #f6f1ec;
+    --fg: #14110f;
+    --muted: #4a433c;
+    --line: #7a7168;
+    --acc: #8a3000;
+    --err: #9b1c0c;
+    --tint: rgba(228, 132, 60, 0.14);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0e1115;
-      --card: #171c22;
-      --fg: #f3f5f7;
-      --muted: #c2cad3;
-      --line: #8793a0;
-      --accent: #8db8ff;
-      --accfg: #0e1115;
-      --err: #ffb3ad;
-      --tint: rgba(141, 184, 255, 0.16);
+      --tg1: #fccc3c; --tg2: #f5a83a;
+      --bg: #121417;
+      --card: #1b1f25;
+      --fg: #f4f1ec;
+      --muted: #cfc8bf;
+      --line: #8a8f98;
+      --acc: #f5a83a;
+      --err: #ff9a8f;
+      --tint: rgba(252, 204, 60, 0.14);
     }
   }
   * { box-sizing: border-box; }
@@ -50,28 +58,47 @@
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
   }
-  h1 { font-size: 1.35rem; line-height: 1.2; margin: 16px 0 4px; }
-  h2 { font-size: 1.05rem; margin: 0 0 8px; color: var(--accent); }
+  h2 { font-size: 1.05rem; margin: 0 0 8px; color: var(--acc); width: fit-content; }
+  h2::after { content: ""; display: block; height: 3px; margin-top: 3px; border-radius: 2px; background: var(--sfumatura); }
   h3 { font-size: 1rem; margin: 16px 0 6px; }
   section { margin: 20px 0; }
   p { margin: 0 0 8px; }
-  a { color: var(--accent); }
+  a { color: var(--acc); }
   .piccolo { font-size: 0.9rem; color: var(--muted); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
 
-  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  /* testo con la sfumatura (solo su fondo scuro, dove ogni tratto passa 7:1); altrove resta il colore pieno */
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    @media (prefers-color-scheme: dark) {
+      .nome, h2 {
+        background-image: linear-gradient(90deg, var(--tg1), var(--tg2));
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+  }
+
+  /* intestazione: scorre via con la pagina; resta fissa solo la barra del peso */
+  .testata { background: var(--bg); }
+  .testata::after { content: ""; display: block; height: 3px; background: var(--sfumatura); }
+  .testata-riga {
+    display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; padding-top: 10px; padding-bottom: 10px;
+    padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .logo { display: block; flex: none; width: 44px; height: 44px; }
+  .nome { margin: 0; min-width: 0; font-size: clamp(1rem, 5.3vw, 1.25rem); line-height: 1.15; font-weight: 800; white-space: nowrap; color: var(--acc); }
+  .versione { flex: none; padding: 1px 8px; font-size: 0.85rem; font-weight: 700; color: var(--fg); border: 1.5px solid var(--acc); border-radius: 999px; white-space: nowrap; }
+  .sottotitolo { margin: 12px 0 0; color: var(--muted); }
 
   /* barra con il peso, sempre visibile mentre si scrive */
-  .barra {
-    position: sticky; top: 0; z-index: 5;
-    background: var(--bg);
-    border-bottom: 2px solid var(--accent);
-  }
+  .barra { position: sticky; top: 0; z-index: 5; background: var(--bg); }
+  .barra::after { content: ""; display: block; height: 3px; background: var(--sfumatura); }
   .barra .colonna { display: flex; align-items: baseline; gap: 8px; min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
   .barra strong { font-size: 1.15rem; white-space: nowrap; }
   .barra span { flex: 1; min-width: 0; font-size: 0.9rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* controlli: tutti con bersaglio di almeno 48 px */
+  /* controlli: tutti con bersaglio di almeno 48 px e testo di almeno 16 px */
   input[type="text"], select {
     width: 100%;
     min-height: 48px;
@@ -83,6 +110,7 @@
     border-radius: 10px;
   }
   select { width: auto; min-width: 88px; }
+  input[type="text"]:focus-visible, select:focus-visible { border-color: var(--acc); }
   input[aria-invalid="true"] { border-color: var(--err); }
   label { display: block; font-weight: 600; margin-bottom: 4px; }
 
@@ -93,23 +121,39 @@
     max-height: 55vh; overflow: auto; -webkit-overflow-scrolling: touch;
     border: 2px solid var(--line); border-radius: 10px; background: var(--bg);
   }
-  .elenco .fam { padding: 8px 12px; font-size: 0.85rem; font-weight: 700; color: var(--accent); background: var(--card); position: sticky; top: 0; }
+  .elenco .fam { padding: 8px 12px; font-size: 0.85rem; font-weight: 700; color: var(--acc); background: var(--card); position: sticky; top: 0; }
   .elenco .voce { min-height: 52px; padding: 8px 12px; cursor: pointer; border-top: 1px solid var(--line); }
   .elenco .voce[aria-selected="true"], .elenco .voce:hover { background: var(--tint); }
   .elenco .voce b { display: block; font-weight: 600; }
   .elenco .voce small { display: block; color: var(--muted); font-size: 0.85rem; }
+  .elenco .voce .trovato { margin-top: 2px; }
   .elenco .nulla { padding: 12px; color: var(--muted); }
 
+  /* scheda del materiale */
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-top: 12px; }
   .card p { margin-bottom: 6px; }
-  details { margin-top: 8px; }
-  summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
-  .avviso { padding: 8px 10px; border-left: 4px solid var(--accent); background: var(--tint); border-radius: 4px; }
+  ul.tag { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; padding: 0; }
+  ul.tag li { padding: 2px 10px; font-size: 0.9rem; font-weight: 600; border: 1.5px solid var(--line); border-radius: 999px; }
+  .avviso { padding: 8px 10px; border-left: 4px solid var(--acc); background: var(--tint); border-radius: 4px; }
+  details { margin-top: 8px; border-top: 1px solid var(--line); }
+  summary {
+    display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer;
+    font-weight: 700; list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  /* freccia ben visibile: ▸ a sezione chiusa, ▾ a sezione aperta */
+  summary::before {
+    content: ""; flex: none; width: 0; height: 0;
+    border-style: solid; border-width: 8px 0 8px 12px; border-color: transparent transparent transparent var(--acc);
+    transition: transform 0.15s ease;
+  }
+  details[open] > summary::before { transform: rotate(90deg); }
+  @media (prefers-reduced-motion: reduce) { summary::before { transition: none; } }
   table.comp { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
   table.comp td { padding: 4px 6px; border-top: 1px solid var(--line); }
   table.comp td:last-child { text-align: right; }
-  ul.fonti { padding-left: 18px; margin: 4px 0; }
-  ul.fonti li { margin-bottom: 8px; font-size: 0.92rem; }
+  ul.fonti, ul.prove { padding-left: 18px; margin: 4px 0; }
+  ul.fonti li, ul.prove li { margin-bottom: 8px; font-size: 0.92rem; }
   ul.fonti a { display: inline-block; min-height: 44px; line-height: 44px; }
 
   /* forme */
@@ -120,14 +164,14 @@
     border: 2px solid var(--line); border-radius: 10px; cursor: pointer;
   }
   .forma input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-  .forma.attiva { background: var(--accent); color: var(--accfg); border-color: var(--accent); }
-  .forma:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .forma.attiva { background: var(--riempimento); color: var(--su-riempimento); border-color: var(--acc); }
+  .forma:focus-within { outline: 3px solid var(--acc); outline-offset: 2px; }
   .disegno { margin: 12px 0 4px; }
   .disegno svg { display: block; width: 100%; height: auto; max-height: 190px; }
   .sez { fill: var(--tint); stroke: var(--fg); stroke-width: 2; stroke-linejoin: round; }
   .tr { fill: none; stroke: var(--fg); stroke-width: 1.4; stroke-dasharray: 4 3; }
-  .q { fill: none; stroke: var(--accent); stroke-width: 1.8; }
-  .qt { fill: var(--accent); font-size: 14px; font-weight: 700; font-family: inherit; }
+  .q { fill: none; stroke: var(--acc); stroke-width: 1.8; }
+  .qt { fill: var(--acc); font-size: 14px; font-weight: 700; font-family: inherit; }
 
   /* dimensioni */
   .riga-unita { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -136,9 +180,10 @@
   .interp { min-height: 1.5em; margin: 4px 0 8px; font-size: 0.92rem; color: var(--muted); }
   .interp.errore { color: var(--err); font-weight: 600; }
 
-  /* risultato */
-  .peso-box { background: var(--card); border: 2px solid var(--accent); border-radius: 12px; padding: 14px 12px; }
-  .peso-box .etichetta { margin: 0; font-weight: 600; }
+  /* risultato: riquadro con bordo a sfumatura */
+  .peso-box { padding: 3px; border-radius: 14px; background: var(--sfumatura); }
+  .peso-int { padding: 12px 10px; border-radius: 11px; background: var(--card); }
+  .peso-int .etichetta { margin: 0; font-weight: 600; }
   .grande { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 12px; }
   .grande output { font-size: clamp(2.6rem, 13vw, 3.6rem); font-weight: 700; line-height: 1.1; }
   .stato { margin: 6px 0 0; color: var(--muted); }
@@ -157,21 +202,29 @@
 </style>
 </head>
 <body>
+<header class="testata">
+  <div class="testata-riga">
+    <img class="logo" src="assets/logo-gt.png" width="120" height="120" alt="Logo GT: le lettere GT in un rombo arancione su fondo scuro">
+    <h1 class="nome">GT-Peso_Materiali</h1>
+    <span class="versione" id="versione" title="Versione dell'app"></span>
+  </div>
+</header>
+
 <div class="barra" id="barra" hidden>
   <div class="colonna"><strong id="barra-peso"></strong><span id="barra-testo"></span></div>
 </div>
 
 <main class="colonna">
-  <h1>Peso teorico dei materiali</h1>
+  <p class="sottotitolo">Peso teorico dei materiali</p>
   <noscript><p class="avviso">Serve JavaScript per calcolare il peso.</p></noscript>
 
   <section aria-labelledby="t-materiale">
     <h2 id="t-materiale">Materiale</h2>
     <div class="cerca">
-      <label for="q">Cerca per nome o designazione</label>
+      <label for="q">Cerca per nome, designazione, alias o uso</label>
       <input id="q" type="text" role="combobox" aria-expanded="false" aria-controls="elenco" aria-autocomplete="list"
              autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search"
-             placeholder="C45, 1.4301, 7075, Ti-6Al-4V…">
+             placeholder="C45, 1.4301, 7075, bonificato, inox…">
       <ul id="elenco" class="elenco" role="listbox" aria-label="Materiali" hidden></ul>
     </div>
     <div id="scheda" class="card" hidden></div>
@@ -205,7 +258,7 @@
 
   <section aria-labelledby="t-risultato">
     <h2 id="t-risultato">Risultato</h2>
-    <div class="peso-box">
+    <div class="peso-box"><div class="peso-int">
       <p class="etichetta" id="peso-etichetta">Peso teorico</p>
       <div class="grande">
         <output id="peso-grande" aria-live="polite">–</output>
@@ -220,7 +273,7 @@
       </div>
       <p class="stato" id="peso-stato"></p>
       <p class="stato" id="peso-intervallo" hidden></p>
-    </div>
+    </div></div>
     <div id="dettagli" class="dettagli" hidden></div>
     <p class="dicitura">Peso teorico da densità nominale, senza tolleranze né raggi.</p>
   </section>
@@ -234,8 +287,21 @@
 {
  "meta": {
   "schema": 1,
-  "versione": "2",
+  "versione": "3",
   "data": "2026-11-13",
+  "tag": [
+   "da bonifica",
+   "da cementazione",
+   "da tempra",
+   "per cuscinetti",
+   "per utensili a caldo",
+   "per utensili a freddo",
+   "automatico",
+   "inox",
+   "austenitico",
+   "indurente per precipitazione",
+   "da costruzione"
+  ],
   "regola_nominale": "Se i documenti letti concordano: valore comune. Se discordano: densità nominale = punto medio tra minimo e massimo letti (arrotondato a 3 decimali), con intervallo e fonti.",
   "famiglie": [
    "Acciai al carbonio",
@@ -313,19 +379,33 @@
    "densita_g_cm3": 7.85,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "da bonifica",
+     "prove": [
+      {
+       "fonte": "LUC-C45E",
+       "pagina": 1,
+       "estratto": "«Acciaio da bonifica» (intestazione della scheda)"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-C45E",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Scheda dati C45E (ISO 683-1:2018), rev. 2024",
-     "riferimento": "densita p. 3; composizione p. 1; designazioni p. 1,3",
+     "riferimento": "densita p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/uploads/2025/01/C45E.pdf",
      "sha256": "f533ff76d6a2150f",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -394,19 +474,33 @@
    "densita_g_cm3": 7.85,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "da bonifica",
+     "prove": [
+      {
+       "fonte": "LUC-42CRMO4",
+       "pagina": 1,
+       "estratto": "«Quenching and Tempering Steel» (intestazione della scheda)"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-42CRMO4",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 42CrMo4 (ISO 683-2:2018), rev. 2018",
-     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/152353604042CrMo4.pdf",
      "sha256": "40bad89650e30240",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -470,19 +564,38 @@
     7.85
    ],
    "nota_intervallo": "Lucefin 7,85 kg/dm³; Ovako 7800 kg/m³ (valore tipico).",
+   "tag": [
+    {
+     "tag": "da cementazione",
+     "prove": [
+      {
+       "fonte": "LUC-16MNCR5",
+       "pagina": 1,
+       "estratto": "«Case-hardening Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "OVA-16MNCR5",
+       "pagina": 1,
+       "estratto": "«16MnCr5 is an alloyed case hardening steel»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-16MNCR5",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 16MnCr5 (ISO 683-3:2018), rev. 2024",
-     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/uploads/2025/01/ENG-16MnCr5.pdf",
      "sha256": "4990576a2817c395",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -497,11 +610,12 @@
      "emittente": "Ovako",
      "ruolo": "produttore",
      "documento": "Steel Navigator, scheda 16MnCr5 (PDF dal sito)",
-     "riferimento": "densita p. 6",
+     "riferimento": "densita p. 6; tag p. 1",
      "url": "https://steelnavigator.ovako.com/steel-grades/16mncr5/pdf",
      "sha256": "767af42285274365",
      "campi": [
-      "densita"
+      "densita",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -578,19 +692,58 @@
     7.81
    ],
    "nota_intervallo": "Lucefin 7,81; Swiss Steel 7,8; Ovako 7800 kg/m³: differenze di arrotondamento.",
+   "tag": [
+    {
+     "tag": "per cuscinetti",
+     "prove": [
+      {
+       "fonte": "LUC-100CR6",
+       "pagina": 1,
+       "estratto": "«Bearing Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-100CR6",
+       "pagina": 1,
+       "estratto": "«WÄLZLAGERSTAHL» (intestazione della scheda)"
+      },
+      {
+       "fonte": "OVA-100CR6",
+       "pagina": 1,
+       "estratto": "«100Cr6 is a through hardening bearing steels»"
+      }
+     ]
+    },
+    {
+     "tag": "da tempra",
+     "prove": [
+      {
+       "fonte": "LUC-100CR6",
+       "pagina": 1,
+       "estratto": "tabella «Table of tempering values … after quenching at 840 °C in oil»: HRC 65 64 63 62 59 57 54 51 47 44 (rinvenimento a 50…500 °C)"
+      },
+      {
+       "fonte": "OVA-100CR6",
+       "pagina": 3,
+       "estratto": "tabella delle varianti: «+Q/T(m) … 61 HRC typical» (temprato e rinvenuto)"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-100CR6",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 100Cr6 (ISO 683-17:2014), rev. 2018",
-     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/1523536908100Cr6.pdf",
      "sha256": "41d34658509bcd46",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -605,14 +758,15 @@
      "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
      "ruolo": "produttore",
      "documento": "Durapur 3505, Werkstoffdatenblatt 100Cr6 / 1.3505, 16/10/2015",
-     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1; tag p. 1",
      "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Engineering-Steel/1.3505_de.pdf",
      "sha256": "450024a8c67fccc5",
      "campi": [
       "composizione",
       "densita",
       "designazioni",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -627,11 +781,12 @@
      "emittente": "Ovako",
      "ruolo": "produttore",
      "documento": "Steel Navigator, scheda 100Cr6 (PDF dal sito)",
-     "riferimento": "densita p. 9",
+     "riferimento": "densita p. 9; tag p. 1,3",
      "url": "https://steelnavigator.ovako.com/steel-grades/100cr6/pdf",
      "sha256": "43eeb928cb93ba8f",
      "campi": [
-      "densita"
+      "densita",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -686,18 +841,37 @@
    "densita_g_cm3": 7.8,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "da costruzione",
+     "prove": [
+      {
+       "fonte": "OVA-S355J2",
+       "pagina": 1,
+       "estratto": "«S355J2 is a micro alloyed structural steel»"
+      },
+      {
+       "fonte": "LUC-S355J2",
+       "pagina": 1,
+       "estratto": "«Steel for general engineering» (intestazione della scheda)"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-S355J2",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card S355J2 (EN 10025-2:2014), rev. 2018",
-     "riferimento": "composizione p. 1; designazioni p. 1",
+     "riferimento": "composizione p. 1; designazioni p. 1; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/1522935764S355J2.pdf",
      "sha256": "fd5efa158688d570",
      "campi": [
       "composizione",
-      "designazioni"
+      "designazioni",
+      "tag"
      ]
     },
     {
@@ -705,11 +879,12 @@
      "emittente": "Ovako",
      "ruolo": "produttore",
      "documento": "Steel Navigator, scheda S355J2 (PDF dal sito)",
-     "riferimento": "densita p. 6",
+     "riferimento": "densita p. 6; tag p. 1",
      "url": "https://steelnavigator.ovako.com/steel-grades/s355j2/pdf",
      "sha256": "67df1b836c18e28f",
      "campi": [
-      "densita"
+      "densita",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -770,19 +945,38 @@
    "densita_g_cm3": 7.85,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "automatico",
+     "prove": [
+      {
+       "fonte": "LUC-11SMNPB30",
+       "pagina": 1,
+       "estratto": "«Free-cutting Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-E217",
+       "pagina": 1,
+       "estratto": "«Special Free-Cutting Steels»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-11SMNPB30",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 11SMnPb30 (ISO 683-4:2018), rev. 2024",
-     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/uploads/2025/01/ENG-11SMnPb30.pdf",
      "sha256": "7a7a8b0a3ad3dd6d",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -797,11 +991,12 @@
      "emittente": "Swiss Steel Group (Steeltec)",
      "ruolo": "produttore",
      "documento": "Technical Datasheet SwissCut, 28.06.23 Rev. N°1",
-     "riferimento": "nome_commerciale p. 1",
+     "riferimento": "nome_commerciale p. 1; tag p. 1",
      "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Engineering-Steel/E217_SwissCut_Technischesdatenblatt_0715.pdf",
      "sha256": "10e713a51f6a4ded",
      "campi": [
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ]
     }
    ],
@@ -863,19 +1058,53 @@
    "densita_g_cm3": 7.9,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "inox",
+     "prove": [
+      {
+       "fonte": "LUC-4301",
+       "pagina": 1,
+       "estratto": "«Austenitic Stainless Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-4301",
+       "pagina": 1,
+       "estratto": "«Chromium-nickel austenitic stainless steel»"
+      }
+     ]
+    },
+    {
+     "tag": "austenitico",
+     "prove": [
+      {
+       "fonte": "LUC-4301",
+       "pagina": 1,
+       "estratto": "«Austenitic Stainless Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-4301",
+       "pagina": 1,
+       "estratto": "«Chromium-nickel austenitic stainless steel»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-4301",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.4301 X5CrNi18-10 (EN 10088-3:2014), 2018",
-     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/15235416291.4301A304.pdf",
      "sha256": "bb8fd0e5ee7eb55e",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -890,12 +1119,13 @@
      "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
      "ruolo": "produttore",
      "documento": "Datasheet 1.4301 Chromium-nickel austenitic stainless steel",
-     "riferimento": "densita p. 1; designazioni p. 1",
+     "riferimento": "densita p. 1; designazioni p. 1; tag p. 1",
      "url": "https://www.swisssteel-group.com/content-media/documents/Data-Sheets/Stainless-Steel/Datenblatt_4301_UK.pdf",
      "sha256": "568e9f66166344c4",
      "campi": [
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -968,19 +1198,53 @@
    "densita_g_cm3": 8.0,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "inox",
+     "prove": [
+      {
+       "fonte": "LUC-4401",
+       "pagina": 1,
+       "estratto": "«Austenitic Stainless Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-4401",
+       "pagina": 1,
+       "estratto": "«NICHTROSTENDER AUSTENITISCHER STAHL»"
+      }
+     ]
+    },
+    {
+     "tag": "austenitico",
+     "prove": [
+      {
+       "fonte": "LUC-4401",
+       "pagina": 1,
+       "estratto": "«Austenitic Stainless Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-4401",
+       "pagina": 1,
+       "estratto": "«NICHTROSTENDER AUSTENITISCHER STAHL»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-4401",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.4401 X5CrNiMo17-12-2 (EN 10088-3:2014), 2018",
-     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/15235422061.4401A316.pdf",
      "sha256": "f726339a0062cdad",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -995,14 +1259,15 @@
      "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
      "ruolo": "produttore",
      "documento": "Acidur 4401, Werkstoffdatenblatt 1.4401, 02/12/2015",
-     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1; tag p. 1",
      "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Stainless-Steel/1.4401_de.pdf",
      "sha256": "df492db33101d1f3",
      "campi": [
       "composizione",
       "densita",
       "designazioni",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1077,19 +1342,48 @@
    "densita_g_cm3": 7.8,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "inox",
+     "prove": [
+      {
+       "fonte": "LUC-4542",
+       "pagina": 1,
+       "estratto": "«Precipitation hardening Stainless Steel» (intestazione della scheda)"
+      }
+     ]
+    },
+    {
+     "tag": "indurente per precipitazione",
+     "prove": [
+      {
+       "fonte": "LUC-4542",
+       "pagina": 1,
+       "estratto": "«Precipitation hardening Stainless Steel» (intestazione della scheda)"
+      },
+      {
+       "fonte": "FAG-174",
+       "pagina": 1,
+       "estratto": "«a martensitic precipitation-hardening steel»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-4542",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.4542 X5CrNiCuNb16-4 17-4 PH (EN 10088-3:2014), 2018",
-     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/15235430111.4542Tp630.pdf",
      "sha256": "40b991234af5e6e6",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1104,12 +1398,13 @@
      "emittente": "Marcegaglia Specialties, Fagersta Stainless",
      "ruolo": "produttore",
      "documento": "R565.10 (17-4 PH), ENG 2025, Edition 1",
-     "riferimento": "densita p. 1; designazioni p. 1",
+     "riferimento": "densita p. 1; designazioni p. 1; tag p. 1",
      "url": "https://www.fagersta.marcegaglia.com/wp-content/uploads/2023/07/1.4542-17-4PH-R565.10-ENG-2025-Edition-1.pdf",
      "sha256": "2c3be6d75db1d6cb",
      "campi": [
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1186,19 +1481,58 @@
     7.8
    ],
    "nota_intervallo": "Lucefin 7,74 kg/dm³; Böhler 7,8 kg/dm³ (W302 ISOBLOC e ISODISC).",
+   "tag": [
+    {
+     "tag": "per utensili a caldo",
+     "prove": [
+      {
+       "fonte": "BOE-W302B",
+       "pagina": 1,
+       "estratto": "«HOT WORK TOOL STEELS» (W302 ISOBLOC)"
+      },
+      {
+       "fonte": "BOE-W302D",
+       "pagina": 1,
+       "estratto": "«HOT WORK TOOL STEELS» (W302 ISODISC)"
+      }
+     ]
+    },
+    {
+     "tag": "da tempra",
+     "prove": [
+      {
+       "fonte": "LUC-12344",
+       "pagina": 1,
+       "estratto": "tabella «Tempering table after quenching at 1040 °C in oil»: HRC 55 54 53 52 51,5 52 53 54 56 56 52 48 42 32 (rinvenimento a 50…700 °C)"
+      },
+      {
+       "fonte": "BOE-W302B",
+       "pagina": 2,
+       "estratto": "«Hardness (HRC) 40 to 55 | bars hardened and tempered (BHT)»"
+      },
+      {
+       "fonte": "SWI-12344",
+       "pagina": 2,
+       "estratto": "«Hardening 1010 – 1030 °C … 54 HRC (after quenching)»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-12344",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.2344 X40CrMoV5-1 (UNI EN ISO 4957:2002), rev. 2018",
-     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/15236076191.2344X40CrMoV51.pdf",
      "sha256": "9347852d145b3b94",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1213,13 +1547,14 @@
      "emittente": "voestalpine BÖHLER Edelstahl",
      "ruolo": "produttore",
      "documento": "Data sheet BÖHLER W302 ISOBLOC",
-     "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1",
+     "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1; tag p. 1,2",
      "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w302-isobloc_en_gb.pdf",
      "sha256": "f5f449e629132340",
      "campi": [
       "densita",
       "designazioni",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1234,12 +1569,13 @@
      "emittente": "voestalpine BÖHLER Edelstahl",
      "ruolo": "produttore",
      "documento": "Data sheet BÖHLER W302 ISODISC",
-     "riferimento": "densita p. 5; nome_commerciale p. 1",
+     "riferimento": "densita p. 5; nome_commerciale p. 1; tag p. 1",
      "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w302-isodisc_en_gb.pdf",
      "sha256": "e0a0a87343baa39b",
      "campi": [
       "densita",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1254,12 +1590,13 @@
      "emittente": "Swiss Steel Group",
      "ruolo": "produttore",
      "documento": "Technical datasheet Thermodur 2344 EFS, 10.05.23 Rev.00",
-     "riferimento": "designazioni p. 1; nome_commerciale p. 1",
+     "riferimento": "designazioni p. 1; nome_commerciale p. 1; tag p. 2",
      "url": "https://swisssteel-group.com/content-media/documents/_import/1.2344_en.pdf",
      "sha256": "9b9e7d772c87108e",
      "campi": [
       "designazioni",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ]
     }
    ],
@@ -1323,19 +1660,43 @@
     7.68
    ],
    "nota_intervallo": "Lucefin 7,68 kg/dm³; Böhler 7,67 kg/dm³.",
+   "tag": [
+    {
+     "tag": "per utensili a freddo",
+     "prove": [
+      {
+       "fonte": "BOE-K110",
+       "pagina": 1,
+       "estratto": "«COLD WORK TOOL STEELS»"
+      }
+     ]
+    },
+    {
+     "tag": "da tempra",
+     "prove": [
+      {
+       "fonte": "LUC-12379",
+       "pagina": 1,
+       "estratto": "tabella «Table of tempering after quenching at 1020 °C in oil»: HRC 64 63,5 63 62 61 60 58,5 58,5 59,5 59,5 57,5 50 36 (rinvenimento a 50…700 °C)"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "LUC-12379",
      "emittente": "Lucefin Group",
      "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.2379 X153CrMoV12 (UNI EN ISO 4957:2002), rev. 2018",
-     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1; tag p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/15236079471.2379X153CrMoV12.pdf",
      "sha256": "40396f425b4d8b3b",
      "campi": [
       "composizione",
       "densita",
-      "designazioni"
+      "designazioni",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1350,13 +1711,14 @@
      "emittente": "voestalpine BÖHLER Edelstahl",
      "ruolo": "produttore",
      "documento": "Data sheet BÖHLER K110",
-     "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1",
+     "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1; tag p. 1",
      "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/k110_en_gb.pdf",
      "sha256": "cdb5debfb917dd4c",
      "campi": [
       "densita",
       "designazioni",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -1429,6 +1791,8 @@
     2.71
    ],
    "nota_intervallo": "Wieland 2,7 g/cm³ (una cifra decimale); Hydro 2,71 g/cm³ (valore tipico).",
+   "tag": [],
+   "alias": [],
    "fonti": [
     {
      "id": "HYD-6082",
@@ -1533,6 +1897,40 @@
    "densita_g_cm3": 2.8,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [],
+   "alias": [
+    {
+     "alias": "Ergal",
+     "origine": "non da produttore",
+     "fonti": [
+      "UPM-ERGAL",
+      "WEE-7075"
+     ],
+     "prove": [
+      {
+       "fonte": "WEE-7075",
+       "pagina": 1,
+       "estratto": "«Alluminio 7075» e, sotto, «Ergal / 9007/2 / AlZnMgCu1.5 / 3.4365 / 2L95/L160 / A-ZGU / P-AlZn5.8MgCu» (elenco delle designazioni della lega)"
+      },
+      {
+       "fonte": "UPM-ERGAL",
+       "pagina": 4,
+       "estratto": "«Nel 1936 fu introdotta la 7075, chiamata Ergal»"
+      },
+      {
+       "fonte": "UPM-ERGAL",
+       "pagina": 40,
+       "estratto": "«… ciò è anche vero per la 7075 (Ergal) …»"
+      },
+      {
+       "fonte": "UPM-ERGAL",
+       "pagina": 17,
+       "estratto": "tabella dei nomi commerciali: «ERGAL, Leghe Al-Zn-Mg-Cu … ERGAL 55=7075 … ERGAL 65=7049»"
+      }
+     ],
+     "nota": "La tesi (pag. 17) elenca «Ergal» anche come nome di una famiglia di leghe Al-Zn-Mg-Cu: ERGAL 55 = 7075, ERGAL 65 = 7049. Negli altri passaggi, e nella scheda Weerg, «Ergal» indica la 7075."
+    }
+   ],
    "fonti": [
     {
      "id": "KAI-7075SP",
@@ -1593,6 +1991,30 @@
        "unita": "g/cm³",
        "g_cm3": 2.8
       }
+     ]
+    },
+    {
+     "id": "WEE-7075",
+     "emittente": "Weerg",
+     "ruolo": "fornitore di lavorazioni (lavorazioni CNC)",
+     "documento": "Scheda tecnica v2.1 «Alluminio 7075», Lavorazione CNC (ultima revisione 28/10/2024)",
+     "riferimento": "alias p. 1",
+     "url": "https://www.weerg.com/hubfs/Datasheets/Datasheets%202024/ITA/IT_Alluminio7075.pdf",
+     "sha256": "1826df0816524aa8",
+     "campi": [
+      "alias"
+     ]
+    },
+    {
+     "id": "UPM-ERGAL",
+     "emittente": "Università Politecnica delle Marche",
+     "ruolo": "tesi o articolo tecnico",
+     "documento": "Tesi di laurea triennale in Ingegneria meccanica, a.a. 2018/2019: «Ruolo degli alliganti nei trattamenti termici di una lega Al-Zn-Cu-Mg»",
+     "riferimento": "alias p. 4,17,40",
+     "url": "https://tesi.univpm.it/retrieve/3635655c-26a5-4a03-9202-85bc2542bb29/Ruolo%20degli%20alliganti%20nei%20trattamenti%20termici%20di%20una%20lega%20Al-Zn-Cu-Mg%20.pdf",
+     "sha256": "9a6fb4cb538877b7",
+     "campi": [
+      "alias"
      ]
     }
    ],
@@ -1658,6 +2080,8 @@
    "densita_g_cm3": 2.77,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [],
+   "alias": [],
    "fonti": [
     {
      "id": "KAI-2024",
@@ -1761,6 +2185,8 @@
    "densita_g_cm3": 2.66,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [],
+   "alias": [],
    "fonti": [
     {
      "id": "HYD-5083",
@@ -1855,6 +2281,8 @@
     4.52
    ],
    "nota_intervallo": "ATI: 4,51 g/cm³ per barra e billetta e 4,52 g/cm³ per lamiera, nastro e piatto (pagina prodotto); scheda tecnica 4,51.",
+   "tag": [],
+   "alias": [],
    "fonti": [
     {
      "id": "ATI-CP2W",
@@ -1960,6 +2388,8 @@
     4.47
    ],
    "nota_intervallo": "ATI: 4,43 g/cm³ (pagina prodotto, 0,160 lb/in³) e 4,47 g/cm³ (scheda tecnica 2012, 0,160 lb/in³): valori diversi per la stessa densità in lb/in³.",
+   "tag": [],
+   "alias": [],
    "fonti": [
     {
      "id": "ATI-64W",
@@ -2046,6 +2476,19 @@
     8.5
    ],
    "nota_intervallo": "Wieland 8,46 g/cm³; Diehl 8,5 g/cm³.",
+   "tag": [
+    {
+     "tag": "automatico",
+     "prove": [
+      {
+       "fonte": "DIE-002",
+       "pagina": 1,
+       "estratto": "«Standard material for automated machining»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "WIE-Z32",
@@ -2094,13 +2537,14 @@
      "emittente": "Diehl Brass Solutions",
      "ruolo": "produttore",
      "documento": "Material Datasheet 002 (CuZn39Pb3)",
-     "riferimento": "densita p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "riferimento": "densita p. 1; designazioni p. 1; nome_commerciale p. 1; tag p. 1",
      "url": "https://www.diehl.com/cms/files/Diehl_Brass_Solutions_Material_Datasheet_002.pdf",
      "sha256": "4e26c5246db2f11b",
      "campi": [
       "densita",
       "designazioni",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -2145,6 +2589,8 @@
    "densita_g_cm3": 8.9,
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
+   "tag": [],
+   "alias": [],
    "fonti": [
     {
      "id": "KEM-CUETP",
@@ -2218,6 +2664,8 @@
     7.31
    ],
    "nota_intervallo": "NIST 7,310 g/cm³ (costante usata nei calcoli); Indium 7,29 g/cm³ (β-stagno). Lo stagno grigio α (5,77 g/cm³, Indium) non è considerato.",
+   "tag": [],
+   "alias": [],
    "fonti": [
     {
      "id": "NIST-T1",
@@ -2339,20 +2787,34 @@
     8.221
    ],
    "nota_intervallo": "Special Metals riporta solo lb/in³: 0,296 (ricotto) = 8,193 g/cm³ e 0,297 (ricotto e invecchiato) = 8,221 g/cm³, convertiti con 1 lb = 0,45359237 kg e 1 in = 25,4 mm.",
+   "tag": [
+    {
+     "tag": "indurente per precipitazione",
+     "prove": [
+      {
+       "fonte": "SPE-718",
+       "pagina": 1,
+       "estratto": "«The age-hardenable alloy can be readily fabricated»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
    "fonti": [
     {
      "id": "SPE-718",
      "emittente": "Special Metals Corporation",
      "ruolo": "produttore",
      "documento": "INCONEL® alloy 718, pubblicazione SMC-045 (Sept 07)",
-     "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1; nome_commerciale p. 1; tag p. 1",
      "url": "https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-718.pdf",
      "sha256": "6c9c60dc272cb4f7",
      "campi": [
       "composizione",
       "densita",
       "designazioni",
-      "nome_commerciale"
+      "nome_commerciale",
+      "tag"
      ],
      "densita_letta": [
       {
@@ -2630,11 +3092,199 @@ const Motore = (function () {
   };
 })();
 // ENGINE:FINE
+
+// RICERCA:INIZIO
+// Ricerca dei materiali: funzioni pure, nessun accesso alla pagina.
+// I test (tests/ricerca.test.mjs) eseguono esattamente questo blocco, estratto da index.html.
+// I sinonimi e i nomi neutri delle famiglie sono logica della ricerca, non dati dei materiali:
+// un materiale è trovato per tag solo se ha quel tag verificato (con documento e pagina) nel DB.
+const Ricerca = (function () {
+  'use strict';
+
+  // Classi di priorità (1 = migliore). Ordine: designazione esatta > alias esatto > designazione parziale
+  // > alias parziale > nome > tag > famiglia (classificazione dell'app).
+  const CLASSE = { DESIG_ESATTA: 1, ALIAS_ESATTO: 2, DESIG_PARZIALE: 3, ALIAS_PARZIALE: 4, NOME: 5, TAG: 6, FAMIGLIA: 7 };
+
+  const PAROLE_VUOTE = ['da', 'di', 'del', 'della', 'dei', 'delle', 'per', 'a', 'al', 'alla', 'il', 'lo', 'la', 'le', 'i', 'gli',
+    'un', 'uno', 'una', 'in', 'e', 'con', 'and', 'for', 'of', 'the'];
+
+  // Forme digitabili di ogni tag (singole parole o frasi). Solo sinonimi senza ambiguità.
+  const SINONIMI_TAG = {
+    'da bonifica': ['bonifica', 'bonificato', 'bonificata', 'bonificati', 'bonificate', 'bonificare', 'bonificabile', 'bonificabili',
+      'da bonifica', 'qt', 'quenched and tempered', 'quenching and tempering'],
+    'da cementazione': ['cementazione', 'cementato', 'cementata', 'cementati', 'cementate', 'cementare', 'cementabile', 'cementabili',
+      'da cementazione', 'case hardening', 'casehardening'],
+    'da tempra': ['tempra', 'temprato', 'temprata', 'temprati', 'temprate', 'temprare', 'temprabile', 'temprabili', 'da tempra'],
+    'per cuscinetti': ['cuscinetto', 'cuscinetti', 'per cuscinetti', 'da cuscinetti', 'bearing', 'bearings'],
+    'per utensili a caldo': ['utensili a caldo', 'utensile a caldo', 'hot work', 'hotwork'],
+    'per utensili a freddo': ['utensili a freddo', 'utensile a freddo', 'cold work', 'coldwork'],
+    'automatico': ['automatico', 'automatici', 'automatica', 'automatiche', 'truciolo corto', 'free cutting', 'freecutting'],
+    'inox': ['inox', 'inossidabile', 'inossidabili', 'stainless'],
+    'austenitico': ['austenitico', 'austenitici', 'austenitica', 'austenitiche', 'austenitic'],
+    'indurente per precipitazione': ['precipitazione', 'indurente per precipitazione', 'precipitation hardening', 'age hardening'],
+    'da costruzione': ['costruzione', 'costruzioni', 'strutturale', 'strutturali', 'da costruzione', 'structural']
+  };
+
+  const ACCIAI = ['Acciai al carbonio', 'Acciai da bonifica', 'Acciai legati', 'Acciai per utensili', 'Acciai inox', 'Acciai speciali'];
+  // Nomi neutri delle famiglie (non quelli di trattamento): trovano le voci a priorità bassa.
+  const FAMIGLIE_NEUTRE = {
+    acciaio: ACCIAI, acciai: ACCIAI,
+    alluminio: ['Alluminio e leghe'],
+    rame: ['Rame, ottone, bronzo'],
+    titanio: ['Titanio'],
+    inox: ['Acciai inox'],
+    ottone: ['Rame, ottone, bronzo'],
+    stagno: ['Stagno']
+  };
+
+  // ---- normalizzazione: minuscole, senza accenti, solo lettere e cifre (ö e ø anche come «oe»)
+  function pulisci(s) {
+    return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ø/g, 'o').replace(/[^a-z0-9]/g, '');
+  }
+  function pulisciAlt(s) {
+    return pulisci(String(s).toLowerCase().replace(/ö|ø/g, 'oe').replace(/ä/g, 'ae').replace(/ü/g, 'ue').replace(/ß/g, 'ss'));
+  }
+  function varianti(s) {
+    const a = pulisci(s);
+    const b = pulisciAlt(s);
+    return a === b ? [a] : [a, b];
+  }
+  // parole significative di un testo (senza parole vuote), normalizzate
+  function parole(testo) {
+    return String(testo).split(/\s+/).map(function (w) { return { grezza: w, norm: pulisci(w) }; })
+      .filter(function (w) { return w.norm && PAROLE_VUOTE.indexOf(w.norm) < 0; });
+  }
+  // termini cercabili di una designazione: il testo intero e ogni sua parola (es. «UNS S30400» → unss30400, uns, s30400)
+  function termini(valore) {
+    const out = [];
+    const aggiungi = function (x) { if (x && out.indexOf(x) < 0) out.push(x); };
+    varianti(valore).forEach(aggiungi);
+    String(valore).split(/[\s/()]+/).forEach(function (w) { varianti(w).forEach(aggiungi); });
+    return out;
+  }
+
+  // ---- indici dei sinonimi
+  const tagPerParola = {};   // parola normalizzata → [tag]
+  const frasiTag = [];       // { tag, parole: [...] } per le frasi di più parole
+  Object.keys(SINONIMI_TAG).forEach(function (tag) {
+    SINONIMI_TAG[tag].forEach(function (s) {
+      const p = parole(s).map(function (w) { return w.norm; });
+      if (p.length === 1) { (tagPerParola[p[0]] = tagPerParola[p[0]] || []).push(tag); }
+      if (p.length >= 1) frasiTag.push({ tag: tag, parole: p });
+    });
+  });
+
+  function indicizza(db) {
+    return db.materiali.map(function (m) {
+      const d = m.designazioni;
+      const desig = [['EN', d.EN], ['W.Nr.', d.WNr], ['UNI', d.UNI], ['AISI/SAE', d.AISI_SAE], ['DIN', d.DIN]]
+        .filter(function (x) { return x[1]; }).map(function (x) { return { etichetta: x[0], valore: x[1] }; });
+      (d.altre || []).forEach(function (v) { desig.push({ etichetta: 'altra', valore: v }); });
+      const nomi = [{ etichetta: 'nome', valore: m.nome }];
+      String(m.nome_commerciale || '').split(';').forEach(function (x) { if (x.trim()) nomi.push({ etichetta: 'nome commerciale', valore: x.trim() }); });
+      return {
+        m: m,
+        desig: desig.map(function (x) { return { etichetta: x.etichetta, valore: x.valore, termini: termini(x.valore) }; }),
+        alias: (m.alias || []).map(function (a) { return { valore: a.alias, origine: a.origine, termini: termini(a.alias) }; }),
+        nomi: nomi.map(function (x) { return { etichetta: x.etichetta, valore: x.valore, interi: varianti(x.valore) }; }),
+        tag: (m.tag || []).map(function (t) { return t.tag; })
+      };
+    });
+  }
+
+  function etichettaAlias(origine) { return origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'; }
+
+  // Miglior corrispondenza di una parola della ricerca con una voce: { classe, motivo } oppure null
+  function migliore(e, p) {
+    let best = null;
+    const prova = function (classe, motivo) { if (!best || classe < best.classe) best = { classe: classe, motivo: motivo }; };
+    const t = p.norm;
+    e.desig.forEach(function (d) {
+      if (d.termini.indexOf(t) >= 0) prova(CLASSE.DESIG_ESATTA, 'designazione ' + d.etichetta + ' «' + d.valore + '»');
+      else if (d.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.DESIG_PARZIALE, 'designazione ' + d.etichetta + ' «' + d.valore + '»');
+    });
+    e.alias.forEach(function (a) {
+      if (a.termini.indexOf(t) >= 0) prova(CLASSE.ALIAS_ESATTO, 'alias «' + a.valore + '» (' + etichettaAlias(a.origine) + ')');
+      else if (a.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.ALIAS_PARZIALE, 'alias «' + a.valore + '» (' + etichettaAlias(a.origine) + ')');
+    });
+    if (t.length >= 2) {
+      e.nomi.forEach(function (n) {
+        if (n.interi.some(function (x) { return x.indexOf(t) >= 0; })) prova(CLASSE.NOME, n.etichetta + ' «' + n.valore + '»');
+      });
+    }
+    const tagDellaParola = tagPerParola[t] || [];
+    e.tag.forEach(function (tag) {
+      if (tagDellaParola.indexOf(tag) >= 0) prova(CLASSE.TAG, 'tag «' + tag + '» (cercato: ' + p.grezza + ')');
+    });
+    const fam = FAMIGLIE_NEUTRE[t];
+    if (fam && fam.indexOf(e.m.famiglia) >= 0) prova(CLASSE.FAMIGLIA, 'famiglia (classificazione dell\'app)');
+    return best;
+  }
+
+  // Tag trovati da una frase di più parole (es. «utensili caldo» → per utensili a caldo)
+  function tagDaFrase(pp) {
+    const out = [];
+    if (pp.length < 2) return out;
+    frasiTag.forEach(function (f) {
+      if (pp.every(function (w) { return f.parole.indexOf(w.norm) >= 0; }) && out.indexOf(f.tag) < 0) out.push(f.tag);
+    });
+    return out;
+  }
+
+  function confronta(a, b) { return a.rango - b.rango || a.m.nome.localeCompare(b.m.nome, 'it'); }
+
+  function cercaIn(indice, testo) {
+    const grezzo = String(testo === null || testo === undefined ? '' : testo).trim();
+    if (!grezzo) return indice.map(function (e) { return { m: e.m, rango: 0, motivi: [] }; });
+    const pp = parole(grezzo);
+    if (!pp.length) return [];
+    const tagFrase = tagDaFrase(pp);
+    const risultati = [];
+    indice.forEach(function (e) {
+      const hit = pp.map(function (p) { return migliore(e, p); });
+      let rango = null;
+      let motivi = [];
+      if (hit.every(Boolean)) {
+        rango = Math.min.apply(null, hit.map(function (h) { return h.classe; }));
+        hit.forEach(function (h) { if (motivi.indexOf(h.motivo) < 0) motivi.push(h.motivo); });
+      }
+      const viaFrase = e.tag.filter(function (t) { return tagFrase.indexOf(t) >= 0; });
+      if (viaFrase.length && (rango === null || CLASSE.TAG < rango)) {
+        rango = CLASSE.TAG;
+        motivi = viaFrase.map(function (t) { return 'tag «' + t + '» (cercato: ' + grezzo + ')'; });
+      }
+      if (rango !== null) risultati.push({ m: e.m, rango: rango, motivi: motivi });
+    });
+    return risultati.sort(confronta);
+  }
+
+  // Raggruppa per famiglia: prima le famiglie con il risultato migliore, a parità nell'ordine del DB
+  function raggruppa(risultati, famiglie) {
+    return famiglie.map(function (fam, idx) {
+      const voci = risultati.filter(function (r) { return r.m.famiglia === fam; }).sort(confronta);
+      return { famiglia: fam, idx: idx, voci: voci, migliore: voci.length ? voci[0].rango : Infinity };
+    }).filter(function (g) { return g.voci.length; })
+      .sort(function (a, b) { return a.migliore - b.migliore || a.idx - b.idx; });
+  }
+
+  function crea(db) {
+    const indice = indicizza(db);
+    return {
+      cerca: function (testo) { return cercaIn(indice, testo); },
+      raggruppa: function (risultati) { return raggruppa(risultati, db.meta.famiglie); }
+    };
+  }
+
+  return { crea: crea, pulisci: pulisci, parole: parole, CLASSE: CLASSE, SINONIMI_TAG: SINONIMI_TAG, FAMIGLIE_NEUTRE: FAMIGLIE_NEUTRE };
+})();
+// RICERCA:FINE
 </script>
 
 <script>
 (function () {
   'use strict';
+  // Versione dell'app: unico punto del codice, da aggiornare a ogni fase (schema 0.<fase>.<revisione>).
+  const APP_VERSIONE = '0.2.1';
   const DB = JSON.parse(document.getElementById('db-materiali').textContent);
   const $ = function (id) { return document.getElementById(id); };
   const f = Motore.formatta;
@@ -2644,49 +3294,23 @@ const Motore = (function () {
   const stato = { materiale: null, forma: 'tonda', testi: {}, unitaL: 'mm', unitaP: 'kg', pezzi: '1' };
   const COMPOSIZIONE_PARZIALE = 'Composizione parziale: solo gli elementi riportati dal documento.';
 
-  $('footer').textContent = 'DB v' + DB.meta.versione + ' · ' + DB.meta.data;
+  $('versione').textContent = 'v' + APP_VERSIONE;
+  $('footer').textContent = 'Database v' + DB.meta.versione + ' · ' + DB.meta.data;
 
   // ------------------------------------------------------------------ ricerca del materiale
-  function norm(s) {
-    return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ø/g, 'o').replace(/[^a-z0-9]/g, '');
-  }
-  function normAlt(s) {
-    return norm(String(s).toLowerCase().replace(/ö|ø/g, 'oe').replace(/ä/g, 'ae').replace(/ü/g, 'ue').replace(/ß/g, 'ss'));
-  }
-  const indice = DB.materiali.map(function (m) {
-    const d = m.designazioni;
-    const termini = [m.id, m.nome, d.EN, d.WNr, d.UNI, d.AISI_SAE, d.DIN, m.famiglia].concat(d.altre || []);
-    String(m.nome_commerciale || '').split(/[;,]/).forEach(function (x) { termini.push(x); });
-    const tutti = termini.map(norm).concat(termini.map(normAlt)).filter(Boolean);
-    return { m: m, termini: tutti.filter(function (t, i) { return tutti.indexOf(t) === i; }) };
-  });
-  function punteggio(e, tokens) {
-    let totale = 0;
-    for (let i = 0; i < tokens.length; i++) {
-      let migliore = 0;
-      for (let k = 0; k < e.termini.length; k++) {
-        const t = e.termini[k];
-        const p = t === tokens[i] ? 3 : t.indexOf(tokens[i]) === 0 ? 2 : t.indexOf(tokens[i]) >= 0 ? 1 : 0;
-        if (p > migliore) migliore = p;
-      }
-      if (migliore === 0) return 0;
-      totale += migliore;
-    }
-    return totale;
-  }
-  function cerca(testo) {
-    const tokens = String(testo).split(/\s+/).map(norm).filter(Boolean);
-    if (!tokens.length) return indice.map(function (e) { return { m: e.m, p: 1 }; });
-    return indice.map(function (e) { return { m: e.m, p: punteggio(e, tokens) }; }).filter(function (x) { return x.p > 0; });
+  const RIC = Ricerca.crea(DB);
+  // «EN» davanti a un valore che già comincia per «EN » (es. «EN AW-7075») non si ripete
+  function conEtichetta(etichetta, valore) {
+    return valore.toUpperCase().indexOf(etichetta.toUpperCase() + ' ') === 0 ? valore : etichetta + ' ' + valore;
   }
   function riassunto(m) {
     const d = m.designazioni;
     const v = [];
-    if (d.EN) v.push('EN ' + d.EN);
+    if (d.EN) v.push(conEtichetta('EN', d.EN));
     if (d.WNr) v.push('W.Nr. ' + d.WNr);
-    if (d.UNI) v.push('UNI ' + d.UNI);
+    if (d.UNI) v.push(conEtichetta('UNI', d.UNI));
     if (d.AISI_SAE) v.push('AISI/SAE ' + d.AISI_SAE);
-    if (d.DIN) v.push('DIN ' + d.DIN);
+    if (d.DIN) v.push(conEtichetta('DIN', d.DIN));
     return v.slice(0, 3).join(' · ');
   }
 
@@ -2696,21 +3320,16 @@ const Motore = (function () {
   function chiudiElenco() { $('elenco').hidden = true; $('q').setAttribute('aria-expanded', 'false'); $('q').removeAttribute('aria-activedescendant'); attivo = -1; }
   function mostraElenco() {
     const q = $('q').value;
-    const risultati = cerca(stato.materiale && q === stato.materiale.nome ? '' : q);
+    const gruppi = RIC.raggruppa(RIC.cerca(stato.materiale && q === stato.materiale.nome ? '' : q)); // famiglie senza voci: nascoste
     visibili = [];
     let h = '';
-    const gruppi = DB.meta.famiglie.map(function (fam, idx) {
-      const voci = risultati.filter(function (x) { return x.m.famiglia === fam; })
-        .sort(function (a, b) { return b.p - a.p || a.m.nome.localeCompare(b.m.nome, 'it'); });
-      return { fam: fam, idx: idx, voci: voci, max: voci.length ? voci[0].p : 0 };
-    }).filter(function (g) { return g.voci.length; }) // le famiglie senza voci restano nascoste
-      .sort(function (a, b) { return b.max - a.max || a.idx - b.idx; });
     gruppi.forEach(function (g) {
-      h += '<li class="fam" role="presentation">' + esc(g.fam) + '</li>';
+      h += '<li class="fam" role="presentation">' + esc(g.famiglia) + '</li>';
       g.voci.forEach(function (x) {
         const i = visibili.length;
         visibili.push(x.m);
-        h += '<li class="voce" role="option" id="o-' + i + '" data-i="' + i + '" aria-selected="false"><b>' + esc(x.m.nome) + '</b><small>' + esc(riassunto(x.m)) + '</small></li>';
+        h += '<li class="voce" role="option" id="o-' + i + '" data-i="' + i + '" aria-selected="false"><b>' + esc(x.m.nome) + '</b><small>' + esc(riassunto(x.m)) + '</small>' +
+          (x.motivi.length ? '<small class="trovato">trovato per: ' + esc(x.motivi.join(' · ')) + '</small>' : '') + '</li>';
       });
     });
     if (!visibili.length) h = '<li class="nulla" role="presentation">Nessun materiale trovato. Prova con un\'altra designazione.</li>';
@@ -2802,22 +3421,42 @@ const Motore = (function () {
     });
     return '<ul class="fonti">' + righe.join('') + '</ul>';
   }
+  function fonteDi(m, id) { return m.fonti.find(function (x) { return x.id === id; }); }
+  function proveHTML(m, prove) {
+    return prove.map(function (p) {
+      const fo = fonteDi(m, p.fonte);
+      return esc((fo ? fo.emittente + ', ' + fo.documento : p.fonte) + ', pag. ' + p.pagina + ': «' + p.estratto + '»');
+    }).join('; ');
+  }
+  function etichettaAlias(a) { return a.origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'; }
   function renderScheda() {
     const m = stato.materiale;
     const box = $('scheda');
     if (!m) { box.hidden = true; box.innerHTML = ''; return; }
     const d = m.designazioni;
     const des = [['EN', d.EN], ['W.Nr.', d.WNr], ['UNI', d.UNI], ['AISI/SAE', d.AISI_SAE], ['DIN', d.DIN]]
-      .filter(function (x) { return x[1]; }).map(function (x) { return esc(x[0] + ' ' + x[1]); });
+      .filter(function (x) { return x[1]; }).map(function (x) { return esc(conEtichetta(x[0], x[1])); });
     const iv = m.densita_intervallo_g_cm3;
     let h = '<p><strong>' + esc(m.nome) + '</strong><br><span class="piccolo">' + esc(m.famiglia) + '</span></p>';
+    if (m.tag.length) h += '<ul class="tag" aria-label="Tag verificati">' + m.tag.map(function (t) { return '<li>' + esc(t.tag) + '</li>'; }).join('') + '</ul>';
     if (des.length) h += '<p class="piccolo">Designazioni: ' + des.join(' · ') + '</p>';
     if (d.altre && d.altre.length) h += '<p class="piccolo">Altre: ' + d.altre.map(esc).join(' · ') + '</p>';
+    if (m.alias.length) h += '<p class="piccolo">Alias: ' + m.alias.map(function (a) { return esc(a.alias) + ' (' + etichettaAlias(a) + ')'; }).join(' · ') + '</p>';
+    m.alias.forEach(function (a) { if (a.nota) h += '<p class="piccolo">Nota su «' + esc(a.alias) + '»: ' + esc(a.nota) + '</p>'; });
     if (m.nome_commerciale) h += '<p class="piccolo">Nome commerciale: ' + esc(m.nome_commerciale) + '</p>';
     h += '<p>Densità nominale: <strong>' + f(m.densita_g_cm3) + ' g/cm³</strong>' + (iv ? ' (letture dei documenti: ' + f(iv[0]) + '–' + f(iv[1]) + ')' : '') + '</p>';
     if (m.composizione.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';
-    h += '<details><summary>Composizione chimica</summary>' + composizioneHTML(m.composizione) + '</details>';
-    h += '<details><summary>Fonti dei dati (' + m.fonti.length + ')</summary>' + fontiHTML(m.fonti, false) + '</details>';
+    h += '<details id="det-comp" open><summary>Composizione chimica</summary>' + composizioneHTML(m.composizione) + '</details>';
+    let fonti = fontiHTML(m.fonti, false);
+    if (m.tag.length) {
+      fonti += '<h3>Tag: dove sono documentati</h3><ul class="prove">' +
+        m.tag.map(function (t) { return '<li><strong>' + esc(t.tag) + '</strong> — ' + proveHTML(m, t.prove) + '</li>'; }).join('') + '</ul>';
+    }
+    if (m.alias.length) {
+      fonti += '<h3>Alias: dove sono documentati</h3><ul class="prove">' +
+        m.alias.map(function (a) { return '<li><strong>' + esc(a.alias) + '</strong> (' + etichettaAlias(a) + ') — ' + proveHTML(m, a.prove) + '</li>'; }).join('') + '</ul>';
+    }
+    h += '<details id="det-fonti"><summary>Fonti dei dati (' + m.fonti.length + ')</summary>' + fonti + '</details>';
     box.innerHTML = h;
     box.hidden = false;
   }

@@ -1,5 +1,6 @@
 # Report fonti – Fase 1, lotto pilota
 Letto il 2026-11-13. Registro di ciò che è entrato nel database (versione 2) e perché.
+Dal database v3 (Fase 2b) ogni voce ha anche `tag` e `alias` con prove: vedi `docs/tag-alias-fase2b.md`, generato da `node tools/report-tag.mjs`.
 La sezione «Dettaglio per voce» è generata dallo stesso programma che costruisce il DB: ogni valore è stato
 confrontato con il testo della pagina del documento citato (176 prove, nessuna mancante) e ogni numero di composizione
 compare nel testo letto per quella voce.

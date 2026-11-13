@@ -27,26 +27,74 @@ const numero = (t) => Number(String(t).replace(/ /g, '').replace(',', '.'));
 // il numero grande mostra 5 cifre significative: errore relativo massimo 5e-5
 const vicino = (a, b) => Math.abs(a - b) <= 6e-5 * Math.abs(b);
 
-// contrasto WCAG tra due colori "rgb(r, g, b)" / "rgba(...)"
-function lum(rgb) {
-  const [r, g, b] = rgb.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+// contrasto WCAG tra due colori [r, g, b]
+function lum([r, g, b]) {
+  const [x, y, z] = [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * x + 0.7152 * y + 0.0722 * z;
 }
 const contrasto = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const daHex = (h) => { h = h.trim().replace('#', ''); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); };
 
-async function coloriEffettivi(page, selettore) {
-  return page.evaluate((sel) => {
+// Colore del testo e sfondi effettivi di un elemento: sovrappone le trasparenze (tinte) e, se c'è una sfumatura,
+// restituisce uno sfondo per ogni tratto della sfumatura. Per il testo con la sfumatura (fill trasparente)
+// restituisce i tratti della sfumatura dal tema (--tg1, --tg2) al posto del colore.
+async function misura(page, selettore, pseudo) {
+  return page.evaluate(([sel, ps]) => {
     const el = document.querySelector(sel);
     if (!el) return null;
-    const cs = getComputedStyle(el);
-    let bg = null;
-    for (let n = el; n; n = n.parentElement) {
-      const c = getComputedStyle(n).backgroundColor;
-      if (!/rgba\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)|transparent/.test(c)) { bg = c; break; }
+    const rgb = (c) => { const m = c.match(/[\d.]+/g).map(Number); return { r: m[0], g: m[1], b: m[2], a: m.length > 3 ? m[3] : 1 }; };
+    const sopra = (t, b) => ({ r: t.r * t.a + b.r * (1 - t.a), g: t.g * t.a + b.g * (1 - t.a), b: t.b * t.a + b.b * (1 - t.a), a: 1 });
+    const strati = [];
+    let base = null;
+    const tf = getComputedStyle(el, ps || null).webkitTextFillColor;
+    const testoASfumatura = tf === 'rgba(0, 0, 0, 0)' || tf === 'transparent';
+    for (let n = testoASfumatura ? el.parentElement : el; n && !base; n = n.parentElement) { // la sfumatura del testo non è lo sfondo
+      const cs = getComputedStyle(n);
+      if (cs.backgroundImage.includes('gradient(')) { base = (cs.backgroundImage.match(/rgba?\([^)]*\)/g) || []).map(rgb); break; }
+      const c = rgb(cs.backgroundColor);
+      if (c.a >= 1) base = [c]; else if (c.a > 0) strati.push(c);
     }
-    return { fg: cs.color, bg: bg || 'rgb(255, 255, 255)', bordo: cs.borderTopColor };
-  }, selettore);
+    if (!base) base = [{ r: 255, g: 255, b: 255, a: 1 }];
+    const sfondi = base.map((b) => strati.reduceRight((acc, t) => sopra(t, acc), b)).map((c) => [c.r, c.g, c.b]);
+    const cs = getComputedStyle(el, ps || null);
+    const radice = getComputedStyle(document.documentElement);
+    const gradiente = testoASfumatura;
+    const aHex = (v) => v.trim();
+    return {
+      fg: gradiente ? null : rgb(cs.color), gradiente: gradiente ? [aHex(radice.getPropertyValue('--tg1')), aHex(radice.getPropertyValue('--tg2'))] : null,
+      fallback: rgb(cs.color), sfondi, bordo: rgb(cs.borderTopColor), bordoSx: rgb(cs.borderLeftColor),
+      trasformazione: cs.transform, contenuto: cs.content, larghezzaBordoSx: cs.borderLeftWidth, lista: cs.listStyleType, display: cs.display
+    };
+  }, [selettore, pseudo || null]);
 }
+const pixel = (c) => [c.r, c.g, c.b];
+// il testo (anche a sfumatura) deve passare `minimo` su ogni sfondo; restituisce il contrasto peggiore
+function peggiore(m) {
+  const testi = m.gradiente ? m.gradiente.map(daHex).concat([pixel(m.fallback)]) : [pixel(m.fg)];
+  let min = Infinity;
+  for (const t of testi) for (const b of m.sfondi) min = Math.min(min, contrasto(t, b));
+  return min;
+}
+async function contrastoDi(page, sel, nome, minimo = 7) {
+  const m = await misura(page, sel);
+  if (!m) { verifica(false, `contrasto ${nome}: elemento ${sel} non trovato`); return null; }
+  const cr = peggiore(m);
+  verifica(cr >= minimo, `contrasto ${nome}: ${cr.toFixed(2)}:1 (minimo ${minimo}:1)`);
+  return cr;
+}
+
+async function scegliPerNome(page, nome) {
+  await page.fill('#q', '');
+  await page.fill('#q', nome);
+  await page.waitForSelector('#elenco:not([hidden])');
+  const i = await page.$$eval('#elenco .voce', (els, n) => els.findIndex((e) => e.querySelector('b').textContent === n), nome);
+  if (i < 0) return false;
+  await page.click(`#o-${i}`);
+  return true;
+}
+const leggiDB = (page) => page.evaluate(() => JSON.parse(document.getElementById('db-materiali').textContent));
+const pngDimensioni = (file) => { const b = fs.readFileSync(file); return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) }; };
+const SORGENTE = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 
 async function scrivi(page, sel, testo) {
   await page.fill(sel, '');
@@ -69,13 +117,61 @@ async function caso(browser, c) {
   await page.goto(URL);
 
   // --- struttura di base
-  verifica((await page.textContent('#footer')).startsWith('DB v'), 'footer con versione del DB');
+  verifica((await page.textContent('#footer')).startsWith('Database v'), 'footer con versione del database');
   const largh = await page.evaluate(() => { const m = document.querySelector('main').getBoundingClientRect(); return { w: m.width, l: m.left, scroll: document.documentElement.scrollWidth > window.innerWidth }; });
   verifica(!largh.scroll, 'nessuno scroll orizzontale');
   verifica(largh.w <= 480.5, `colonna unica larga al massimo 480 px (${largh.w})`);
   if (!c.mobile) verifica(Math.abs(largh.l - (c.viewport.width - largh.w) / 2) < 1.5, 'colonna centrata su desktop');
   verifica((await page.locator('.forma').count()) === 8, '8 forme');
   verifica((await page.locator('.interp').count()) >= 3, 'riga del valore interpretato sotto ogni campo');
+
+  // --- intestazione: logo, nome, versione (una costante sola), una riga a 390 px
+  verifica((await page.locator('h1').count()) === 1, 'un solo h1 (il nome dell\'app nell\'intestazione)');
+  const ord = await page.evaluate(() => {
+    const riga = document.querySelector('.testata-riga');
+    const figli = [...riga.children].map((e) => e.className);
+    const r = (s) => document.querySelector(s).getBoundingClientRect();
+    return { figli, logo: r('.logo'), nome: r('.nome'), ver: r('#versione'), riga: riga.getBoundingClientRect(), testo: document.querySelector('.nome').textContent,
+      vers: document.querySelector('#versione').textContent, sc: riga.scrollWidth > riga.clientWidth, nomeAlt: getComputedStyle(document.querySelector('.nome')).lineHeight,
+      nomeH: document.querySelector('.nome').getBoundingClientRect().height, sx: window.innerWidth };
+  });
+  verifica(ord.figli.join(',') === 'logo,nome,versione', `intestazione: logo, nome, versione in quest'ordine (${ord.figli})`);
+  verifica(ord.testo === 'GT-Peso_Materiali', `nome dell'app «${ord.testo}»`);
+  verifica(ord.logo.right <= ord.nome.left + 0.5 && ord.nome.right <= ord.ver.left + 0.5, 'da sinistra: logo, poi nome, poi versione');
+  verifica(ord.logo.left < 40 && ord.logo.top < 24, `logo in alto a sinistra della pagina (x = ${Math.round(ord.logo.left)} px, y = ${Math.round(ord.logo.top)} px)`);
+  verifica(ord.logo.width >= 40 && ord.logo.height >= 40, `logo mostrato almeno 40 px (${ord.logo.width}×${ord.logo.height})`);
+  const centri = [ord.logo, ord.nome, ord.ver].map((x) => x.top + x.height / 2);
+  verifica(Math.max(...centri) - Math.min(...centri) < 8, 'logo, nome e versione sulla stessa riga');
+  verifica(ord.nomeH < parseFloat(ord.nomeAlt) * 1.5, `nome su una sola riga (altezza ${Math.round(ord.nomeH)} px)`);
+  verifica(ord.riga.height < 72 && !ord.sc, `riga dell'intestazione compatta e senza taglio (${Math.round(ord.riga.height)} px)`);
+  const logoInfo = await page.evaluate(() => { const i = document.querySelector('.logo'); return { nw: i.naturalWidth, nh: i.naturalHeight, ok: i.complete, alt: i.getAttribute('alt'), src: i.getAttribute('src') }; });
+  verifica(logoInfo.ok && logoInfo.nw >= 120 && logoInfo.nh >= 120, `logo esportato almeno 120×120 (${logoInfo.nw}×${logoInfo.nh})`);
+  verifica(logoInfo.alt && logoInfo.alt.length > 10, `logo con testo alternativo («${logoInfo.alt}»)`);
+  verifica(logoInfo.src === 'assets/logo-gt.png', `logo nella cartella assets (${logoInfo.src})`);
+  const nelFile = pngDimensioni(path.resolve(__dirname, '..', 'assets', 'logo-gt.png'));
+  verifica(nelFile.w >= 120 && nelFile.h >= 120 && fs.statSync(path.resolve(__dirname, '..', 'assets', 'logo-gt.png')).size < 50 * 1024, `file del logo ${nelFile.w}×${nelFile.h}, sotto i 50 KB`);
+  const touch = await page.evaluate(() => { const l = document.querySelector('link[rel="apple-touch-icon"]'); return l && l.getAttribute('href'); });
+  const tFile = touch && path.resolve(__dirname, '..', touch);
+  verifica(touch === 'apple-touch-icon.png' && fs.existsSync(tFile) && pngDimensioni(tFile).w === 180 && pngDimensioni(tFile).h === 180, 'apple-touch-icon 180×180 collegata');
+  // versione: una sola costante nel codice, mostrata tale e quale
+  const defs = SORGENTE.match(/const APP_VERSIONE = '([^']+)';/g) || [];
+  verifica(defs.length === 1, `una sola definizione di APP_VERSIONE (${defs.length})`);
+  const ver = defs.length ? defs[0].match(/'([^']+)'/)[1] : '';
+  verifica(/^0\.\d+\.\d+$/.test(ver), `schema 0.<fase>.<revisione> (${ver})`);
+  verifica(SORGENTE.split(`'${ver}'`).length === 2 && !SORGENTE.includes(`v${ver}`), 'la versione non è scritta a mano in nessun altro punto');
+  verifica(ord.vers === 'v' + ver, `la versione in intestazione è quella della costante (${ord.vers})`);
+  if (c.nome === 'iphone-chiaro') {
+    for (const w of [320, 360, 390, 430]) {
+      await page.setViewportSize({ width: w, height: 844 });
+      const q = await page.evaluate(() => {
+        const n = document.querySelector('.nome'); const v = document.querySelector('#versione').getBoundingClientRect();
+        const riga = document.querySelector('.testata-riga');
+        return { h: n.getBoundingClientRect().height, lh: parseFloat(getComputedStyle(n).lineHeight), sc: document.documentElement.scrollWidth > window.innerWidth, vr: v.right, rw: riga.clientWidth, vh: v.height };
+      });
+      verifica(q.h < q.lh * 1.5 && !q.sc && q.vr <= w && q.vh < 32, `intestazione senza andare a capo a ${w} px (nome ${Math.round(q.h)} px, versione ${Math.round(q.vh)} px)`);
+    }
+    await page.setViewportSize(c.viewport);
+  }
 
   // --- font-size ≥ 16 px su tutti i campi di testo e i select, per ogni forma (sotto i 16 px Safari su iPhone zooma da solo)
   const nomiForme = await page.$$eval('input[name="forma"]', (els) => els.map((e) => e.value));
@@ -123,6 +219,62 @@ async function caso(browser, c) {
   r = await cerca(page, '1.0503');
   verifica(r.length === 0 && /Nessun materiale/.test(await page.textContent('#elenco')), '1.0503: nessun risultato con messaggio (voce esclusa)');
 
+  // --- ricerca intelligente: tag verificati, nomi neutri delle famiglie, «trovato per»
+  const db = await leggiDB(page);
+  const righe = async (q) => {
+    await page.fill('#q', '');
+    await page.fill('#q', q);
+    await page.waitForSelector('#elenco:not([hidden])');
+    return page.$$eval('#elenco .voce', (els) => els.map((e) => ({ nome: e.querySelector('b').textContent, trovato: e.querySelector('.trovato') ? e.querySelector('.trovato').textContent : '' })));
+  };
+  const nomiConTag = (t) => db.materiali.filter((v) => v.tag.some((x) => x.tag === t)).map((v) => v.nome).sort();
+  const nomi = (rr) => rr.map((x) => x.nome).sort();
+  for (const [q, tag] of [['bonificato', 'da bonifica'], ['BONIFICATA', 'da bonifica'], ['Bonifica', 'da bonifica'], ['acciaio da bonifica', 'da bonifica'],
+    ['temprato', 'da tempra'], ['tempra', 'da tempra'], ['cementato', 'da cementazione'], ['cuscinetti', 'per cuscinetti'], ['automatico', 'automatico'],
+    ['utensili a caldo', 'per utensili a caldo'], ['utensili a freddo', 'per utensili a freddo'], ['austenitico', 'austenitico'], ['precipitazione', 'indurente per precipitazione']]) {
+    const rr = await righe(q);
+    const attesi = nomiConTag(tag);
+    verifica(attesi.length > 0 && JSON.stringify(nomi(rr)) === JSON.stringify(attesi), `«${q}» trova solo le voci con il tag «${tag}» (${nomi(rr).join(', ')} / attese ${attesi.join(', ')})`);
+    verifica(rr.every((x) => (/\s/.test(q) ? x.trovato.includes(`tag «${tag}»` ) : x.trovato.startsWith(`trovato per: tag «${tag}»`))), `«${q}»: ogni riga dice «trovato per: tag «${tag}»» (${rr.map((x) => x.trovato).join(' | ')})`);
+  }
+  const bon = await righe('bonificato');
+  verifica(!nomi(bon).some((n) => nomiConTag('da tempra').includes(n)), '«bonificato» non trova le voci «da tempra»');
+  const tem = await righe('temprato');
+  verifica(!nomi(tem).some((n) => nomiConTag('da bonifica').includes(n)), '«temprato» non trova le voci «da bonifica»');
+  verifica(JSON.stringify(await page.$$eval('#elenco .fam', (els) => els.map((e) => e.textContent))) === JSON.stringify(['Acciai legati', 'Acciai per utensili']), 'temprato: solo le famiglie con risultati, a pari priorità nell\'ordine del DB (legati, utensili)');
+  for (const q of ['bonificatoo', 'xyzzy', 'temprat0', 'cementat']) { const rr = await righe(q); verifica(rr.length === 0, `«${q}»: nessun risultato (${nomi(rr)})`); }
+  const FAM = 'trovato per: famiglia (classificazione dell\'app)';
+  const acc = await righe('acciaio');
+  const nAcc = db.materiali.filter((v) => /^Acciai/.test(v.famiglia)).length;
+  verifica(acc.length === nAcc, `«acciaio» trova tutti gli ${nAcc} acciai (${acc.length})`);
+  verifica(acc.find((x) => x.nome === 'C45E').trovato === FAM, '«acciaio»: C45E «trovato per: famiglia (classificazione dell\'app)»');
+  verifica(/^trovato per: nome/.test(acc.find((x) => /^Acciaio per utensili 1\.2344/.test(x.nome)).trovato), '«acciaio»: la voce con «Acciaio» nel nome è trovata per nome');
+  const iFam = acc.findIndex((x) => x.trovato === FAM), iNome = acc.map((x) => x.trovato).lastIndexOf(acc.find((x) => /^trovato per: nome/.test(x.trovato)).trovato);
+  verifica(iFam > iNome, '«acciaio»: le voci per famiglia vengono dopo quelle per nome (priorità bassa)');
+  const ott = await righe('ottone');
+  verifica(ott.length === 2 && /CuZn39Pb3/.test(ott[0].nome) && /^trovato per: nome/.test(ott[0].trovato) && /Cu-ETP/.test(ott[1].nome) && ott[1].trovato === FAM, `«ottone»: CuZn39Pb3 per nome, poi Cu-ETP per famiglia (${JSON.stringify(ott)})`);
+  const rame = await righe('rame');
+  verifica(rame.length === 2 && /Cu-ETP/.test(rame[0].nome) && rame[1].trovato === FAM, '«rame»: Cu-ETP per nome, l\'ottone per famiglia');
+  const nFam = (f) => db.materiali.filter((v) => v.famiglia === f).length;
+  for (const [q, n] of [['alluminio', nFam('Alluminio e leghe')], ['titanio', nFam('Titanio')], ['inox', nFam('Acciai inox')], ['stagno', nFam('Stagno')]]) { const rr = await righe(q); verifica(rr.length === n, `«${q}» trova ${n} voci (${rr.length})`); }
+  verifica((await righe('alluminio')).every((x) => /^trovato per: (nome|famiglia)/.test(x.trovato)), '«alluminio»: motivo mostrato su ogni riga');
+  const bohler = ['BÖHLER', 'Böhler', 'bohler', 'BOEHLER'];
+  for (const q of bohler) verifica((await righe(q)).length === 2, `«${q}» trova 1.2344 e 1.2379`);
+  verifica((await righe('')).every((x) => true) && !/\b(EN EN|UNI UNI|DIN DIN)\b/.test(await page.innerText('#elenco')), 'elenco completo: nessuna etichetta ripetuta (es. «EN EN»)');
+  const c45 = await righe('C45');
+  verifica(c45[0].nome === 'C45E' && /^trovato per: designazione/.test(c45[0].trovato), `«C45»: designazione per prima, con il motivo (${c45[0].trovato})`);
+  await page.fill('#q', '');
+  await page.waitForSelector('#elenco:not([hidden])');
+  verifica((await page.locator('#elenco .trovato').count()) === 0, 'elenco completo: nessun «trovato per»');
+  verifica((await page.locator('.elenco .nulla, #elenco .nulla').count()) === 0, 'nessun messaggio «nessun materiale» con l\'elenco completo');
+  await page.fill('#q', 'ergal');
+  verifica((await page.locator('#elenco .voce').count()) === db.materiali.filter((v) => v.alias.some((a) => /ergal/i.test(a.alias))).length, '«ergal» trova solo le voci che hanno quell\'alias nel DB');
+  for (const q of ['ergal', 'ERGAL', 'Ergal 7075']) {
+    const rr = await righe(q);
+    const motivoAlias = 'trovato per: alias «Ergal» (alias non da produttore)';
+    verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && (q === 'Ergal 7075' ? rr[0].trovato.startsWith(motivoAlias + ' · designazione') : rr[0].trovato === motivoAlias), `«${q}»: Alluminio 7075 per alias (${JSON.stringify(rr)})`);
+  }
+
   // --- tastiera: frecce + Invio
   await cerca(page, 'alluminio');
   await page.keyboard.press('ArrowDown');
@@ -142,6 +294,19 @@ async function caso(browser, c) {
   verifica(await page.isVisible('#barra'), 'barra del peso visibile');
   const hBarra = await page.evaluate(() => document.querySelector('#barra').getBoundingClientRect().height);
   verifica(hBarra < 60, `barra del peso su una riga (altezza ${Math.round(hBarra)} px)`);
+  // --- l'intestazione scorre via, resta fissa solo la barra del peso
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const ps0 = await page.evaluate(() => ({ t: document.querySelector('.testata').getBoundingClientRect(), b: document.querySelector('#barra').getBoundingClientRect() }));
+  verifica(ps0.t.top === 0 && Math.abs(ps0.b.top - ps0.t.bottom) <= 1, 'in cima: intestazione e sotto la barra del peso');
+  const margine = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+  verifica(margine > ps0.t.height + 10, `pagina abbastanza lunga per scorrere (${Math.round(margine)} px)`);
+  await page.evaluate(() => window.scrollTo(0, Math.min(900, document.documentElement.scrollHeight)));
+  const ps1 = await page.evaluate(() => ({ t: document.querySelector('.testata').getBoundingClientRect().bottom, b: document.querySelector('#barra').getBoundingClientRect().top,
+    pb: getComputedStyle(document.querySelector('#barra')).position, pt: getComputedStyle(document.querySelector('.testata')).position }));
+  verifica(ps1.t <= 0, `scorrendo, l'intestazione esce dallo schermo (fondo a ${Math.round(ps1.t)} px)`);
+  verifica(ps1.pb === 'sticky' && Math.abs(ps1.b) <= 1, `la barra del peso resta in alto (top ${Math.round(ps1.b)} px)`);
+  verifica(ps1.pt !== 'sticky' && ps1.pt !== 'fixed', `l'intestazione non è fissa (${ps1.pt})`);
+  await page.evaluate(() => window.scrollTo(0, 0));
   const dett = await page.textContent('#dettagli');
   for (const parte of ['Densità usata', 'Formula e passaggi', 'Volume', 'Peso unitario', 'Peso totale', 'Lucefin Group', 'produttore e distributore', 'Swiss Steel', 'Apri il documento'])
     verifica(dett.includes(parte), `dettagli contengono «${parte}»`);
@@ -245,8 +410,78 @@ async function caso(browser, c) {
   verifica(!(await page.textContent('#dettagli')).includes('Composizione parziale'), 'dicitura di parzialità non ripetuta nei dettagli del risultato');
   await cerca(page, '1.4301'); await page.click('#elenco .voce');
   verifica(!(await page.textContent('#scheda')).includes('Composizione parziale'), 'nessuna dicitura di parzialità su una composizione completa (304)');
-  await page.click('#scheda summary');
   verifica((await page.textContent('#scheda')).includes('EN 10088-3:2014'), 'composizione: norma citata sulla scheda');
+  verifica(await page.evaluate(() => document.querySelector('#det-comp').open) && await page.isVisible('#det-comp table.comp'), 'composizione aperta e visibile senza toccare nulla');
+  verifica(!(await page.evaluate(() => document.querySelector('#det-fonti').open)), 'fonti chiuse in modo predefinito');
+
+  // --- frecce delle sezioni apribili: visibili, con stato aperto/chiuso
+  await scegliPerNome(page, 'Inconel 718');
+  let ac = await misura(page, '#det-comp > summary', '::before');
+  let af = await misura(page, '#det-fonti > summary', '::before');
+  const ruotata = (t) => { if (t === 'none') return false; const n = t.match(/-?[\d.e-]+/g).map(Number); return Math.abs(n[0]) < 1e-6 && Math.abs(n[1] - 1) < 1e-6; };
+  for (const [nome, a] of [['composizione', ac], ['fonti', af]]) {
+    verifica(a.contenuto === '""' && a.larghezzaBordoSx === '12px' && a.display === 'block', `freccia «${nome}» presente (contenuto ${a.contenuto}, bordo ${a.larghezzaBordoSx})`);
+    verifica(contrasto(pixel(a.bordoSx), a.sfondi[0]) >= 3, `freccia «${nome}»: contrasto ${contrasto(pixel(a.bordoSx), a.sfondi[0]).toFixed(2)}:1 (minimo 3:1 per elementi grafici)`);
+  }
+  verifica((await misura(page, '#det-comp > summary')).lista === 'none', 'nessun marcatore nativo accanto alla freccia');
+  verifica(ruotata(ac.trasformazione) && !ruotata(af.trasformazione), `freccia: composizione aperta (giù), fonti chiusa (destra) — ${ac.trasformazione} / ${af.trasformazione}`);
+  await page.click('#det-fonti > summary');
+  await page.waitForTimeout(300);
+  af = await misura(page, '#det-fonti > summary', '::before');
+  verifica(await page.evaluate(() => document.querySelector('#det-fonti').open) && ruotata(af.trasformazione), 'cliccando, le fonti si aprono e la freccia ruota');
+  await page.click('#det-comp > summary');
+  await page.waitForTimeout(300);
+  ac = await misura(page, '#det-comp > summary', '::before');
+  verifica(!(await page.evaluate(() => document.querySelector('#det-comp').open)) && !ruotata(ac.trasformazione), 'cliccando, la composizione si chiude e la freccia torna a destra');
+  await page.click('#det-comp > summary');
+  verifica(await page.evaluate(() => document.querySelector('#det-comp').open), 'la composizione si riapre');
+
+  // --- per ogni voce: composizione davvero visibile (righe = elementi del DB), tag e relative prove
+  let controlliVoci = 0;
+  for (const m of db.materiali) {
+    verifica(await scegliPerNome(page, m.nome), `scegli «${m.nome}»`);
+    verifica(await page.evaluate(() => document.querySelector('#det-comp').open), `${m.nome}: composizione aperta`);
+    if (m.composizione.tipo === 'elemento') {
+      verifica((await page.innerText('#det-comp')).includes(m.composizione.simbolo), `${m.nome}: elemento puro ${m.composizione.simbolo} visibile`);
+    } else {
+      const attesi = Object.keys(m.composizione.elementi).map((k) => (k === 'Altri_ciascuno' ? 'Altri (ciascuno)' : k === 'Altri_totale' ? 'Altri (totale)' : k));
+      const visti = await page.$$eval('#det-comp table.comp tbody tr td:first-child', (tds) => tds.filter((t) => t.getBoundingClientRect().height > 0).map((t) => t.textContent));
+      verifica(JSON.stringify(visti) === JSON.stringify(attesi), `${m.nome}: ${attesi.length} elementi visibili in composizione (${visti.length})`);
+    }
+    verifica(!/\b(EN EN|UNI UNI|DIN DIN)\b/.test(await page.innerText('#scheda')), `${m.nome}: nessuna etichetta di designazione ripetuta (es. «EN EN»)`);
+    const chip = await page.$$eval('#scheda ul.tag li', (els) => els.map((e) => e.textContent));
+    verifica(JSON.stringify(chip) === JSON.stringify(m.tag.map((t) => t.tag)), `${m.nome}: tag mostrati ${JSON.stringify(chip)}`);
+    await page.click('#det-fonti > summary');
+    const fonti = await page.innerText('#det-fonti');
+    verifica((await page.locator('#det-fonti ul.fonti > li').count()) === m.fonti.length, `${m.nome}: ${m.fonti.length} fonti elencate`);
+    for (const t of m.tag) {
+      verifica(fonti.includes(t.tag), `${m.nome}: tag «${t.tag}» con le prove tra le fonti`);
+      for (const pr of t.prove) {
+        const fo = m.fonti.find((x) => x.id === pr.fonte);
+        verifica(fonti.includes(`pag. ${pr.pagina}`) && fonti.includes(pr.estratto) && fonti.includes(fo.emittente), `${m.nome}/${t.tag}: ${fo.emittente}, pag. ${pr.pagina}, frase`);
+      }
+    }
+    verifica(m.tag.length === 0 || fonti.includes('Tag: dove sono documentati'), `${m.nome}: sezione delle prove dei tag`);
+    for (const al of m.alias) {
+      const scheda = await page.innerText('#scheda');
+      verifica(scheda.includes(`Alias: ${al.alias} (${al.origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'})`), `${m.nome}: alias «${al.alias}» sulla scheda con la dicitura`);
+      verifica(!al.nota || scheda.includes(al.nota), `${m.nome}: nota sull'alias «${al.alias}» sulla scheda`);
+      verifica(fonti.includes('Alias: dove sono documentati'), `${m.nome}: sezione delle prove degli alias`);
+      for (const pr of al.prove) {
+        const fo = m.fonti.find((x) => x.id === pr.fonte);
+        verifica(fonti.includes(`pag. ${pr.pagina}`) && fonti.includes(pr.estratto) && fonti.includes(fo.emittente), `${m.nome}/${al.alias}: ${fo.emittente}, pag. ${pr.pagina}, frase`);
+      }
+      verifica(fonti.includes('alias non da produttore') || al.origine === 'produttore', `${m.nome}: «alias non da produttore» anche tra le fonti`);
+    }
+    await page.click('#det-fonti > summary');
+    controlliVoci++;
+  }
+  verifica(controlliVoci === db.materiali.length && db.materiali.length === 21, `${controlliVoci} voci controllate`);
+  const inc = db.materiali.find((v) => v.id === 'inconel718');
+  await scegliPerNome(page, 'Inconel 718');
+  verifica(Object.keys(inc.composizione.elementi).length >= 10 && (await page.locator('#det-comp table.comp tbody tr').count()) === Object.keys(inc.composizione.elementi).length, `Inconel 718: composizione con ${Object.keys(inc.composizione.elementi).length} righe visibili`);
+  verifica(/Ni/.test(await page.innerText('#det-comp')) && /Cr/.test(await page.innerText('#det-comp')) && /Nb/.test(await page.innerText('#det-comp')), 'Inconel 718: Ni, Cr, Nb in composizione');
+  await scegliPerNome(page, 'Inox 304 (1.4301)');
 
   // --- bersagli touch ≥ 44 px su tutti i controlli visibili
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -263,19 +498,48 @@ async function caso(browser, c) {
   verifica((await page.evaluate(() => getComputedStyle(document.body).fontVariantNumeric)).includes('tabular-nums'), 'cifre tabulari');
   verifica(await page.evaluate(() => document.querySelector('#c-D').getAttribute('inputmode')) === 'decimal', 'tastiera decimale');
 
-  // --- contrasti (testo ≥ 7:1, bordi dei controlli ≥ 3:1)
-  for (const [sel, nome] of [['body', 'testo'], ['.piccolo', 'testo secondario'], ['h2', 'titoli (accento)'], ['.interp', 'valore interpretato'], ['.forma.attiva', 'forma attiva'], ['.stato', 'stato'], ['a', 'link'], ['.dicitura', 'dicitura']]) {
-    const col = await coloriEffettivi(page, sel);
-    if (!col) continue;
-    const cr = contrasto(col.fg, col.bg);
-    verifica(cr >= 7, `contrasto ${nome}: ${cr.toFixed(2)}:1`);
+  // --- contrasti (testo ≥ 7:1, bordi dei controlli e frecce ≥ 3:1), anche su tinte e sfumature
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const MIS = [];
+  const ct = async (sel, nome, min = 7) => { const cr = await contrastoDi(page, sel, nome, min); if (cr !== null) MIS.push(`${nome} ${cr.toFixed(1)}`); };
+  await page.click('#det-fonti > summary');
+  for (const [sel, nome] of [['body', 'testo'], ['.piccolo', 'testo secondario'], ['.nome', 'nome dell\'app'], ['#versione', 'versione'], ['h2', 'titoli'], ['ul.tag li', 'tag'],
+    ['#det-comp > summary', 'titolo sezione'], ['table.comp td', 'tabella composizione'], ['ul.fonti li', 'fonti'], ['ul.fonti a', 'link'], ['ul.prove li', 'prove dei tag'],
+    ['.stato', 'stato'], ['.dicitura', 'dicitura'], ['#peso-grande', 'numero grande'], ['.dettagli dd', 'dettagli'], ['.forma.attiva', 'forma attiva (su sfumatura)'],
+    ['.forma:not(.attiva)', 'forma non attiva'], ['.interp', 'valore interpretato'], ['#barra-peso', 'barra del peso']]) await ct(sel, nome);
+  await page.click('#det-fonti > summary');
+  await page.check('input[value="tuboq"]', { force: true });
+  await ct('#avviso-forma', 'avviso (su tinta)');
+  await page.check('input[value="tonda"]', { force: true });
+  const acs = await misura(page, '#det-comp > summary', '::before');
+  const crFreccia = contrasto(pixel(acs.bordoSx), acs.sfondi[0]);
+  verifica(crFreccia >= 3, `contrasto freccia: ${crFreccia.toFixed(2)}:1`);
+  const fuori = (await misura(page, '#forme')).sfondi[0];
+  for (const [sel, nome] of [['#unita-lung', 'bordo select'], ['#q', 'bordo campo di ricerca'], ['#c-D', 'bordo campo'], ['.forma:not(.attiva)', 'bordo forma'], ['.forma.attiva', 'bordo forma attiva'], ['#versione', 'bordo versione']]) {
+    const m = await misura(page, sel);
+    const cr = contrasto(pixel(m.bordo), fuori);
+    verifica(cr >= 3, `contrasto ${nome}: ${cr.toFixed(2)}:1 (minimo 3:1)`);
+    MIS.push(`${nome} ${cr.toFixed(1)}`);
   }
+  // nel tema chiaro nessuna tinta del logo regge come testo: il colore d'accento è pieno, senza sfumatura
+  const g = await page.evaluate(() => ({ a: getComputedStyle(document.documentElement).getPropertyValue('--tg1').trim(), b: getComputedStyle(document.documentElement).getPropertyValue('--tg2').trim() }));
+  if (c.schema === 'light') verifica(g.a === g.b, `tema chiaro: testo d'accento a tinta unita (${g.a})`);
+  else verifica(g.a !== g.b, `tema scuro: testo d'accento con la sfumatura giallo → arancio chiaro (${g.a} → ${g.b})`);
   await scrivi(page, '#c-D', 'x');
-  const err = await coloriEffettivi(page, '.interp.errore');
-  verifica(err && contrasto(err.fg, err.bg) >= 7, `contrasto messaggio d'errore: ${err ? contrasto(err.fg, err.bg).toFixed(2) : '?'}:1`);
-  const ctrl = await coloriEffettivi(page, '#unita-lung');
-  verifica(contrasto(ctrl.bordo, ctrl.bg) >= 3, `contrasto bordo dei controlli: ${contrasto(ctrl.bordo, ctrl.bg).toFixed(2)}:1`);
+  await ct('.interp.errore', 'messaggio d\'errore');
   await scrivi(page, '#c-D', '100');
+  // elenco aperto: intestazioni di famiglia, riga selezionata (tinta), «trovato per»
+  await page.fill('#q', '');
+  await page.fill('#q', 'acciaio');
+  await page.waitForSelector('#elenco:not([hidden])');
+  await page.keyboard.press('ArrowDown');
+  await ct('#elenco .fam', 'intestazione famiglia');
+  await ct('#elenco .voce[aria-selected="true"] b', 'riga selezionata (su tinta)');
+  await ct('#elenco .voce[aria-selected="true"] small', 'riga selezionata, testo secondario (su tinta)');
+  await ct('#elenco .voce:not([aria-selected="true"]) .trovato', '«trovato per»');
+  await ct('#elenco', 'elenco');
+  if (c.mobile) console.log('   contrasti misurati (' + c.schema + '): ' + MIS.join('; '));
+  await page.fill('#q', '');
 
   // --- schermate di controllo
   if (OUT) {
@@ -285,13 +549,38 @@ async function caso(browser, c) {
     await page.screenshot({ path: path.join(OUT, `${c.nome}-barra.png`) });
   }
 
+  // --- alias: nel DB reale non ce n'è ancora; la visualizzazione si prova su una copia con un alias inventato per il collaudo
+  {
+    const dbA = JSON.parse(JSON.stringify(db));
+    const v = dbA.materiali.find((x) => x.id === '7075');
+    v.fonti.push({ id: 'PROVA-A1', emittente: 'Fornitore di prova', ruolo: 'fornitore di lavorazioni', documento: 'Documento di prova uno', riferimento: 'alias p. 3', url: 'https://esempio.it/a1.pdf', sha256: '00', campi: ['alias'] });
+    v.fonti.push({ id: 'PROVA-A2', emittente: 'Università di prova', ruolo: 'tesi o articolo tecnico', documento: 'Documento di prova due', riferimento: 'alias p. 7', url: 'https://esempio.it/a2.pdf', sha256: '00', campi: ['alias'] });
+    v.alias = [{ alias: 'Provalias', origine: 'non da produttore', fonti: ['PROVA-A1', 'PROVA-A2'], prove: [{ fonte: 'PROVA-A1', pagina: 3, estratto: '7075 detto Provalias' }, { fonte: 'PROVA-A2', pagina: 7, estratto: 'Provalias (7075)' }] }];
+    const htmlA = SORGENTE.replace(/(<script type="application\/json" id="db-materiali">)[\s\S]*?(<\/script>)/, (_, a, b) => a + JSON.stringify(dbA).replace(/</g, '\\u003c') + b);
+    const pa = await ctx.newPage();
+    await pa.setContent(htmlA);
+    await pa.fill('#q', 'PROVALIAS');
+    await pa.waitForSelector('#elenco:not([hidden])');
+    const rr = await pa.$$eval('#elenco .voce', (els) => els.map((e) => ({ nome: e.querySelector('b').textContent, t: e.querySelector('.trovato').textContent })));
+    verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && rr[0].t === 'trovato per: alias «Provalias» (alias non da produttore)', `alias: «PROVALIAS» → ${JSON.stringify(rr)}`);
+    await pa.fill('#q', 'prova');
+    verifica((await pa.locator('#elenco .voce').count()) === 1, 'alias: trovato anche con l\'inizio della parola');
+    await pa.click('#elenco .voce');
+    verifica((await pa.innerText('#scheda')).includes('Alias: Provalias (alias non da produttore)'), 'alias: indicato sulla scheda con la dicitura «alias non da produttore»');
+    await pa.click('#det-fonti > summary');
+    const ft = await pa.innerText('#det-fonti');
+    verifica(ft.includes('Alias: dove sono documentati') && ft.includes('pag. 3') && ft.includes('pag. 7') && ft.includes('Fornitore di prova') && ft.includes('Università di prova'), 'alias: documenti e pagine tra le fonti');
+    await pa.close();
+  }
+
   verifica(errori.length === 0, `nessun errore in console (${errori.join(' | ')})`);
   await ctx.close();
 }
 
 (async () => {
   const browser = await chromium.launch();
-  for (const c of CASI) await caso(browser, c);
+  const solo = process.env.CASI ? process.env.CASI.split(',') : null; // per i controlli rapidi: CASI=iphone-chiaro,iphone-scuro
+  for (const c of CASI) if (!solo || solo.includes(c.nome)) await caso(browser, c);
   await browser.close();
   console.log(`\n${totali - falliti}/${totali} verifiche riuscite${OUT ? ' — screenshot in ' + OUT : ''}.`);
   process.exit(falliti ? 1 : 0);

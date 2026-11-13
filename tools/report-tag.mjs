@@ -45,7 +45,16 @@ for (const v of conAlias) {
   for (const a of v.alias) {
     out.push(`- **${a.alias}** (${a.origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'})`);
     for (const p of a.prove) out.push(`  - ${riga(v, p)}`);
+    if (a.nota) out.push(`  - Nota: ${a.nota}`);
   }
+  out.push('');
+}
+const docAlias = new Map();
+for (const v of conAlias) for (const f of v.fonti) if (f.campi.includes('alias') && !docAlias.has(f.id)) docAlias.set(f.id, f);
+if (docAlias.size) {
+  out.push('### Documenti usati per gli alias (solo per gli alias, mai per i dati numerici)', '');
+  out.push('| id | Emittente | Ruolo | Documento | URL | SHA-256 (16 car.) |', '|---|---|---|---|---|---|');
+  for (const f of docAlias.values()) out.push(`| ${f.id} | ${f.emittente} | ${f.ruolo} | ${f.documento} | ${f.url} | \`${f.sha256}\` |`);
   out.push('');
 }
 out.push(`Totale: ${nTag} tag in ${db.materiali.length - senza.length} voci (${nProve} prove con documento e pagina), ${conAlias.reduce((n, v) => n + v.alias.length, 0)} alias.`, '');

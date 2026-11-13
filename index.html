@@ -1898,7 +1898,39 @@
    "densita_intervallo_g_cm3": null,
    "nota_intervallo": "",
    "tag": [],
-   "alias": [],
+   "alias": [
+    {
+     "alias": "Ergal",
+     "origine": "non da produttore",
+     "fonti": [
+      "UPM-ERGAL",
+      "WEE-7075"
+     ],
+     "prove": [
+      {
+       "fonte": "WEE-7075",
+       "pagina": 1,
+       "estratto": "«Alluminio 7075» e, sotto, «Ergal / 9007/2 / AlZnMgCu1.5 / 3.4365 / 2L95/L160 / A-ZGU / P-AlZn5.8MgCu» (elenco delle designazioni della lega)"
+      },
+      {
+       "fonte": "UPM-ERGAL",
+       "pagina": 4,
+       "estratto": "«Nel 1936 fu introdotta la 7075, chiamata Ergal»"
+      },
+      {
+       "fonte": "UPM-ERGAL",
+       "pagina": 40,
+       "estratto": "«… ciò è anche vero per la 7075 (Ergal) …»"
+      },
+      {
+       "fonte": "UPM-ERGAL",
+       "pagina": 17,
+       "estratto": "tabella dei nomi commerciali: «ERGAL, Leghe Al-Zn-Mg-Cu … ERGAL 55=7075 … ERGAL 65=7049»"
+      }
+     ],
+     "nota": "La tesi (pag. 17) elenca «Ergal» anche come nome di una famiglia di leghe Al-Zn-Mg-Cu: ERGAL 55 = 7075, ERGAL 65 = 7049. Negli altri passaggi, e nella scheda Weerg, «Ergal» indica la 7075."
+    }
+   ],
    "fonti": [
     {
      "id": "KAI-7075SP",
@@ -1959,6 +1991,30 @@
        "unita": "g/cm³",
        "g_cm3": 2.8
       }
+     ]
+    },
+    {
+     "id": "WEE-7075",
+     "emittente": "Weerg",
+     "ruolo": "fornitore di lavorazioni (lavorazioni CNC)",
+     "documento": "Scheda tecnica v2.1 «Alluminio 7075», Lavorazione CNC (ultima revisione 28/10/2024)",
+     "riferimento": "alias p. 1",
+     "url": "https://www.weerg.com/hubfs/Datasheets/Datasheets%202024/ITA/IT_Alluminio7075.pdf",
+     "sha256": "1826df0816524aa8",
+     "campi": [
+      "alias"
+     ]
+    },
+    {
+     "id": "UPM-ERGAL",
+     "emittente": "Università Politecnica delle Marche",
+     "ruolo": "tesi o articolo tecnico",
+     "documento": "Tesi di laurea triennale in Ingegneria meccanica, a.a. 2018/2019: «Ruolo degli alliganti nei trattamenti termici di una lega Al-Zn-Cu-Mg»",
+     "riferimento": "alias p. 4,17,40",
+     "url": "https://tesi.univpm.it/retrieve/3635655c-26a5-4a03-9202-85bc2542bb29/Ruolo%20degli%20alliganti%20nei%20trattamenti%20termici%20di%20una%20lega%20Al-Zn-Cu-Mg%20.pdf",
+     "sha256": "9a6fb4cb538877b7",
+     "campi": [
+      "alias"
      ]
     }
    ],
@@ -3243,14 +3299,18 @@ const Ricerca = (function () {
 
   // ------------------------------------------------------------------ ricerca del materiale
   const RIC = Ricerca.crea(DB);
+  // «EN» davanti a un valore che già comincia per «EN » (es. «EN AW-7075») non si ripete
+  function conEtichetta(etichetta, valore) {
+    return valore.toUpperCase().indexOf(etichetta.toUpperCase() + ' ') === 0 ? valore : etichetta + ' ' + valore;
+  }
   function riassunto(m) {
     const d = m.designazioni;
     const v = [];
-    if (d.EN) v.push('EN ' + d.EN);
+    if (d.EN) v.push(conEtichetta('EN', d.EN));
     if (d.WNr) v.push('W.Nr. ' + d.WNr);
-    if (d.UNI) v.push('UNI ' + d.UNI);
+    if (d.UNI) v.push(conEtichetta('UNI', d.UNI));
     if (d.AISI_SAE) v.push('AISI/SAE ' + d.AISI_SAE);
-    if (d.DIN) v.push('DIN ' + d.DIN);
+    if (d.DIN) v.push(conEtichetta('DIN', d.DIN));
     return v.slice(0, 3).join(' · ');
   }
 
@@ -3375,13 +3435,14 @@ const Ricerca = (function () {
     if (!m) { box.hidden = true; box.innerHTML = ''; return; }
     const d = m.designazioni;
     const des = [['EN', d.EN], ['W.Nr.', d.WNr], ['UNI', d.UNI], ['AISI/SAE', d.AISI_SAE], ['DIN', d.DIN]]
-      .filter(function (x) { return x[1]; }).map(function (x) { return esc(x[0] + ' ' + x[1]); });
+      .filter(function (x) { return x[1]; }).map(function (x) { return esc(conEtichetta(x[0], x[1])); });
     const iv = m.densita_intervallo_g_cm3;
     let h = '<p><strong>' + esc(m.nome) + '</strong><br><span class="piccolo">' + esc(m.famiglia) + '</span></p>';
     if (m.tag.length) h += '<ul class="tag" aria-label="Tag verificati">' + m.tag.map(function (t) { return '<li>' + esc(t.tag) + '</li>'; }).join('') + '</ul>';
     if (des.length) h += '<p class="piccolo">Designazioni: ' + des.join(' · ') + '</p>';
     if (d.altre && d.altre.length) h += '<p class="piccolo">Altre: ' + d.altre.map(esc).join(' · ') + '</p>';
     if (m.alias.length) h += '<p class="piccolo">Alias: ' + m.alias.map(function (a) { return esc(a.alias) + ' (' + etichettaAlias(a) + ')'; }).join(' · ') + '</p>';
+    m.alias.forEach(function (a) { if (a.nota) h += '<p class="piccolo">Nota su «' + esc(a.alias) + '»: ' + esc(a.nota) + '</p>'; });
     if (m.nome_commerciale) h += '<p class="piccolo">Nome commerciale: ' + esc(m.nome_commerciale) + '</p>';
     h += '<p>Densità nominale: <strong>' + f(m.densita_g_cm3) + ' g/cm³</strong>' + (iv ? ' (letture dei documenti: ' + f(iv[0]) + '–' + f(iv[1]) + ')' : '') + '</p>';
     if (m.composizione.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';

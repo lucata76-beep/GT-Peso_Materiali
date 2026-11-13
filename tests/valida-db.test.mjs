@@ -152,14 +152,14 @@ test('«da tempra»: solo con la durezza HRC dopo tempra e solo per utensili o c
   conErrore(db, 'durezza HRC');
 });
 
-// ---- alias (nessun alias è ancora nel DB reale: le regole si provano su voci costruite)
+// ---- alias: le regole si provano su voci costruite, con un alias inventato («Provalias») che non è nel DB reale
 const conAlias = (db, opzioni = {}) => {
   const v = db.materiali.find((x) => x.id === '7075');
   const nuova = (id, emittente, ruolo, url) => ({ id, emittente, ruolo, documento: 'Documento di prova', riferimento: 'alias p. 1', url, sha256: '0123456789abcdef', campi: ['alias'] });
   v.fonti.push(nuova('A1', opzioni.e1 ?? 'Fornitore Uno', opzioni.r1 ?? 'fornitore di lavorazioni', opzioni.u1 ?? 'https://esempio-uno.it/7075.pdf'));
   v.fonti.push(nuova('A2', opzioni.e2 ?? 'Politecnico Due', opzioni.r2 ?? 'tesi o articolo tecnico', opzioni.u2 ?? 'https://esempio-due.it/tesi.pdf'));
-  v.alias.push({ alias: 'Ergal', origine: opzioni.origine ?? 'non da produttore', fonti: opzioni.fonti ?? ['A1', 'A2'],
-    prove: (opzioni.fonti ?? ['A1', 'A2']).map((f) => ({ fonte: f, pagina: 1, estratto: '7075, noto come Ergal' })) });
+  v.alias.push({ alias: 'Provalias', origine: opzioni.origine ?? 'non da produttore', fonti: opzioni.fonti ?? ['A1', 'A2'],
+    prove: (opzioni.fonti ?? ['A1', 'A2']).map((f) => ({ fonte: f, pagina: 1, estratto: '7075, noto come Provalias' })) });
   return v;
 };
 
@@ -196,7 +196,7 @@ test('alias con origine «produttore» ma senza documento di produttore: rifiuta
 test('alias «non da produttore» con un documento di produttore tra le fonti: rifiutato', () => {
   const db = copia(); const v = conAlias(db, { fonti: ['A1', 'A2', 'KAI-7075SP'] });
   v.fonti.find((f) => f.id === 'KAI-7075SP').campi.push('alias');
-  v.alias[0].prove.push({ fonte: 'KAI-7075SP', pagina: 1, estratto: '7075 (Ergal)' });
+  v.alias[0].prove.push({ fonte: 'KAI-7075SP', pagina: 1, estratto: '7075 (Provalias)' });
   conErrore(db, 'l\'origine deve essere «produttore»');
 });
 
@@ -205,6 +205,15 @@ test('alias senza prove, o fonte che dichiara «alias» senza essere citata: rif
   conErrore(db, 'senza prove (documento, pagina, frase)');
   db = copia(); v = conAlias(db); v.alias = [];
   conErrore(db, 'dichiara «alias» ma nessun alias la cita');
+});
+
+test('alias con nota: ammessa se è un testo, rifiutata se vuota o non testuale', () => {
+  let db = copia(); let v = conAlias(db); v.alias[0].nota = 'Nel documento «Provalias» è anche il nome di una famiglia di leghe.';
+  assert.deepEqual(validaDb(db).errori, []);
+  db = copia(); v = conAlias(db); v.alias[0].nota = '';
+  conErrore(db, 'la nota, se presente');
+  db = copia(); v = conAlias(db); v.alias[0].nota = 42;
+  conErrore(db, 'la nota, se presente');
 });
 
 test('Lucefin è etichettato come produttore e distributore', () => {

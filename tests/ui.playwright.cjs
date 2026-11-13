@@ -260,6 +260,7 @@ async function caso(browser, c) {
   verifica((await righe('alluminio')).every((x) => /^trovato per: (nome|famiglia)/.test(x.trovato)), '«alluminio»: motivo mostrato su ogni riga');
   const bohler = ['BÖHLER', 'Böhler', 'bohler', 'BOEHLER'];
   for (const q of bohler) verifica((await righe(q)).length === 2, `«${q}» trova 1.2344 e 1.2379`);
+  verifica((await righe('')).every((x) => true) && !/\b(EN EN|UNI UNI|DIN DIN)\b/.test(await page.innerText('#elenco')), 'elenco completo: nessuna etichetta ripetuta (es. «EN EN»)');
   const c45 = await righe('C45');
   verifica(c45[0].nome === 'C45E' && /^trovato per: designazione/.test(c45[0].trovato), `«C45»: designazione per prima, con il motivo (${c45[0].trovato})`);
   await page.fill('#q', '');
@@ -268,6 +269,11 @@ async function caso(browser, c) {
   verifica((await page.locator('.elenco .nulla, #elenco .nulla').count()) === 0, 'nessun messaggio «nessun materiale» con l\'elenco completo');
   await page.fill('#q', 'ergal');
   verifica((await page.locator('#elenco .voce').count()) === db.materiali.filter((v) => v.alias.some((a) => /ergal/i.test(a.alias))).length, '«ergal» trova solo le voci che hanno quell\'alias nel DB');
+  for (const q of ['ergal', 'ERGAL', 'Ergal 7075']) {
+    const rr = await righe(q);
+    const motivoAlias = 'trovato per: alias «Ergal» (alias non da produttore)';
+    verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && (q === 'Ergal 7075' ? rr[0].trovato.startsWith(motivoAlias + ' · designazione') : rr[0].trovato === motivoAlias), `«${q}»: Alluminio 7075 per alias (${JSON.stringify(rr)})`);
+  }
 
   // --- tastiera: frecce + Invio
   await cerca(page, 'alluminio');
@@ -442,6 +448,7 @@ async function caso(browser, c) {
       const visti = await page.$$eval('#det-comp table.comp tbody tr td:first-child', (tds) => tds.filter((t) => t.getBoundingClientRect().height > 0).map((t) => t.textContent));
       verifica(JSON.stringify(visti) === JSON.stringify(attesi), `${m.nome}: ${attesi.length} elementi visibili in composizione (${visti.length})`);
     }
+    verifica(!/\b(EN EN|UNI UNI|DIN DIN)\b/.test(await page.innerText('#scheda')), `${m.nome}: nessuna etichetta di designazione ripetuta (es. «EN EN»)`);
     const chip = await page.$$eval('#scheda ul.tag li', (els) => els.map((e) => e.textContent));
     verifica(JSON.stringify(chip) === JSON.stringify(m.tag.map((t) => t.tag)), `${m.nome}: tag mostrati ${JSON.stringify(chip)}`);
     await page.click('#det-fonti > summary');
@@ -455,6 +462,17 @@ async function caso(browser, c) {
       }
     }
     verifica(m.tag.length === 0 || fonti.includes('Tag: dove sono documentati'), `${m.nome}: sezione delle prove dei tag`);
+    for (const al of m.alias) {
+      const scheda = await page.innerText('#scheda');
+      verifica(scheda.includes(`Alias: ${al.alias} (${al.origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'})`), `${m.nome}: alias «${al.alias}» sulla scheda con la dicitura`);
+      verifica(!al.nota || scheda.includes(al.nota), `${m.nome}: nota sull'alias «${al.alias}» sulla scheda`);
+      verifica(fonti.includes('Alias: dove sono documentati'), `${m.nome}: sezione delle prove degli alias`);
+      for (const pr of al.prove) {
+        const fo = m.fonti.find((x) => x.id === pr.fonte);
+        verifica(fonti.includes(`pag. ${pr.pagina}`) && fonti.includes(pr.estratto) && fonti.includes(fo.emittente), `${m.nome}/${al.alias}: ${fo.emittente}, pag. ${pr.pagina}, frase`);
+      }
+      verifica(fonti.includes('alias non da produttore') || al.origine === 'produttore', `${m.nome}: «alias non da produttore» anche tra le fonti`);
+    }
     await page.click('#det-fonti > summary');
     controlliVoci++;
   }

@@ -161,6 +161,7 @@ export function validaDb(db) {
       if (nomiAlias.has(chiave)) err(id, `alias «${a.alias}» duplicato`);
       nomiAlias.add(chiave);
       if (!['produttore', 'non da produttore'].includes(a.origine)) err(id, `alias «${a.alias}»: origine deve essere «produttore» o «non da produttore»`);
+      if (a.nota !== undefined && (!eStr(a.nota) || a.nota.trim().length < 10)) err(id, `alias «${a.alias}»: la nota, se presente, deve essere un testo di almeno 10 caratteri`);
       const fa = (Array.isArray(a.fonti) ? a.fonti : []).map((x) => fontePerId.get(x));
       if (fa.length === 0 || fa.some((f) => !f)) { err(id, `alias «${a.alias}»: fonti mancanti o non presenti tra le fonti della voce`); continue; }
       for (const f of fa) {

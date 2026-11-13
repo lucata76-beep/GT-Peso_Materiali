@@ -119,6 +119,20 @@ Nessun tag del vocabolario è affermato dai documenti letti per queste voci; nes
 
 ## Alias
 
-Nessun alias nel DB.
+### Alluminio 7075 (`7075`)
 
-Totale: 19 tag in 13 voci (33 prove con documento e pagina), 0 alias.
+- **Ergal** (alias non da produttore)
+  - Weerg, «Scheda tecnica v2.1 «Alluminio 7075», Lavorazione CNC (ultima revisione 28/10/2024)», pag. 1: «Alluminio 7075» e, sotto, «Ergal / 9007/2 / AlZnMgCu1.5 / 3.4365 / 2L95/L160 / A-ZGU / P-AlZn5.8MgCu» (elenco delle designazioni della lega)
+  - Università Politecnica delle Marche, «Tesi di laurea triennale in Ingegneria meccanica, a.a. 2018/2019: «Ruolo degli alliganti nei trattamenti termici di una lega Al-Zn-Cu-Mg»», pag. 4: «Nel 1936 fu introdotta la 7075, chiamata Ergal»
+  - Università Politecnica delle Marche, «Tesi di laurea triennale in Ingegneria meccanica, a.a. 2018/2019: «Ruolo degli alliganti nei trattamenti termici di una lega Al-Zn-Cu-Mg»», pag. 40: «… ciò è anche vero per la 7075 (Ergal) …»
+  - Università Politecnica delle Marche, «Tesi di laurea triennale in Ingegneria meccanica, a.a. 2018/2019: «Ruolo degli alliganti nei trattamenti termici di una lega Al-Zn-Cu-Mg»», pag. 17: tabella dei nomi commerciali: «ERGAL, Leghe Al-Zn-Mg-Cu … ERGAL 55=7075 … ERGAL 65=7049»
+  - Nota: La tesi (pag. 17) elenca «Ergal» anche come nome di una famiglia di leghe Al-Zn-Mg-Cu: ERGAL 55 = 7075, ERGAL 65 = 7049. Negli altri passaggi, e nella scheda Weerg, «Ergal» indica la 7075.
+
+### Documenti usati per gli alias (solo per gli alias, mai per i dati numerici)
+
+| id | Emittente | Ruolo | Documento | URL | SHA-256 (16 car.) |
+|---|---|---|---|---|---|
+| WEE-7075 | Weerg | fornitore di lavorazioni (lavorazioni CNC) | Scheda tecnica v2.1 «Alluminio 7075», Lavorazione CNC (ultima revisione 28/10/2024) | https://www.weerg.com/hubfs/Datasheets/Datasheets%202024/ITA/IT_Alluminio7075.pdf | `1826df0816524aa8` |
+| UPM-ERGAL | Università Politecnica delle Marche | tesi o articolo tecnico | Tesi di laurea triennale in Ingegneria meccanica, a.a. 2018/2019: «Ruolo degli alliganti nei trattamenti termici di una lega Al-Zn-Cu-Mg» | https://tesi.univpm.it/retrieve/3635655c-26a5-4a03-9202-85bc2542bb29/Ruolo%20degli%20alliganti%20nei%20trattamenti%20termici%20di%20una%20lega%20Al-Zn-Cu-Mg%20.pdf | `9a6fb4cb538877b7` |
+
+Totale: 19 tag in 13 voci (33 prove con documento e pagina), 1 alias.

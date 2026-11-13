@@ -77,6 +77,22 @@ async function caso(browser, c) {
   verifica((await page.locator('.forma').count()) === 8, '8 forme');
   verifica((await page.locator('.interp').count()) >= 3, 'riga del valore interpretato sotto ogni campo');
 
+  // --- font-size ≥ 16 px su tutti i campi di testo e i select, per ogni forma (sotto i 16 px Safari su iPhone zooma da solo)
+  const nomiForme = await page.$$eval('input[name="forma"]', (els) => els.map((e) => e.value));
+  const sotto16 = [];
+  let controlliFont = 0;
+  for (const fo of nomiForme) {
+    await page.check(`input[value="${fo}"]`, { force: true });
+    const px = await page.$$eval('input, select, textarea', (els) => els
+      .filter((e) => !['radio', 'checkbox', 'button', 'submit', 'hidden'].includes(e.type))
+      .map((e) => ({ id: e.id, px: parseFloat(getComputedStyle(e).fontSize) })));
+    controlliFont += px.length;
+    px.filter((x) => x.px < 16).forEach((x) => sotto16.push(`${fo}:#${x.id}=${x.px}px`));
+  }
+  await page.check('input[value="tonda"]', { force: true });
+  verifica(nomiForme.length === 8 && controlliFont >= 8 * 5, `font-size controllato su ${controlliFont} campi in ${nomiForme.length} forme`);
+  verifica(sotto16.length === 0, `font-size ≥ 16 px su tutti i campi di testo e i select (sotto soglia: ${sotto16.join(', ')})`);
+
   // --- famiglie vuote nascoste
   await page.focus('#q');
   await page.waitForSelector('#elenco:not([hidden])');

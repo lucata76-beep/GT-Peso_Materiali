@@ -138,8 +138,13 @@ Richiesta HTTP dei soli primi 2 KB, contenuto scartato: serve solo a sapere se l
   - Fagersta/Marcegaglia 17-4PH (404)
   - Wieland: tutti i PDF trovati danno 404, la home risponde: gli indirizzi attuali vanno cercati dal sito
   - Böhler: i PDF W302 vengono reindirizzati alla home: le schede vanno cercate dalla pagina prodotto
-- **Aperam:** HTTP 403 dal sito al client automatico.
-- **Bloccati dal proxy:** `rolledalloys.com` senza `www` (il PDF grado 2 è su questo nome); Aurubis (`www.aurubis.fi` reindirizza a `www.aurubis.com/finland/…`). Da aggiungere: `rolledalloys.com`, `www.aurubis.com`.
+- **Host aggiunti all'ambiente dopo il controllo:** `rolledalloys.com` (il PDF grado 2 è su questo nome: ora raggiungibile) e `www.aurubis.com` (`www.aurubis.fi` reindirizza lì).
+- **Rifiutati dal sito al client automatico (non aggirati):** Aperam (HTTP 403) e Aurubis su `www.aurubis.com` (HTTP 406, host raggiungibile ma documento rifiutato). Per il 304 restano Swiss Steel e Lucefin. Per il rame serve un'altra fonte (candidato rinviato: Kemper).
+
+### Sintesi per voce (PDF raggiungibile oggi ≠ valore verificato: nessun documento è ancora letto)
+
+- **Con almeno un PDF raggiungibile (16):** C45, 42CrMo4, 16MnCr5, 100Cr6, S355J2, 11SMnPb30, 304, 316, 17-4PH (solo Lucefin), 1.2344, 1.2379, 2024, Ti grado 2, Ti-6Al-4V, CuZn39Pb3, Inconel 718.
+- **Senza documento raggiungibile oggi (5):** alluminio 6082, 7075 e 5083 (PDF Wieland 404: indirizzi attuali da cercare dal sito), rame (Aurubis rifiuta), stagno (nessuna scheda di produttore trovata).
 
 ## Host necessari (24 individuati, nomi esatti, nessun wildcard)
 

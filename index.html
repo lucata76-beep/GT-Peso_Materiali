@@ -64,7 +64,7 @@
 {
  "meta": {
   "schema": 1,
-  "versione": "1",
+  "versione": "2",
   "data": "2026-11-13",
   "regola_nominale": "Se i documenti letti concordano: valore comune. Se discordano: densità nominale = punto medio tra minimo e massimo letti (arrotondato a 3 decimali), con intervallo e fonti.",
   "famiglie": [
@@ -104,7 +104,7 @@
    "nome_commerciale": "",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "ISO 683-1:2018, % in massa (riportata da Lucefin)",
+    "riferimento": "ISO 683-1:2018, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "min": 0.42,
@@ -140,16 +140,14 @@
     },
     "nota": "Cr+Mo+Ni max 0,63 %."
    },
-   "densita_g_cm3": 7.775,
-   "densita_intervallo_g_cm3": [
-    7.7,
-    7.85
-   ],
-   "nota_intervallo": "Due produttori divergono: Lucefin 7,85 kg/dm³, thyssenkrupp 7,70 kg/dm³ (scheda C45E/C45R).",
+   "densita_g_cm3": 7.85,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
    "fonti": [
     {
      "id": "LUC-C45E",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Scheda dati C45E (ISO 683-1:2018), rev. 2024",
      "riferimento": "densita p. 3; composizione p. 1; designazioni p. 1,3",
      "url": "https://www.lucefin.com/wp-content/uploads/2025/01/C45E.pdf",
@@ -164,25 +162,6 @@
        "valore": "7.85",
        "unita": "kg/dm³",
        "g_cm3": 7.85
-      }
-     ]
-    },
-    {
-     "id": "TK-1191",
-     "emittente": "thyssenkrupp Materials Austria",
-     "documento": "TK 1191 / TK 1201, Werkstoffdatenblatt Unlegierter Vergütungsstahl",
-     "riferimento": "densita p. 1; designazioni p. 1",
-     "url": "https://ucpcdn.thyssenkrupp.com/_legacy/UCPthyssenkruppBAMXAustria/assets.files/download/baustahl_datenblatt_tk_1191_1201.pdf",
-     "sha256": "666254be2f1e584c",
-     "campi": [
-      "densita",
-      "designazioni"
-     ],
-     "densita_letta": [
-      {
-       "valore": "7,70",
-       "unita": "kg/dm³",
-       "g_cm3": 7.7
       }
      ]
     }
@@ -207,7 +186,7 @@
    "nome_commerciale": "",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "ISO 683-2:2018, % in massa (riportata da Lucefin)",
+    "riferimento": "ISO 683-2:2018, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "min": 0.38,
@@ -249,6 +228,7 @@
     {
      "id": "LUC-42CRMO4",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 42CrMo4 (ISO 683-2:2018), rev. 2018",
      "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
      "url": "https://www.lucefin.com/wp-content/files_mf/152353604042CrMo4.pdf",
@@ -261,24 +241,6 @@
      "densita_letta": [
       {
        "valore": "7.85",
-       "unita": "kg/dm³",
-       "g_cm3": 7.85
-      }
-     ]
-    },
-    {
-     "id": "TK-42CRMO4",
-     "emittente": "thyssenkrupp Materials (Schulte)",
-     "documento": "Werkstoffdatenblatt 42CrMo4 / 42CrMoS4 (1.7225 / 1.7227)",
-     "riferimento": "densita p. 2",
-     "url": "https://ucpcdn.thyssenkrupp.com/_binary/UCPthyssenkruppBAMaterialsSchulte/dc4e3d67-9afe-4b41-8794-a82c0d3ab7bb/42CrMo4-42CrMoS4-1.7225-1.7227.pdf",
-     "sha256": "1f278a4b784942e8",
-     "campi": [
-      "densita"
-     ],
-     "densita_letta": [
-      {
-       "valore": "7,85",
        "unita": "kg/dm³",
        "g_cm3": 7.85
       }
@@ -302,7 +264,7 @@
    "nome_commerciale": "",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "ISO 683-3:2018, % in massa (riportata da Lucefin)",
+    "riferimento": "ISO 683-3:2018, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "min": 0.14,
@@ -342,6 +304,7 @@
     {
      "id": "LUC-16MNCR5",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 16MnCr5 (ISO 683-3:2018), rev. 2024",
      "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
      "url": "https://www.lucefin.com/wp-content/uploads/2025/01/ENG-16MnCr5.pdf",
@@ -362,6 +325,7 @@
     {
      "id": "OVA-16MNCR5",
      "emittente": "Ovako",
+     "ruolo": "produttore",
      "documento": "Steel Navigator, scheda 16MnCr5 (PDF dal sito)",
      "riferimento": "densita p. 6",
      "url": "https://steelnavigator.ovako.com/steel-grades/16mncr5/pdf",
@@ -401,7 +365,7 @@
    "nome_commerciale": "Durapur 3505",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "ISO 683-17:2014, % in massa (riportata da Lucefin)",
+    "riferimento": "ISO 683-17:2014, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "min": 0.93,
@@ -448,6 +412,7 @@
     {
      "id": "LUC-100CR6",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 100Cr6 (ISO 683-17:2014), rev. 2018",
      "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/1523536908100Cr6.pdf",
@@ -468,6 +433,7 @@
     {
      "id": "SWI-100CR6",
      "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
+     "ruolo": "produttore",
      "documento": "Durapur 3505, Werkstoffdatenblatt 100Cr6 / 1.3505, 16/10/2015",
      "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
      "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Engineering-Steel/1.3505_de.pdf",
@@ -489,6 +455,7 @@
     {
      "id": "OVA-100CR6",
      "emittente": "Ovako",
+     "ruolo": "produttore",
      "documento": "Steel Navigator, scheda 100Cr6 (PDF dal sito)",
      "riferimento": "densita p. 9",
      "url": "https://steelnavigator.ovako.com/steel-grades/100cr6/pdf",
@@ -522,7 +489,7 @@
    "nome_commerciale": "",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "EN 10025-2:2014, analisi di colata, % in massa (riportata da Lucefin)",
+    "riferimento": "EN 10025-2:2014, analisi di colata, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "max": 0.2
@@ -553,6 +520,7 @@
     {
      "id": "LUC-S355J2",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card S355J2 (EN 10025-2:2014), rev. 2018",
      "riferimento": "composizione p. 1; designazioni p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/1522935764S355J2.pdf",
@@ -565,6 +533,7 @@
     {
      "id": "OVA-S355J2",
      "emittente": "Ovako",
+     "ruolo": "produttore",
      "documento": "Steel Navigator, scheda S355J2 (PDF dal sito)",
      "riferimento": "densita p. 6",
      "url": "https://steelnavigator.ovako.com/steel-grades/s355j2/pdf",
@@ -601,7 +570,7 @@
    "nome_commerciale": "SwissCut SC30Pb",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "ISO 683-4:2018, % in massa (riportata da Lucefin)",
+    "riferimento": "ISO 683-4:2018, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "max": 0.14
@@ -635,6 +604,7 @@
     {
      "id": "LUC-11SMNPB30",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 11SMnPb30 (ISO 683-4:2018), rev. 2024",
      "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
      "url": "https://www.lucefin.com/wp-content/uploads/2025/01/ENG-11SMnPb30.pdf",
@@ -655,6 +625,7 @@
     {
      "id": "SWI-E217",
      "emittente": "Swiss Steel Group (Steeltec)",
+     "ruolo": "produttore",
      "documento": "Technical Datasheet SwissCut, 28.06.23 Rev. N°1",
      "riferimento": "nome_commerciale p. 1",
      "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Engineering-Steel/E217_SwissCut_Technischesdatenblatt_0715.pdf",
@@ -687,7 +658,7 @@
    "nome_commerciale": "",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "EN 10088-3:2014, % in massa (riportata da Lucefin)",
+    "riferimento": "EN 10088-3:2014, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "max": 0.07
@@ -726,6 +697,7 @@
     {
      "id": "LUC-4301",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.4301 X5CrNi18-10 (EN 10088-3:2014), 2018",
      "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
      "url": "https://www.lucefin.com/wp-content/files_mf/15235416291.4301A304.pdf",
@@ -746,6 +718,7 @@
     {
      "id": "SWI-4301",
      "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
+     "ruolo": "produttore",
      "documento": "Datasheet 1.4301 Chromium-nickel austenitic stainless steel",
      "riferimento": "densita p. 1; designazioni p. 1",
      "url": "https://www.swisssteel-group.com/content-media/documents/Data-Sheets/Stainless-Steel/Datenblatt_4301_UK.pdf",
@@ -787,7 +760,7 @@
    "nome_commerciale": "Acidur 4401",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "EN 10088-3:2014, % in massa (riportata da Lucefin e Swiss Steel)",
+    "riferimento": "EN 10088-3:2014, % in massa (norma citata sulle schede Lucefin e Swiss Steel)",
     "elementi": {
      "C": {
       "max": 0.07
@@ -829,6 +802,7 @@
     {
      "id": "LUC-4401",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.4401 X5CrNiMo17-12-2 (EN 10088-3:2014), 2018",
      "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
      "url": "https://www.lucefin.com/wp-content/files_mf/15235422061.4401A316.pdf",
@@ -849,6 +823,7 @@
     {
      "id": "SWI-4401",
      "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
+     "ruolo": "produttore",
      "documento": "Acidur 4401, Werkstoffdatenblatt 1.4401, 02/12/2015",
      "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
      "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Stainless-Steel/1.4401_de.pdf",
@@ -890,7 +865,7 @@
    "nome_commerciale": "",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "EN 10088-3:2014, % in massa (riportata da Lucefin)",
+    "riferimento": "EN 10088-3:2014, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "max": 0.07
@@ -936,6 +911,7 @@
     {
      "id": "LUC-4542",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.4542 X5CrNiCuNb16-4 17-4 PH (EN 10088-3:2014), 2018",
      "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
      "url": "https://www.lucefin.com/wp-content/files_mf/15235430111.4542Tp630.pdf",
@@ -956,6 +932,7 @@
     {
      "id": "FAG-174",
      "emittente": "Marcegaglia Specialties, Fagersta Stainless",
+     "ruolo": "produttore",
      "documento": "R565.10 (17-4 PH), ENG 2025, Edition 1",
      "riferimento": "densita p. 1; designazioni p. 1",
      "url": "https://www.fagersta.marcegaglia.com/wp-content/uploads/2023/07/1.4542-17-4PH-R565.10-ENG-2025-Edition-1.pdf",
@@ -998,7 +975,7 @@
    "nome_commerciale": "BÖHLER W302 (ISODISC, ISOBLOC); Thermodur 2344 EFS",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "UNI EN ISO 4957:2002, % in massa (riportata da Lucefin)",
+    "riferimento": "UNI EN ISO 4957:2002, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "min": 0.35,
@@ -1043,6 +1020,7 @@
     {
      "id": "LUC-12344",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.2344 X40CrMoV5-1 (UNI EN ISO 4957:2002), rev. 2018",
      "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/15236076191.2344X40CrMoV51.pdf",
@@ -1063,6 +1041,7 @@
     {
      "id": "BOE-W302B",
      "emittente": "voestalpine BÖHLER Edelstahl",
+     "ruolo": "produttore",
      "documento": "Data sheet BÖHLER W302 ISOBLOC",
      "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1",
      "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w302-isobloc_en_gb.pdf",
@@ -1083,6 +1062,7 @@
     {
      "id": "BOE-W302D",
      "emittente": "voestalpine BÖHLER Edelstahl",
+     "ruolo": "produttore",
      "documento": "Data sheet BÖHLER W302 ISODISC",
      "riferimento": "densita p. 5; nome_commerciale p. 1",
      "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w302-isodisc_en_gb.pdf",
@@ -1102,6 +1082,7 @@
     {
      "id": "SWI-12344",
      "emittente": "Swiss Steel Group",
+     "ruolo": "produttore",
      "documento": "Technical datasheet Thermodur 2344 EFS, 10.05.23 Rev.00",
      "riferimento": "designazioni p. 1; nome_commerciale p. 1",
      "url": "https://swisssteel-group.com/content-media/documents/_import/1.2344_en.pdf",
@@ -1131,7 +1112,7 @@
    "nome_commerciale": "BÖHLER K110",
    "composizione": {
     "tipo": "lega",
-    "riferimento": "UNI EN ISO 4957:2002, % in massa (riportata da Lucefin)",
+    "riferimento": "UNI EN ISO 4957:2002, % in massa (norma citata sulla scheda Lucefin)",
     "elementi": {
      "C": {
       "min": 1.45,
@@ -1176,6 +1157,7 @@
     {
      "id": "LUC-12379",
      "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
      "documento": "Technical card 1.2379 X153CrMoV12 (UNI EN ISO 4957:2002), rev. 2018",
      "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
      "url": "https://www.lucefin.com/wp-content/files_mf/15236079471.2379X153CrMoV12.pdf",
@@ -1196,6 +1178,7 @@
     {
      "id": "BOE-K110",
      "emittente": "voestalpine BÖHLER Edelstahl",
+     "ruolo": "produttore",
      "documento": "Data sheet BÖHLER K110",
      "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1",
      "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/k110_en_gb.pdf",
@@ -1280,6 +1263,7 @@
     {
      "id": "HYD-6082",
      "emittente": "Hydro",
+     "ruolo": "produttore",
      "documento": "Technical datasheet, Extruded products, Alloy EN AW-6082",
      "riferimento": "composizione p. 1; densita p. 2; designazioni p. 1",
      "url": "https://www.hydro.com/globalassets/08-about-hydro/hydro-worldwide/austria/nenzing/alloy-data-sheets/hydro-en-aw-6082.pdf",
@@ -1300,6 +1284,7 @@
     {
      "id": "WIE-A32",
      "emittente": "Wieland-Werke AG",
+     "ruolo": "produttore",
      "documento": "Information sheet for articles Wieland-A32 (EN AW-6082), 10.11.2020, vers. 5",
      "riferimento": "densita p. 4; designazioni p. 2",
      "url": "https://www.wieland.com/content/download/10451/file/Wieland-A32_EN.pdf",
@@ -1382,6 +1367,7 @@
     {
      "id": "KAI-7075SP",
      "emittente": "Kaiser Aluminum",
+     "ruolo": "produttore",
      "documento": "Sheet Coil & Plate Alloy 7075, Technical Data, Rev. 05/06",
      "riferimento": "composizione p. 2; densita p. 2; designazioni p. 2",
      "url": "https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1017/Kaiser_Aluminum_7075_Sheet_Coil_and_Plate.pdf",
@@ -1402,6 +1388,7 @@
     {
      "id": "KAI-7075RB",
      "emittente": "Kaiser Aluminum",
+     "ruolo": "produttore",
      "documento": "Rod & Bar Alloy 7075, Technical Data",
      "riferimento": "composizione p. 2; densita p. 2",
      "url": "https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1028/Kaiser_Aluminum_7075_Rod_and_Bar.pdf",
@@ -1421,6 +1408,7 @@
     {
      "id": "WIE-A07",
      "emittente": "Wieland-Werke AG",
+     "ruolo": "produttore",
      "documento": "Information sheet for articles Wieland-A07 (EN AW-7075), 15.05.2025, vers. 6",
      "riferimento": "densita p. 5; designazioni p. 2",
      "url": "https://www.wieland.com/content/download/10433/file/Wieland-A07_EN.pdf",
@@ -1504,6 +1492,7 @@
     {
      "id": "KAI-2024",
      "emittente": "Kaiser Aluminum",
+     "ruolo": "produttore",
      "documento": "Sheet Coil & Plate Alloy 2024, Technical Data",
      "riferimento": "composizione p. 2; densita p. 2; designazioni p. 1",
      "url": "https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1012/Kaiser_Aluminum_2024_Sheet_Coil_and_Plate.pdf",
@@ -1524,6 +1513,7 @@
     {
      "id": "AUB-2024",
      "emittente": "Aubert & Duval",
+     "ruolo": "produttore",
      "documento": "Aluminium alloy 2024 (Al Cu4Mg1), scheda",
      "riferimento": "densita p. 2; designazioni p. 1",
      "url": "https://www.aubertduval.com/wp-content/uploads/2024/12/2024_GB.pdf",
@@ -1605,6 +1595,7 @@
     {
      "id": "HYD-5083",
      "emittente": "Hydro",
+     "ruolo": "produttore",
      "documento": "Njørdal™ H116, coil, sheet & plate for marine and offshore",
      "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1; nome_commerciale p. 1",
      "url": "https://www.hydro.com/globalassets/01-products--services/rolled-products/ge_h116_njordal_200514.pdf",
@@ -1626,6 +1617,7 @@
     {
      "id": "WIE-A14",
      "emittente": "Wieland-Werke AG",
+     "ruolo": "produttore",
      "documento": "Information sheet for articles Wieland-A14 (EN AW-5083), 10.11.2020, vers. 5",
      "riferimento": "densita p. 4; designazioni p. 2",
      "url": "https://www.wieland.com/content/download/10445/file/Wieland-A14_EN.pdf",
@@ -1684,6 +1676,7 @@
      },
      "Ti": "resto"
     },
+    "parziale": true,
     "nota": "Valori massimi dalla pagina prodotto ATI; la scheda tecnica ATI riporta solo valori tipici."
    },
    "densita_g_cm3": 4.515,
@@ -1696,6 +1689,7 @@
     {
      "id": "ATI-CP2W",
      "emittente": "ATI (Allegheny Technologies)",
+     "ruolo": "produttore",
      "documento": "Pagina prodotto «ATI 40, CP Grade 2», sezione Product Specifications By Form",
      "riferimento": "composizione (pagina web); densita (pagina web); designazioni (pagina web)",
      "url": "https://www.atimaterials.com/Products/ati-cp2",
@@ -1721,6 +1715,7 @@
     {
      "id": "ATI-CP2T",
      "emittente": "ATI (Allegheny Technologies)",
+     "ruolo": "produttore",
      "documento": "Technical Data Sheet ATI 30, CP Grade 1, ATI 40, CP Grade 2, ATI 55, CP Grade 3, ATI 70, CP Grade 4, version 1 (2/21/2012)",
      "riferimento": "densita p. 1; designazioni p. 1",
      "url": "https://www.atimaterials.com/Products/Documents/datasheets/titanium/commerciallypure/ati_cp2_tds_en.pdf",
@@ -1786,6 +1781,7 @@
      },
      "Ti": "resto"
     },
+    "parziale": true,
     "nota": "Fe max 0,40 % per barra e billetta, 0,30 % per lamiera (pagina prodotto ATI)."
    },
    "densita_g_cm3": 4.45,
@@ -1798,6 +1794,7 @@
     {
      "id": "ATI-64W",
      "emittente": "ATI (Allegheny Technologies)",
+     "ruolo": "produttore",
      "documento": "Pagina prodotto «ATI 6-4 Titanium», sezione Product Specifications By Form",
      "riferimento": "composizione (pagina web); densita (pagina web); designazioni (pagina web)",
      "url": "https://www.atimaterials.com/Products/Pages/ati-6-4-grade5.aspx",
@@ -1818,6 +1815,7 @@
     {
      "id": "ATI-64T",
      "emittente": "ATI (Allegheny Technologies)",
+     "ruolo": "produttore",
      "documento": "Technical Data Sheet ATI Ti-6Al-4V, Grade 5, version 1 (1/31/2012)",
      "riferimento": "densita p. 1; designazioni p. 1",
      "url": "https://www.atimaterials.com/Products/Documents/datasheets/titanium/alloyed/ati_6-4_tds_en_v1.pdf",
@@ -1869,6 +1867,7 @@
      },
      "Zn": "resto"
     },
+    "parziale": true,
     "nota": "Solo i componenti elencati nella scheda Wieland; limiti completi EN 12164 non verificati. Diehl riporta solo valori di riferimento (Cu 58,0; Pb 3,0)."
    },
    "densita_g_cm3": 8.48,
@@ -1881,6 +1880,7 @@
     {
      "id": "WIE-Z32",
      "emittente": "Wieland-Werke AG",
+     "ruolo": "produttore",
      "documento": "Safety data sheet Wieland-Z32 (CuZn39Pb3), 06/14/2022, vers. 12",
      "riferimento": "composizione p. 2; densita p. 5; designazioni p. 2; nome_commerciale p. 1",
      "url": "https://www.wieland.com/en/content/download/11066/file/Wieland-Z32-USA_EN.pdf",
@@ -1902,6 +1902,7 @@
     {
      "id": "WIE-Z33",
      "emittente": "Wieland-Werke AG",
+     "ruolo": "produttore",
      "documento": "Safety data sheet Wieland-Z33 (CuZn39Pb3), 06/14/2022, vers. 11",
      "riferimento": "densita p. 5; nome_commerciale p. 1",
      "url": "https://www.wieland.com/en/content/download/11067/file/Wieland-Z33-USA_EN.pdf",
@@ -1921,6 +1922,7 @@
     {
      "id": "DIE-002",
      "emittente": "Diehl Brass Solutions",
+     "ruolo": "produttore",
      "documento": "Material Datasheet 002 (CuZn39Pb3)",
      "riferimento": "densita p. 1; designazioni p. 1; nome_commerciale p. 1",
      "url": "https://www.diehl.com/cms/files/Diehl_Brass_Solutions_Material_Datasheet_002.pdf",
@@ -1966,7 +1968,9 @@
      "O": {
       "max": 0.04
      }
-    }
+    },
+    "parziale": true,
+    "nota": "Il datasheet Kemper riporta solo Cu (minimo) e O (massimo)."
    },
    "densita_g_cm3": 8.9,
    "densita_intervallo_g_cm3": null,
@@ -1975,6 +1979,7 @@
     {
      "id": "KEM-CUETP",
      "emittente": "Gebr. Kemper GmbH + Co KG",
+     "ruolo": "produttore",
      "documento": "Datenblatt Cu-ETP / datasheet Cu-ETP, Stand 03/2024",
      "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1",
      "url": "https://www.kemper-group.com/media/de-at/content/04-produkte/walzprodukte/datenblaetter/cu-etp.pdf",
@@ -1995,6 +2000,7 @@
     {
      "id": "WIE-K32",
      "emittente": "Wieland-Werke AG",
+     "ruolo": "produttore",
      "documento": "Safety data sheet Wieland-K32 (Cu-ETP), 05/09/2022, vers. 6",
      "riferimento": "densita p. 4; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
      "url": "https://www.wieland.com/en/content/download/10983/file/Wieland-K32-USA_EN.pdf",
@@ -2046,6 +2052,7 @@
     {
      "id": "NIST-T1",
      "emittente": "NIST (National Institute of Standards and Technology)",
+     "ruolo": "riferimento scientifico",
      "documento": "X-Ray Mass Attenuation Coefficients, Table 1 (costanti dei materiali, Z=50 Sn)",
      "riferimento": "densita (pagina web); designazioni (pagina web)",
      "url": "https://physics.nist.gov/PhysRefData/XrayMassCoef/tab1.html",
@@ -2065,6 +2072,7 @@
     {
      "id": "IND-SN",
      "emittente": "Indium Corporation",
+     "ruolo": "fornitore",
      "documento": "Product Data Sheet Commercial Tin Metal, Form No. 98803 R0",
      "riferimento": "densita p. 2",
      "url": "https://www.indium.com/wp-content/uploads/2025/03/Commercial-Tin-Metal-PDS-98803-R0-1.pdf",
@@ -2165,6 +2173,7 @@
     {
      "id": "SPE-718",
      "emittente": "Special Metals Corporation",
+     "ruolo": "produttore",
      "documento": "INCONEL® alloy 718, pubblicazione SMC-045 (Sept 07)",
      "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1; nome_commerciale p. 1",
      "url": "https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-718.pdf",

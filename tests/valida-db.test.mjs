@@ -85,6 +85,33 @@ test('composizione con min > max e senza «resto»: rifiutata', () => {
   conErrore(db, 'elemento base');
 });
 
+test('fonte da distributore o senza ruolo: rifiutata', () => {
+  const db = copia();
+  db.materiali[0].fonti[0].ruolo = 'distributore';
+  delete db.materiali[1].fonti[0].ruolo;
+  conErrore(db, 'ruolo non ammesso');
+  assert.ok(validaDb(db).errori.filter((e) => e.includes('ruolo non ammesso')).length >= 2);
+});
+
+test('Lucefin è etichettato come produttore e distributore', () => {
+  const lucefin = copia().materiali.flatMap((v) => v.fonti).filter((f) => f.emittente === 'Lucefin Group');
+  assert.ok(lucefin.length > 0);
+  for (const f of lucefin) assert.match(f.ruolo, /^produttore e distributore/);
+});
+
+test('nessuna fonte thyssenkrupp nel DB (non ammessa)', () => {
+  const testo = JSON.stringify(copia());
+  assert.ok(!/thyssenkrupp/i.test(testo));
+});
+
+test('composizione parziale: solo valori booleani', () => {
+  const db = copia();
+  const v = db.materiali.find((x) => x.composizione.parziale);
+  assert.ok(v, 'attesa almeno una voce con composizione parziale');
+  v.composizione.parziale = 'sì';
+  conErrore(db, 'vero/falso');
+});
+
 test('famiglia non prevista: rifiutata', () => {
   const db = copia(); db.materiali[0].famiglia = 'Famiglia inventata';
   conErrore(db, 'non prevista');

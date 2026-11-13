@@ -1,73 +1,84 @@
 # Report fonti – Fase 1, lotto pilota
-
-Letto il 2026-11-13. Questo file è il registro di ciò che è entrato nel database e perché.
+Letto il 2026-11-13. Registro di ciò che è entrato nel database (versione 2) e perché.
 La sezione «Dettaglio per voce» è generata dallo stesso programma che costruisce il DB: ogni valore è stato
-confrontato con il testo della pagina del documento citato (179 prove, nessuna mancante).
+confrontato con il testo della pagina del documento citato (176 prove, nessuna mancante) e ogni numero di composizione
+compare nel testo letto per quella voce.
 
-Le copie dei PDF non sono nel repository (è pubblico): l'hash SHA-256 identifica il file letto.
+Le copie dei PDF non sono nel repository (è pubblico): l'hash SHA-256 (16 caratteri) identifica il file letto.
 
 ## Esito in sintesi
 
-- **21 voci verificate** su 22 previste (C45 e C45E separate, come richiesto).
-- **1 voce esclusa:** C45 (1.0503), vedi sotto.
-- Densità: 10 voci con letture concordi, 11 con intervallo (nominale + intervallo + fonti). In 5 dei casi con intervallo la
-  differenza è al massimo 0,02 g/cm³ (100Cr6 7,80-7,81; 1.2379 7,67-7,68; 6082 2,7-2,71; stagno 7,29-7,31; titanio grado 2 4,51-4,52).
-  Le differenze più ampie sono C45E (7,70-7,85, 0,15), 1.2344 (7,74-7,80), 16MnCr5 (7,80-7,85), Ti-6Al-4V (4,43-4,47), CuZn39Pb3 (8,46-8,50).
-  L'Inconel 718 ha un intervallo perché lo stesso documento dà due valori (ricotto e invecchiato).
-- Tre voci hanno una sola fonte di densità: S355J2 (Ovako), 11SMnPb30 (Lucefin), Inconel 718 (Special Metals).
-- Regola per il nominale quando i documenti discordano: punto medio tra minimo e massimo letti, arrotondato a 3 decimali.
-  Non c'è un criterio «migliore» nei documenti: la regola è dichiarata nel DB (`meta.regola_nominale`).
+- **21 voci verificate** su 22 previste (C45 e C45E separate, come richiesto). **1 voce esclusa:** C45 (1.0503).
+- **44 documenti ammessi** da 17 emittenti sono citati nel DB.
+- **Fonti ammesse** (decisione dell'utente): produttori, e Lucefin (produce barre trafilate, pelate e rettificate, oltre a distribuirle;
+  nel DB è etichettato «produttore e distributore»; per i limiti di composizione la voce cita la norma riportata sulla scheda).
+  **Non ammessi:** thyssenkrupp Materials (si definisce distributore) e Rolled Alloys. I loro documenti sono nel registro come «letto, non ammesso».
+- Densità: **11 voci con letture concordi**, **10 con intervallo** (nominale al punto medio + intervallo + fonti).
+  Differenza fino a 0,02 g/cm³: 100Cr6 7,8–7,81; Acciaio per utensili 1.2379 (D2) 7,67–7,68; Alluminio 6082 2,7–2,71; Titanio grado 2 (CP) 4,51–4,52; Stagno (Sn) 7,29–7,31.
+  Differenze più ampie: 16MnCr5 7,8–7,85; Acciaio per utensili 1.2344 (H13) 7,74–7,8; Titanio Ti-6Al-4V (grado 5) 4,43–4,47; Ottone CuZn39Pb3 (CW614N) 8,46–8,5; Inconel 718 8,193–8,221.
+- **Voci con una sola fonte di densità (5):** C45E, 42CrMo4, S355J2, 11SMnPb30, Inconel 718.
+  Segnalata in modo esplicito: **42CrMo4** ora ha solo Lucefin (il secondo valore, identico, era di thyssenkrupp, non ammesso);
+  **C45E** ha solo Lucefin (7,85); S355J2 ha la densità solo da Ovako; 11SMnPb30 solo Lucefin; Inconel 718 solo Special Metals.
+- Regola per il nominale quando le letture discordano: punto medio tra minimo e massimo (3 decimali), dichiarata nel DB (`meta.regola_nominale`).
+  Interfaccia e scheda mostrano sempre intervallo e fonti quando il nominale non coincide con una lettura.
 
 ## Escluso dal lotto pilota
 
 ### C45 (1.0503) → lotto 2
 
-Nessun documento letto riporta la densità di 1.0503.
+Nessun documento ammesso riporta la densità di 1.0503.
 
 - Saarstahl «Material specification sheet C45» (1.0503): designazioni e analisi tipica, nessuna densità.
 - Swiss Steel «C45 XTP» (1.0503): designazioni e composizione, nessuna densità.
-- thyssenkrupp TK 1191 / TK 1201 riguarda C45E/C45R (1.1191/1.1201), non 1.0503. thyssenkrupp Svizzera
-  «Sonderprodukte in Edelbaustahl» e il Werkstoffhandbuch (Schulte) non contengono 1.0503 nel testo.
-- La densità di C45E non è stata riusata per 1.0503: nessun documento letto lo consente.
+- La densità di C45E (1.1191) non è stata riusata per 1.0503: nessun documento letto lo consente.
 
-Per sbloccarla serve una scheda di produttore che indichi la densità di C45 / 1.0503 (EN 10083-2).
-Non ho un URL candidato da proporre.
+Per sbloccarla serve una scheda di produttore che indichi la densità di C45 / 1.0503 (EN 10083-2). Non ho un URL candidato da proporre.
+
+## Letto, non ammesso
+
+| Emittente | Documento | Perché non ammesso | Cosa riportava (non usato) | SHA-256 |
+|---|---|---|---|---|
+| thyssenkrupp Materials (Schulte) | Werkstoffdatenblatt 42CrMo4 / 42CrMoS4 | si definisce distributore | densità 7,85 kg/dm³ (uguale a Lucefin) | `1f278a4b784942e8` |
+| thyssenkrupp Materials Austria | TK 1191 / TK 1201 (C45E / C45R) | si definisce distributore | densità 7,70 kg/dm³ (Lucefin: 7,85) | `666254be2f1e584c` |
+| thyssenkrupp Materials Schweiz | Sonderprodukte in Edelbaustahl | si definisce distributore | 1.0503 non compare nel testo | `08a65130a9ec398b` |
+| thyssenkrupp Materials (Schulte) | Werkstoffhandbuch Qualitäts-, Edelbau- und Werkzeugstähle | si definisce distributore | 1.0503 non compare nel testo | `65ee71ac86497812` |
+| Rolled Alloys | Data sheet Titanium Grade 2/2H | trasformatore e distributore | densità 0,163 lb/in³, massimi di composizione, W.Nr. 3.7034 | `d6129b0ea3ec0eaa` |
+| Rolled Alloys | Data sheet 6Al-4V Titanium | trasformatore e distributore | limiti di composizione, UNS R56400, W.Nr. 3.7164 e 3.7165 | `432efbf4b0c71e10` |
+
+URL: thyssenkrupp 42CrMo4 `https://ucpcdn.thyssenkrupp.com/_binary/UCPthyssenkruppBAMaterialsSchulte/dc4e3d67-9afe-4b41-8794-a82c0d3ab7bb/42CrMo4-42CrMoS4-1.7225-1.7227.pdf`;
+TK 1191/1201 `https://ucpcdn.thyssenkrupp.com/_legacy/UCPthyssenkruppBAMXAustria/assets.files/download/baustahl_datenblatt_tk_1191_1201.pdf`;
+Rolled Alloys `https://rolledalloys.com/wp-content/uploads/TiGrade2_DS_USA-1.pdf` e `https://www.rolledalloys.com/wp-content/uploads/6AL4V_Data-sheet.pdf`.
+
+Letti anche, senza dati utilizzabili: Saarstahl «C45» (`e4b0837499da6c01`) e Swiss Steel «C45 XTP» (`530d12c9a21bee0c`): produttori ammessi, ma senza densità.
 
 ## Cosa non è verificato
 
-- **Lucefin e thyssenkrupp Materials: non ho verificato se siano produttori o distributori.** Le loro schede citano
-  le norme (ISO/EN) e riportano i limiti; sono state tenute come fonti, e ogni riferimento nel DB ha il campo
-  `emittente` per poterle togliere.
-  - Lucefin è la fonte principale della composizione e delle designazioni di 11 acciai (C45E, 42CrMo4, 16MnCr5,
-    100Cr6, S355J2, 11SMnPb30, 304, 316, 17-4PH, 1.2344, 1.2379).
-  - thyssenkrupp Materials è seconda fonte per 42CrMo4 (stesso valore di Lucefin) e il limite inferiore di C45E (7,70).
-- **CuZn39Pb3:** composizione limitata ai componenti elencati da Wieland (Cu, Pb, Ni max, Zn resto). I limiti
-  completi della EN 12164 non sono stati letti. Diehl riporta solo valori di riferimento (Cu 58,0; Pb 3,0).
-- **Titanio grado 2 e Ti-6Al-4V:** i limiti sono i massimi dichiarati sulla pagina prodotto ATI; la scheda
-  tecnica ATI dà solo valori tipici. I numeri W.Nr. compaiono solo in schede di Rolled Alloys (distributore,
-  non ammesso) e non sono stati inseriti.
-- **Designazioni UNI e DIN lasciate vuote** dove nessun documento le riporta (100Cr6, S355J2, 304, 316, 17-4PH,
-  UNI di 1.2344 e 1.2379). L'AFNOR «16MC» di Lucefin per 16MnCr5 non è stata inserita (testo troncato).
-- **Aubert & Duval 2024:** densità 2,77 senza unità nel documento; coincide con Kaiser 2,77 Mg/m³.
-- **Inconel 718:** Special Metals dà la densità solo in lb/in³ (0,296 ricotto; 0,297 ricotto e invecchiato).
-  Convertita con 1 lb = 0,45359237 kg e 1 in = 25,4 mm: 8,193 e 8,221 g/cm³.
+- **Indium Corporation** è etichettata «fornitore»: il documento si definisce «leading global supplier of pure tin». Contribuisce al valore dello stagno
+  (7,29 contro 7,310 di NIST): senza Indium lo stagno avrebbe solo NIST, 7,310, senza intervallo.
+- **Le etichette di ruolo** (produttore, fornitore, riferimento scientifico) sono una mia classificazione, tranne quella di Lucefin, indicata dall'utente.
+- **CuZn39Pb3:** composizione parziale, limitata ai componenti elencati da Wieland (Cu, Pb, Ni max, Zn resto); i limiti completi della EN 12164 non sono stati letti.
+- **Rame Cu-ETP:** composizione parziale: il datasheet Kemper riporta solo Cu (minimo) e O (massimo).
+- **Titanio grado 2 e Ti-6Al-4V:** composizione parziale: solo i massimi dichiarati sulla pagina prodotto ATI (la scheda tecnica ATI dà solo valori tipici).
+  I numeri W.Nr. compaiono solo nelle schede Rolled Alloys (non ammesse) e non sono stati inseriti.
+  L'interfaccia scrive «solo gli elementi riportati dal documento» per queste voci.
+- **Designazioni UNI e DIN lasciate vuote** dove nessun documento ammesso le riporta. L'AFNOR «16MC» di Lucefin per 16MnCr5 non è stata inserita (testo troncato).
+- **Aubert & Duval 2024:** densità 2,77 senza unità nel documento; coincide con Kaiser (2,77 Mg/m³).
+- **Inconel 718:** Special Metals dà la densità solo in lb/in³ (0,296 ricotto; 0,297 ricotto e invecchiato), convertita con 1 lb = 0,45359237 kg e 1 in = 25,4 mm: 8,193 e 8,221 g/cm³.
 - **Valori tipici:** molte densità sono dichiarate tipiche dai produttori, non garantite.
-- **Wieland (5083, 6082, 7075):** le schede usate sono «information sheet for articles»; indicano la densità come
-  valore di letteratura e solo i componenti principali. I limiti completi di 5083, 6082 e 7075 vengono da
-  Hydro (EN 573-3:2013 per il 6082; Njørdal H116 per il 5083) e da Kaiser (7075, 2024).
+- **Wieland (5083, 6082, 7075):** schede informative; valore di letteratura per la densità e solo i componenti principali. I limiti completi vengono da Hydro (6082: EN 573-3:2013; 5083: Njørdal H116) e da Kaiser (7075, 2024).
 
 ## Documenti non leggibili da qui
 
-Nessuna voce del lotto pilota resta bloccata per questo motivo (tranne C45 per mancanza di densità).
-Elenco per un eventuale scaricamento manuale; i primi tre li ho rispettati senza aggirarli:
+Nessuna voce del lotto pilota resta bloccata per questo motivo (tranne C45 per mancanza di densità). Elenco per un eventuale scaricamento manuale
+(i primi due non sono stati aggirati):
 
 | Documento | Esito | URL esatto |
 |---|---|---|
 | Aperam, scheda 304 | HTTP 403 al client automatico | https://www.aperam.com/product/304-1-4301/ |
 | Aurubis, Cu-ETP | HTTP 406 (reindirizza a www.aurubis.com/finland/…) | https://www.aurubis.fi/wp-content/uploads/2020/06/CU_ETP.pdf |
-| Constellium, ALPLAN 5083 | Il sito risponde con una pagina web invece del PDF | https://www.constellium.com/sites/default/files/tid_product_documents/alplan_5083.pdf |
-| BGH, 1.4542 | 404 (anche l'indirizzo in tedesco) | https://bgh.de/media/bb/77/03/1740389214/14542_BGH_de.pdf |
-| Wieland, «Datasheets EN AW 7075 / 5083» | L'elenco è caricato da un servizio esterno non raggiungibile | https://www.wieland.com/en/resources/downloads?resource-category=1191 (e `…=1186`) |
+| Constellium, ALPLAN 5083 | il sito risponde con una pagina web invece del PDF | https://www.constellium.com/sites/default/files/tid_product_documents/alplan_5083.pdf |
+| BGH, 1.4542 | 404 | https://bgh.de/media/bb/77/03/1740389214/14542_BGH_de.pdf |
+| Wieland, «Datasheets EN AW 7075 / 5083» | elenco caricato da un servizio esterno non raggiungibile | https://www.wieland.com/en/resources/downloads?resource-category=1191 (e `…=1186`) |
 
 ## Piano del lotto 2
 
@@ -85,16 +96,17 @@ Fonti non ancora cercate: servirà un nuovo censimento e, per i nuovi host, una 
 
 Plastiche tecniche (POM, PA, PEEK, PTFE), magnesio, zinco e piombo restano dopo, come da accordi.
 
+Host dell'ambiente da togliere alla prossima scheda (non compaiono come fonte nel DB): bgh.de, www.goodfellow.com, www.constellium.com,
+rolledalloys.com, www.rolledalloys.com, ucpcdn.thyssenkrupp.com, en.saarstahl.com.
+
 ---
 
-## Documenti letti
+## Documenti ammessi e letti
 
 | id | Emittente | Documento | URL | SHA-256 |
 |---|---|---|---|---|
 | LUC-C45E | Lucefin Group | Scheda dati C45E (ISO 683-1:2018), rev. 2024 | https://www.lucefin.com/wp-content/uploads/2025/01/C45E.pdf | `f533ff76d6a2150f6d91298ddca2827e519d542e8554af4017ac5b83ea6fe576` |
-| TK-1191 | thyssenkrupp Materials Austria | TK 1191 / TK 1201, Werkstoffdatenblatt Unlegierter Vergütungsstahl | https://ucpcdn.thyssenkrupp.com/_legacy/UCPthyssenkruppBAMXAustria/assets.files/download/baustahl_datenblatt_tk_1191_1201.pdf | `666254be2f1e584c0a791c79f4047ab7bf9579820518f6e30d9cc4fe75d74bf5` |
 | LUC-42CRMO4 | Lucefin Group | Technical card 42CrMo4 (ISO 683-2:2018), rev. 2018 | https://www.lucefin.com/wp-content/files_mf/152353604042CrMo4.pdf | `40bad89650e302408b3bad27d7a3715a9c4f737325290b03ef7510bbe01c3b68` |
-| TK-42CRMO4 | thyssenkrupp Materials (Schulte) | Werkstoffdatenblatt 42CrMo4 / 42CrMoS4 (1.7225 / 1.7227) | https://ucpcdn.thyssenkrupp.com/_binary/UCPthyssenkruppBAMaterialsSchulte/dc4e3d67-9afe-4b41-8794-a82c0d3ab7bb/42CrMo4-42CrMoS4-1.7225-1.7227.pdf | `1f278a4b784942e8be446775c32b416f67b94b56ea85a6f852be020c1600749d` |
 | LUC-16MNCR5 | Lucefin Group | Technical card 16MnCr5 (ISO 683-3:2018), rev. 2024 | https://www.lucefin.com/wp-content/uploads/2025/01/ENG-16MnCr5.pdf | `4990576a2817c3954caf42e9b9a6b51cdc0e5c61807a7b2e5842267a248dd18d` |
 | OVA-16MNCR5 | Ovako | Steel Navigator, scheda 16MnCr5 (PDF dal sito) | https://steelnavigator.ovako.com/steel-grades/16mncr5/pdf | `767af42285274365c18815409c914494535e691d3037cac28ac41f9e7277232a` |
 | LUC-100CR6 | Lucefin Group | Technical card 100Cr6 (ISO 683-17:2014), rev. 2018 | https://www.lucefin.com/wp-content/files_mf/1523536908100Cr6.pdf | `41d34658509bcd4650d3e2e1c8c8055e52c5d5b142930d4230232535cabf4202` |
@@ -142,15 +154,12 @@ Plastiche tecniche (POM, PA, PEEK, PTFE), magnesio, zinco e piombo restano dopo,
 
 ### C45E (`c45e`, Acciai da bonifica)
 
-- **Densità nominale: 7.775 g/cm³**, intervallo 7.7–7.85. Due produttori divergono: Lucefin 7,85 kg/dm³, thyssenkrupp 7,70 kg/dm³ (scheda C45E/C45R).
+- **Densità: 7.85 g/cm³** (documenti concordi).
 - LUC-C45E (Lucefin Group):
   - densita, p. 3: «Massa Volumica Kg/dm3 7.85»
   - composizione, p. 1: «0,42-0,50 0,10-0,40 0,50-0,80 0,025 0,035 0,40 0,10 0,40 0,30»
   - designazioni, p. 3: «C45E C45 F1140 Ck45 XC48 080M46 1672 1045»
   - designazioni, p. 1: «Numero 1.1191»
-- TK-1191 (thyssenkrupp Materials Austria):
-  - densita, p. 1: «Dichte (kg/dm3) 7,70»
-  - designazioni, p. 1: «DIN 17200 1.1191 / 1.1201 Ck45 / Cm45»
 
 ### 42CrMo4 (`42crmo4`, Acciai da bonifica)
 
@@ -160,8 +169,6 @@ Plastiche tecniche (POM, PA, PEEK, PTFE), magnesio, zinco e piombo restano dopo,
   - composizione, p. 1: «0,38-0,45 0,10-0,40 0,60-0,90 0,025 0,035 0,90-1,20 0,15-0,30 0,40»
   - designazioni, p. 2: «42CrMo4 42CrMo4 ML42CrMo 42CrMo4 42CD4 708M40 38ChM 4140»
   - designazioni, p. 1: «Number 1.7225»
-- TK-42CRMO4 (thyssenkrupp Materials (Schulte)):
-  - densita, p. 2: «Dichte bei Elastizitätsmodul Wärmeleitfähigkeit spez. Wärmekapazität spez. elektrischer 20 °C kN/mm² bei bei 20 °C bei 20 °C Widerstand bei »
 
 ### 16MnCr5 (`16mncr5`, Acciai legati)
 

@@ -12,6 +12,7 @@ const CHIAVI_DESIGNAZIONI = ['EN', 'WNr', 'UNI', 'AISI_SAE', 'DIN'];
 const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
 const RE_ID = /^[a-z0-9][a-z0-9.\-]*$/;
 const RE_HASH = /^[0-9a-f]{16}$/;
+const RE_RUOLO = /^(produttore|fornitore|riferimento scientifico)/;
 
 /** Estrae e interpreta il blocco DB:INIZIO … DB:FINE da un testo HTML. */
 export function estraiDb(html) {
@@ -82,6 +83,7 @@ export function validaDb(db) {
       if (idFonti.has(f.id)) err(id, `fonte ${fid} duplicata`);
       idFonti.add(f.id);
       for (const k of ['emittente', 'documento', 'riferimento']) if (!eStr(f[k]) || !f[k]) err(id, `fonte ${fid}: ${k} mancante`);
+      if (!eStr(f.ruolo) || !RE_RUOLO.test(f.ruolo)) err(id, `fonte ${fid}: ruolo non ammesso (ammessi: produttore, fornitore, riferimento scientifico; i distributori non sono fonte ammessa)`);
       if (!eStr(f.url) || !/^https:\/\/\S+$/.test(f.url)) err(id, `fonte ${fid}: url https mancante`);
       if (!RE_HASH.test(f.sha256 ?? '')) err(id, `fonte ${fid}: sha256 (16 caratteri esadecimali) mancante`);
       if (!Array.isArray(f.campi) || f.campi.length === 0 || f.campi.some((c) => !CAMPI_FONTE.includes(c))) err(id, `fonte ${fid}: campi non validi`);
@@ -136,6 +138,7 @@ export function validaDb(db) {
       if (!eStr(c.simbolo) || !/^[A-Z][a-z]?$/.test(c.simbolo)) err(id, 'composizione.simbolo non valido');
     } else if (c.tipo === 'lega') {
       if (!eStr(c.riferimento) || !c.riferimento) err(id, 'composizione.riferimento mancante');
+      if (c.parziale !== undefined && typeof c.parziale !== 'boolean') err(id, 'composizione.parziale deve essere vero/falso');
       if (!coperti.has('composizione')) err(id, 'composizione da lega senza fonte che la copra');
       const el = c.elementi;
       if (!el || typeof el !== 'object' || Object.keys(el).length === 0) err(id, 'composizione.elementi mancanti');

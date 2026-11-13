@@ -1,3 +1,8 @@
 node_modules/
 .DS_Store
 *.log
+
+# Documenti dei produttori: il repository è pubblico, non vanno pubblicati.
+# Scaricare i PDF a mano nella cartella fonti-locali/ (ignorata).
+fonti-locali/
+*.pdf

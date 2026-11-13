@@ -62,8 +62,2136 @@
      Non inserire valori senza il documento originale letto. -->
 <script type="application/json" id="db-materiali">
 {
-  "meta": { "schema": 1, "versione": "0", "data": "2026-11-13" },
-  "materiali": []
+ "meta": {
+  "schema": 1,
+  "versione": "1",
+  "data": "2026-11-13",
+  "regola_nominale": "Se i documenti letti concordano: valore comune. Se discordano: densità nominale = punto medio tra minimo e massimo letti (arrotondato a 3 decimali), con intervallo e fonti.",
+  "famiglie": [
+   "Acciai al carbonio",
+   "Acciai da bonifica",
+   "Acciai legati",
+   "Acciai per utensili",
+   "Acciai inox",
+   "Acciai speciali",
+   "Ghise",
+   "Ferro",
+   "Alluminio e leghe",
+   "Rame, ottone, bronzo",
+   "Stagno",
+   "Titanio",
+   "Altri"
+  ]
+ },
+ "materiali": [
+  {
+   "id": "c45e",
+   "nome": "C45E",
+   "famiglia": "Acciai da bonifica",
+   "designazioni": {
+    "EN": "C45E",
+    "WNr": "1.1191",
+    "UNI": "C45",
+    "AISI_SAE": "1045",
+    "DIN": "Ck45",
+    "altre": [
+     "UNE F1140",
+     "AFNOR XC48",
+     "BS 080M46",
+     "SS 1672"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "ISO 683-1:2018, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 0.42,
+      "max": 0.5
+     },
+     "Si": {
+      "min": 0.1,
+      "max": 0.4
+     },
+     "Mn": {
+      "min": 0.5,
+      "max": 0.8
+     },
+     "P": {
+      "max": 0.025
+     },
+     "S": {
+      "max": 0.035
+     },
+     "Cr": {
+      "max": 0.4
+     },
+     "Mo": {
+      "max": 0.1
+     },
+     "Ni": {
+      "max": 0.4
+     },
+     "Cu": {
+      "max": 0.3
+     },
+     "Fe": "resto"
+    },
+    "nota": "Cr+Mo+Ni max 0,63 %."
+   },
+   "densita_g_cm3": 7.775,
+   "densita_intervallo_g_cm3": [
+    7.7,
+    7.85
+   ],
+   "nota_intervallo": "Due produttori divergono: Lucefin 7,85 kg/dm³, thyssenkrupp 7,70 kg/dm³ (scheda C45E/C45R).",
+   "fonti": [
+    {
+     "id": "LUC-C45E",
+     "emittente": "Lucefin Group",
+     "documento": "Scheda dati C45E (ISO 683-1:2018), rev. 2024",
+     "riferimento": "densita p. 3; composizione p. 1; designazioni p. 1,3",
+     "url": "https://www.lucefin.com/wp-content/uploads/2025/01/C45E.pdf",
+     "sha256": "f533ff76d6a2150f",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.85",
+       "unita": "kg/dm³",
+       "g_cm3": 7.85
+      }
+     ]
+    },
+    {
+     "id": "TK-1191",
+     "emittente": "thyssenkrupp Materials Austria",
+     "documento": "TK 1191 / TK 1201, Werkstoffdatenblatt Unlegierter Vergütungsstahl",
+     "riferimento": "densita p. 1; designazioni p. 1",
+     "url": "https://ucpcdn.thyssenkrupp.com/_legacy/UCPthyssenkruppBAMXAustria/assets.files/download/baustahl_datenblatt_tk_1191_1201.pdf",
+     "sha256": "666254be2f1e584c",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7,70",
+       "unita": "kg/dm³",
+       "g_cm3": 7.7
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "42crmo4",
+   "nome": "42CrMo4",
+   "famiglia": "Acciai da bonifica",
+   "designazioni": {
+    "EN": "42CrMo4",
+    "WNr": "1.7225",
+    "UNI": "42CrMo4",
+    "AISI_SAE": "4140",
+    "DIN": "42CrMo4",
+    "altre": [
+     "BS 708M40",
+     "AFNOR 42CD4"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "ISO 683-2:2018, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 0.38,
+      "max": 0.45
+     },
+     "Si": {
+      "min": 0.1,
+      "max": 0.4
+     },
+     "Mn": {
+      "min": 0.6,
+      "max": 0.9
+     },
+     "P": {
+      "max": 0.025
+     },
+     "S": {
+      "max": 0.035
+     },
+     "Cr": {
+      "min": 0.9,
+      "max": 1.2
+     },
+     "Mo": {
+      "min": 0.15,
+      "max": 0.3
+     },
+     "Cu": {
+      "max": 0.4
+     },
+     "Fe": "resto"
+    },
+    "nota": "Il silicio può essere fornito più basso (nota a della scheda)."
+   },
+   "densita_g_cm3": 7.85,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "LUC-42CRMO4",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 42CrMo4 (ISO 683-2:2018), rev. 2018",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "url": "https://www.lucefin.com/wp-content/files_mf/152353604042CrMo4.pdf",
+     "sha256": "40bad89650e30240",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.85",
+       "unita": "kg/dm³",
+       "g_cm3": 7.85
+      }
+     ]
+    },
+    {
+     "id": "TK-42CRMO4",
+     "emittente": "thyssenkrupp Materials (Schulte)",
+     "documento": "Werkstoffdatenblatt 42CrMo4 / 42CrMoS4 (1.7225 / 1.7227)",
+     "riferimento": "densita p. 2",
+     "url": "https://ucpcdn.thyssenkrupp.com/_binary/UCPthyssenkruppBAMaterialsSchulte/dc4e3d67-9afe-4b41-8794-a82c0d3ab7bb/42CrMo4-42CrMoS4-1.7225-1.7227.pdf",
+     "sha256": "1f278a4b784942e8",
+     "campi": [
+      "densita"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7,85",
+       "unita": "kg/dm³",
+       "g_cm3": 7.85
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "16mncr5",
+   "nome": "16MnCr5",
+   "famiglia": "Acciai legati",
+   "designazioni": {
+    "EN": "16MnCr5",
+    "WNr": "1.7131",
+    "UNI": "16MnCr5",
+    "AISI_SAE": "5115",
+    "DIN": "16MnCr5",
+    "altre": []
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "ISO 683-3:2018, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 0.14,
+      "max": 0.19
+     },
+     "Si": {
+      "min": 0.15,
+      "max": 0.4
+     },
+     "Mn": {
+      "min": 1.0,
+      "max": 1.3
+     },
+     "P": {
+      "max": 0.025
+     },
+     "S": {
+      "max": 0.035
+     },
+     "Cr": {
+      "min": 0.8,
+      "max": 1.1
+     },
+     "Cu": {
+      "max": 0.4
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 7.825,
+   "densita_intervallo_g_cm3": [
+    7.8,
+    7.85
+   ],
+   "nota_intervallo": "Lucefin 7,85 kg/dm³; Ovako 7800 kg/m³ (valore tipico).",
+   "fonti": [
+    {
+     "id": "LUC-16MNCR5",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 16MnCr5 (ISO 683-3:2018), rev. 2024",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "url": "https://www.lucefin.com/wp-content/uploads/2025/01/ENG-16MnCr5.pdf",
+     "sha256": "4990576a2817c395",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.85",
+       "unita": "kg/dm³",
+       "g_cm3": 7.85
+      }
+     ]
+    },
+    {
+     "id": "OVA-16MNCR5",
+     "emittente": "Ovako",
+     "documento": "Steel Navigator, scheda 16MnCr5 (PDF dal sito)",
+     "riferimento": "densita p. 6",
+     "url": "https://steelnavigator.ovako.com/steel-grades/16mncr5/pdf",
+     "sha256": "767af42285274365",
+     "campi": [
+      "densita"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7800",
+       "unita": "kg/m³",
+       "g_cm3": 7.8
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "100cr6",
+   "nome": "100Cr6",
+   "famiglia": "Acciai legati",
+   "designazioni": {
+    "EN": "100Cr6",
+    "WNr": "1.3505",
+    "UNI": "",
+    "AISI_SAE": "52100",
+    "DIN": "",
+    "altre": [
+     "UNE F.1310",
+     "BS 2S135 / 535A99",
+     "JIS SUJ2",
+     "AFNOR 100C6",
+     "SS 2258"
+    ]
+   },
+   "nome_commerciale": "Durapur 3505",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "ISO 683-17:2014, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 0.93,
+      "max": 1.05
+     },
+     "Si": {
+      "min": 0.15,
+      "max": 0.35
+     },
+     "Mn": {
+      "min": 0.25,
+      "max": 0.45
+     },
+     "P": {
+      "max": 0.025
+     },
+     "S": {
+      "max": 0.015
+     },
+     "Cr": {
+      "min": 1.35,
+      "max": 1.6
+     },
+     "Mo": {
+      "max": 0.1
+     },
+     "Al": {
+      "max": 0.05
+     },
+     "Cu": {
+      "max": 0.3
+     },
+     "Fe": "resto"
+    },
+    "nota": "Ossigeno max 0,0015 a discrezione del produttore."
+   },
+   "densita_g_cm3": 7.805,
+   "densita_intervallo_g_cm3": [
+    7.8,
+    7.81
+   ],
+   "nota_intervallo": "Lucefin 7,81; Swiss Steel 7,8; Ovako 7800 kg/m³: differenze di arrotondamento.",
+   "fonti": [
+    {
+     "id": "LUC-100CR6",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 100Cr6 (ISO 683-17:2014), rev. 2018",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/1523536908100Cr6.pdf",
+     "sha256": "41d34658509bcd46",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.81",
+       "unita": "kg/dm³",
+       "g_cm3": 7.81
+      }
+     ]
+    },
+    {
+     "id": "SWI-100CR6",
+     "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
+     "documento": "Durapur 3505, Werkstoffdatenblatt 100Cr6 / 1.3505, 16/10/2015",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Engineering-Steel/1.3505_de.pdf",
+     "sha256": "450024a8c67fccc5",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7,8",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "OVA-100CR6",
+     "emittente": "Ovako",
+     "documento": "Steel Navigator, scheda 100Cr6 (PDF dal sito)",
+     "riferimento": "densita p. 9",
+     "url": "https://steelnavigator.ovako.com/steel-grades/100cr6/pdf",
+     "sha256": "43eeb928cb93ba8f",
+     "campi": [
+      "densita"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7800",
+       "unita": "kg/m³",
+       "g_cm3": 7.8
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "s355j2",
+   "nome": "S355J2",
+   "famiglia": "Acciai al carbonio",
+   "designazioni": {
+    "EN": "S355J2",
+    "WNr": "1.0577",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": []
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 10025-2:2014, analisi di colata, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "max": 0.2
+     },
+     "Si": {
+      "max": 0.55
+     },
+     "Mn": {
+      "max": 1.6
+     },
+     "P": {
+      "max": 0.025
+     },
+     "S": {
+      "max": 0.025
+     },
+     "Cu": {
+      "max": 0.4
+     },
+     "Fe": "resto"
+    },
+    "nota": "C max 0,22 % su analisi di colata e 0,24 % sul prodotto per spessori >30 mm fino a 100 mm; oltre 100 mm da concordare (nota a della scheda). Nessun valore N riportato per l'analisi di colata."
+   },
+   "densita_g_cm3": 7.8,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "LUC-S355J2",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card S355J2 (EN 10025-2:2014), rev. 2018",
+     "riferimento": "composizione p. 1; designazioni p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/1522935764S355J2.pdf",
+     "sha256": "fd5efa158688d570",
+     "campi": [
+      "composizione",
+      "designazioni"
+     ]
+    },
+    {
+     "id": "OVA-S355J2",
+     "emittente": "Ovako",
+     "documento": "Steel Navigator, scheda S355J2 (PDF dal sito)",
+     "riferimento": "densita p. 6",
+     "url": "https://steelnavigator.ovako.com/steel-grades/s355j2/pdf",
+     "sha256": "67df1b836c18e28f",
+     "campi": [
+      "densita"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7800",
+       "unita": "kg/m³",
+       "g_cm3": 7.8
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "11smnpb30",
+   "nome": "11SMnPb30",
+   "famiglia": "Acciai al carbonio",
+   "designazioni": {
+    "EN": "11SMnPb30",
+    "WNr": "1.0718",
+    "UNI": "CF 9SMnPb28",
+    "AISI_SAE": "12L14",
+    "DIN": "9SMnPb28",
+    "altre": [
+     "AFNOR S250Pb",
+     "GB Y15Pb"
+    ]
+   },
+   "nome_commerciale": "SwissCut SC30Pb",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "ISO 683-4:2018, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "max": 0.14
+     },
+     "Si": {
+      "max": 0.05
+     },
+     "Mn": {
+      "min": 0.9,
+      "max": 1.3
+     },
+     "P": {
+      "max": 0.11
+     },
+     "S": {
+      "min": 0.27,
+      "max": 0.33
+     },
+     "Pb": {
+      "min": 0.2,
+      "max": 0.35
+     },
+     "Fe": "resto"
+    },
+    "nota": "Silicio non aggiunto intenzionalmente; con ossidi speciali si può concordare 0,10-0,40 %."
+   },
+   "densita_g_cm3": 7.85,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "LUC-11SMNPB30",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 11SMnPb30 (ISO 683-4:2018), rev. 2024",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "url": "https://www.lucefin.com/wp-content/uploads/2025/01/ENG-11SMnPb30.pdf",
+     "sha256": "7a7a8b0a3ad3dd6d",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.85",
+       "unita": "kg/dm³",
+       "g_cm3": 7.85
+      }
+     ]
+    },
+    {
+     "id": "SWI-E217",
+     "emittente": "Swiss Steel Group (Steeltec)",
+     "documento": "Technical Datasheet SwissCut, 28.06.23 Rev. N°1",
+     "riferimento": "nome_commerciale p. 1",
+     "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Engineering-Steel/E217_SwissCut_Technischesdatenblatt_0715.pdf",
+     "sha256": "10e713a51f6a4ded",
+     "campi": [
+      "nome_commerciale"
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "304",
+   "nome": "Inox 304 (1.4301)",
+   "famiglia": "Acciai inox",
+   "designazioni": {
+    "EN": "X5CrNi18-10",
+    "WNr": "1.4301",
+    "UNI": "",
+    "AISI_SAE": "304",
+    "DIN": "",
+    "altre": [
+     "UNS S30400",
+     "BS 304S15 / 304S31",
+     "JIS SUS304",
+     "AFNOR Z7CN18-09",
+     "SIS 2333"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 10088-3:2014, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "max": 0.07
+     },
+     "Si": {
+      "max": 1.0
+     },
+     "Mn": {
+      "max": 2.0
+     },
+     "P": {
+      "max": 0.045
+     },
+     "S": {
+      "max": 0.03
+     },
+     "Cr": {
+      "min": 17.5,
+      "max": 19.5
+     },
+     "Ni": {
+      "min": 8.0,
+      "max": 10.5
+     },
+     "N": {
+      "max": 0.1
+     },
+     "Fe": "resto"
+    },
+    "nota": "Zolfo controllato 0,015-0,030 % ammesso per la lavorabilità."
+   },
+   "densita_g_cm3": 7.9,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "LUC-4301",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 1.4301 X5CrNi18-10 (EN 10088-3:2014), 2018",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15235416291.4301A304.pdf",
+     "sha256": "bb8fd0e5ee7eb55e",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.90",
+       "unita": "kg/dm³",
+       "g_cm3": 7.9
+      }
+     ]
+    },
+    {
+     "id": "SWI-4301",
+     "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
+     "documento": "Datasheet 1.4301 Chromium-nickel austenitic stainless steel",
+     "riferimento": "densita p. 1; designazioni p. 1",
+     "url": "https://www.swisssteel-group.com/content-media/documents/Data-Sheets/Stainless-Steel/Datenblatt_4301_UK.pdf",
+     "sha256": "568e9f66166344c4",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.90",
+       "unita": "kg/dm³",
+       "g_cm3": 7.9
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "316",
+   "nome": "Inox 316 (1.4401)",
+   "famiglia": "Acciai inox",
+   "designazioni": {
+    "EN": "X5CrNiMo17-12-2",
+    "WNr": "1.4401",
+    "UNI": "",
+    "AISI_SAE": "316",
+    "DIN": "",
+    "altre": [
+     "UNS S31600",
+     "BS 316S31",
+     "JIS SUS316",
+     "AFNOR Z7CND17-11-02 / Z7CND17-12-02",
+     "SS 2347",
+     "UNE F.3534"
+    ]
+   },
+   "nome_commerciale": "Acidur 4401",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 10088-3:2014, % in massa (riportata da Lucefin e Swiss Steel)",
+    "elementi": {
+     "C": {
+      "max": 0.07
+     },
+     "Si": {
+      "max": 1.0
+     },
+     "Mn": {
+      "max": 2.0
+     },
+     "P": {
+      "max": 0.045
+     },
+     "S": {
+      "max": 0.03
+     },
+     "Cr": {
+      "min": 16.5,
+      "max": 18.5
+     },
+     "Ni": {
+      "min": 10.0,
+      "max": 13.0
+     },
+     "Mo": {
+      "min": 2.0,
+      "max": 2.5
+     },
+     "N": {
+      "max": 0.1
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 8.0,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "LUC-4401",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 1.4401 X5CrNiMo17-12-2 (EN 10088-3:2014), 2018",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15235422061.4401A316.pdf",
+     "sha256": "f726339a0062cdad",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "8.00",
+       "unita": "kg/dm³",
+       "g_cm3": 8.0
+      }
+     ]
+    },
+    {
+     "id": "SWI-4401",
+     "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
+     "documento": "Acidur 4401, Werkstoffdatenblatt 1.4401, 02/12/2015",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Stainless-Steel/1.4401_de.pdf",
+     "sha256": "df492db33101d1f3",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "8,0",
+       "unita": "kg/dm³",
+       "g_cm3": 8.0
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "17-4ph",
+   "nome": "Inox 17-4PH (1.4542)",
+   "famiglia": "Acciai inox",
+   "designazioni": {
+    "EN": "X5CrNiCuNb16-4",
+    "WNr": "1.4542",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "17-4 PH",
+     "ASTM Type 630",
+     "UNS S17400",
+     "JIS SUS 630"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 10088-3:2014, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "max": 0.07
+     },
+     "Si": {
+      "max": 0.7
+     },
+     "Mn": {
+      "max": 1.5
+     },
+     "P": {
+      "max": 0.04
+     },
+     "S": {
+      "max": 0.03
+     },
+     "Cr": {
+      "min": 15.0,
+      "max": 17.0
+     },
+     "Ni": {
+      "min": 3.0,
+      "max": 5.0
+     },
+     "Mo": {
+      "max": 0.6
+     },
+     "Cu": {
+      "min": 3.0,
+      "max": 5.0
+     },
+     "Nb": {
+      "max": 0.45
+     },
+     "Fe": "resto"
+    },
+    "nota": "Nb: minimo 5 x C, massimo 0,45 %."
+   },
+   "densita_g_cm3": 7.8,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "LUC-4542",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 1.4542 X5CrNiCuNb16-4 17-4 PH (EN 10088-3:2014), 2018",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15235430111.4542Tp630.pdf",
+     "sha256": "40b991234af5e6e6",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7,80",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "FAG-174",
+     "emittente": "Marcegaglia Specialties, Fagersta Stainless",
+     "documento": "R565.10 (17-4 PH), ENG 2025, Edition 1",
+     "riferimento": "densita p. 1; designazioni p. 1",
+     "url": "https://www.fagersta.marcegaglia.com/wp-content/uploads/2023/07/1.4542-17-4PH-R565.10-ENG-2025-Edition-1.pdf",
+     "sha256": "2c3be6d75db1d6cb",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.8",
+       "unita": "g/cm³",
+       "g_cm3": 7.8
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "1.2344",
+   "nome": "Acciaio per utensili 1.2344 (H13)",
+   "famiglia": "Acciai per utensili",
+   "designazioni": {
+    "EN": "X40CrMoV5-1",
+    "WNr": "1.2344",
+    "UNI": "",
+    "AISI_SAE": "H13",
+    "DIN": "X40CrMoV5-1",
+    "altre": [
+     "UNS T20813",
+     "JIS SKD61",
+     "AFNOR Z40CDV5",
+     "BS BH13",
+     "UNE F.5318",
+     "SS 2242",
+     "NADCA #207"
+    ]
+   },
+   "nome_commerciale": "BÖHLER W302 (ISODISC, ISOBLOC); Thermodur 2344 EFS",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "UNI EN ISO 4957:2002, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 0.35,
+      "max": 0.42
+     },
+     "Si": {
+      "min": 0.8,
+      "max": 1.2
+     },
+     "Mn": {
+      "min": 0.25,
+      "max": 0.5
+     },
+     "P": {
+      "max": 0.03
+     },
+     "S": {
+      "max": 0.02
+     },
+     "Cr": {
+      "min": 4.8,
+      "max": 5.5
+     },
+     "Mo": {
+      "min": 1.2,
+      "max": 1.5
+     },
+     "V": {
+      "min": 0.85,
+      "max": 1.15
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 7.77,
+   "densita_intervallo_g_cm3": [
+    7.74,
+    7.8
+   ],
+   "nota_intervallo": "Lucefin 7,74 kg/dm³; Böhler 7,8 kg/dm³ (W302 ISOBLOC e ISODISC).",
+   "fonti": [
+    {
+     "id": "LUC-12344",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 1.2344 X40CrMoV5-1 (UNI EN ISO 4957:2002), rev. 2018",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15236076191.2344X40CrMoV51.pdf",
+     "sha256": "9347852d145b3b94",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.74",
+       "unita": "kg/dm³",
+       "g_cm3": 7.74
+      }
+     ]
+    },
+    {
+     "id": "BOE-W302B",
+     "emittente": "voestalpine BÖHLER Edelstahl",
+     "documento": "Data sheet BÖHLER W302 ISOBLOC",
+     "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1",
+     "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w302-isobloc_en_gb.pdf",
+     "sha256": "f5f449e629132340",
+     "campi": [
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.8",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "BOE-W302D",
+     "emittente": "voestalpine BÖHLER Edelstahl",
+     "documento": "Data sheet BÖHLER W302 ISODISC",
+     "riferimento": "densita p. 5; nome_commerciale p. 1",
+     "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w302-isodisc_en_gb.pdf",
+     "sha256": "e0a0a87343baa39b",
+     "campi": [
+      "densita",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.8",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "SWI-12344",
+     "emittente": "Swiss Steel Group",
+     "documento": "Technical datasheet Thermodur 2344 EFS, 10.05.23 Rev.00",
+     "riferimento": "designazioni p. 1; nome_commerciale p. 1",
+     "url": "https://swisssteel-group.com/content-media/documents/_import/1.2344_en.pdf",
+     "sha256": "9b9e7d772c87108e",
+     "campi": [
+      "designazioni",
+      "nome_commerciale"
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "1.2379",
+   "nome": "Acciaio per utensili 1.2379 (D2)",
+   "famiglia": "Acciai per utensili",
+   "designazioni": {
+    "EN": "X153CrMoV12",
+    "WNr": "1.2379",
+    "UNI": "",
+    "AISI_SAE": "D2",
+    "DIN": "X155CrVMo12-1",
+    "altre": [
+     "UNS ~T30402"
+    ]
+   },
+   "nome_commerciale": "BÖHLER K110",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "UNI EN ISO 4957:2002, % in massa (riportata da Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 1.45,
+      "max": 1.6
+     },
+     "Si": {
+      "min": 0.1,
+      "max": 0.6
+     },
+     "Mn": {
+      "min": 0.2,
+      "max": 0.6
+     },
+     "P": {
+      "max": 0.03
+     },
+     "S": {
+      "max": 0.03
+     },
+     "Cr": {
+      "min": 11.0,
+      "max": 13.0
+     },
+     "Mo": {
+      "min": 0.7,
+      "max": 1.0
+     },
+     "V": {
+      "min": 0.7,
+      "max": 1.0
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 7.675,
+   "densita_intervallo_g_cm3": [
+    7.67,
+    7.68
+   ],
+   "nota_intervallo": "Lucefin 7,68 kg/dm³; Böhler 7,67 kg/dm³.",
+   "fonti": [
+    {
+     "id": "LUC-12379",
+     "emittente": "Lucefin Group",
+     "documento": "Technical card 1.2379 X153CrMoV12 (UNI EN ISO 4957:2002), rev. 2018",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15236079471.2379X153CrMoV12.pdf",
+     "sha256": "40396f425b4d8b3b",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.68",
+       "unita": "kg/dm³",
+       "g_cm3": 7.68
+      }
+     ]
+    },
+    {
+     "id": "BOE-K110",
+     "emittente": "voestalpine BÖHLER Edelstahl",
+     "documento": "Data sheet BÖHLER K110",
+     "riferimento": "densita p. 6; designazioni p. 2; nome_commerciale p. 1",
+     "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/k110_en_gb.pdf",
+     "sha256": "cdb5debfb917dd4c",
+     "campi": [
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.67",
+       "unita": "kg/dm³",
+       "g_cm3": 7.67
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "6082",
+   "nome": "Alluminio 6082",
+   "famiglia": "Alluminio e leghe",
+   "designazioni": {
+    "EN": "EN AW-6082 (AlSi1MgMn)",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": []
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 573-3:2013, % in massa (riportata da Hydro)",
+    "elementi": {
+     "Si": {
+      "min": 0.7,
+      "max": 1.3
+     },
+     "Fe": {
+      "max": 0.5
+     },
+     "Cu": {
+      "max": 0.1
+     },
+     "Mn": {
+      "min": 0.4,
+      "max": 1.0
+     },
+     "Mg": {
+      "min": 0.6,
+      "max": 1.2
+     },
+     "Cr": {
+      "max": 0.25
+     },
+     "Zn": {
+      "max": 0.2
+     },
+     "Ti": {
+      "max": 0.1
+     },
+     "Altri_ciascuno": {
+      "max": 0.05
+     },
+     "Altri_totale": {
+      "max": 0.15
+     },
+     "Al": "resto"
+    },
+    "nota": "Hydro dichiara limiti interni più stretti della norma; qui i limiti di norma riportati nella tabella."
+   },
+   "densita_g_cm3": 2.705,
+   "densita_intervallo_g_cm3": [
+    2.7,
+    2.71
+   ],
+   "nota_intervallo": "Wieland 2,7 g/cm³ (una cifra decimale); Hydro 2,71 g/cm³ (valore tipico).",
+   "fonti": [
+    {
+     "id": "HYD-6082",
+     "emittente": "Hydro",
+     "documento": "Technical datasheet, Extruded products, Alloy EN AW-6082",
+     "riferimento": "composizione p. 1; densita p. 2; designazioni p. 1",
+     "url": "https://www.hydro.com/globalassets/08-about-hydro/hydro-worldwide/austria/nenzing/alloy-data-sheets/hydro-en-aw-6082.pdf",
+     "sha256": "32c48123bad42c79",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.71",
+       "unita": "g/cm³",
+       "g_cm3": 2.71
+      }
+     ]
+    },
+    {
+     "id": "WIE-A32",
+     "emittente": "Wieland-Werke AG",
+     "documento": "Information sheet for articles Wieland-A32 (EN AW-6082), 10.11.2020, vers. 5",
+     "riferimento": "densita p. 4; designazioni p. 2",
+     "url": "https://www.wieland.com/content/download/10451/file/Wieland-A32_EN.pdf",
+     "sha256": "23ed95bddbb1eefe",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.7",
+       "unita": "g/cm³",
+       "g_cm3": 2.7
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "7075",
+   "nome": "Alluminio 7075",
+   "famiglia": "Alluminio e leghe",
+   "designazioni": {
+    "EN": "EN AW-7075 (AlZn5,5MgCu)",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "7075"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Limiti di composizione dichiarati da Kaiser Aluminum, % in massa",
+    "elementi": {
+     "Si": {
+      "max": 0.4
+     },
+     "Fe": {
+      "max": 0.5
+     },
+     "Cu": {
+      "min": 1.2,
+      "max": 2.0
+     },
+     "Mn": {
+      "max": 0.3
+     },
+     "Mg": {
+      "min": 2.1,
+      "max": 2.9
+     },
+     "Cr": {
+      "min": 0.18,
+      "max": 0.28
+     },
+     "Zn": {
+      "min": 5.1,
+      "max": 6.1
+     },
+     "Ti": {
+      "max": 0.2
+     },
+     "Altri_ciascuno": {
+      "max": 0.05
+     },
+     "Altri_totale": {
+      "max": 0.15
+     },
+     "Al": "resto"
+    }
+   },
+   "densita_g_cm3": 2.8,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "KAI-7075SP",
+     "emittente": "Kaiser Aluminum",
+     "documento": "Sheet Coil & Plate Alloy 7075, Technical Data, Rev. 05/06",
+     "riferimento": "composizione p. 2; densita p. 2; designazioni p. 2",
+     "url": "https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1017/Kaiser_Aluminum_7075_Sheet_Coil_and_Plate.pdf",
+     "sha256": "d25360f06b1a0a9b",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.80",
+       "unita": "Mg/m³",
+       "g_cm3": 2.8
+      }
+     ]
+    },
+    {
+     "id": "KAI-7075RB",
+     "emittente": "Kaiser Aluminum",
+     "documento": "Rod & Bar Alloy 7075, Technical Data",
+     "riferimento": "composizione p. 2; densita p. 2",
+     "url": "https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1028/Kaiser_Aluminum_7075_Rod_and_Bar.pdf",
+     "sha256": "2ddcf0676cea2bbb",
+     "campi": [
+      "composizione",
+      "densita"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.80",
+       "unita": "Mg/m³",
+       "g_cm3": 2.8
+      }
+     ]
+    },
+    {
+     "id": "WIE-A07",
+     "emittente": "Wieland-Werke AG",
+     "documento": "Information sheet for articles Wieland-A07 (EN AW-7075), 15.05.2025, vers. 6",
+     "riferimento": "densita p. 5; designazioni p. 2",
+     "url": "https://www.wieland.com/content/download/10433/file/Wieland-A07_EN.pdf",
+     "sha256": "5c134eb2e89ed1d9",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.8",
+       "unita": "g/cm³",
+       "g_cm3": 2.8
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "2024",
+   "nome": "Alluminio 2024",
+   "famiglia": "Alluminio e leghe",
+   "designazioni": {
+    "EN": "EN AW-2024 (AlCu4Mg1)",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "2024",
+     "UNS A92024",
+     "AFNOR AU4G1 (designazione precedente)"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Limiti di composizione dichiarati da Kaiser Aluminum, % in massa",
+    "elementi": {
+     "Si": {
+      "max": 0.5
+     },
+     "Fe": {
+      "max": 0.5
+     },
+     "Cu": {
+      "min": 3.8,
+      "max": 4.9
+     },
+     "Mn": {
+      "min": 0.3,
+      "max": 0.9
+     },
+     "Mg": {
+      "min": 1.2,
+      "max": 1.8
+     },
+     "Cr": {
+      "max": 0.1
+     },
+     "Zn": {
+      "max": 0.25
+     },
+     "Ti": {
+      "max": 0.15
+     },
+     "Altri_ciascuno": {
+      "max": 0.05
+     },
+     "Altri_totale": {
+      "max": 0.15
+     },
+     "Al": "resto"
+    }
+   },
+   "densita_g_cm3": 2.77,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "KAI-2024",
+     "emittente": "Kaiser Aluminum",
+     "documento": "Sheet Coil & Plate Alloy 2024, Technical Data",
+     "riferimento": "composizione p. 2; densita p. 2; designazioni p. 1",
+     "url": "https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1012/Kaiser_Aluminum_2024_Sheet_Coil_and_Plate.pdf",
+     "sha256": "2509985b39f859ca",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.77",
+       "unita": "Mg/m³",
+       "g_cm3": 2.77
+      }
+     ]
+    },
+    {
+     "id": "AUB-2024",
+     "emittente": "Aubert & Duval",
+     "documento": "Aluminium alloy 2024 (Al Cu4Mg1), scheda",
+     "riferimento": "densita p. 2; designazioni p. 1",
+     "url": "https://www.aubertduval.com/wp-content/uploads/2024/12/2024_GB.pdf",
+     "sha256": "b0e024856813868f",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.77",
+       "unita": "non indicata nel documento",
+       "g_cm3": 2.77
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "5083",
+   "nome": "Alluminio 5083",
+   "famiglia": "Alluminio e leghe",
+   "designazioni": {
+    "EN": "EN AW-5083 (AlMg4,5Mn0,7)",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "AA 5083"
+    ]
+   },
+   "nome_commerciale": "Njørdal H116 (Hydro)",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Limiti di composizione dichiarati da Hydro (Njørdal H116), % in massa",
+    "elementi": {
+     "Si": {
+      "max": 0.4
+     },
+     "Fe": {
+      "max": 0.4
+     },
+     "Cu": {
+      "max": 0.1
+     },
+     "Mn": {
+      "min": 0.4,
+      "max": 1.0
+     },
+     "Mg": {
+      "min": 4.0,
+      "max": 4.9
+     },
+     "Cr": {
+      "min": 0.05,
+      "max": 0.25
+     },
+     "Zn": {
+      "max": 0.25
+     },
+     "Ti": {
+      "max": 0.15
+     },
+     "Altri_ciascuno": {
+      "max": 0.05
+     },
+     "Altri_totale": {
+      "max": 0.15
+     },
+     "Al": "resto"
+    }
+   },
+   "densita_g_cm3": 2.66,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "HYD-5083",
+     "emittente": "Hydro",
+     "documento": "Njørdal™ H116, coil, sheet & plate for marine and offshore",
+     "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "url": "https://www.hydro.com/globalassets/01-products--services/rolled-products/ge_h116_njordal_200514.pdf",
+     "sha256": "c64f51b4a0720a94",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.66",
+       "unita": "g/cm³",
+       "g_cm3": 2.66
+      }
+     ]
+    },
+    {
+     "id": "WIE-A14",
+     "emittente": "Wieland-Werke AG",
+     "documento": "Information sheet for articles Wieland-A14 (EN AW-5083), 10.11.2020, vers. 5",
+     "riferimento": "densita p. 4; designazioni p. 2",
+     "url": "https://www.wieland.com/content/download/10445/file/Wieland-A14_EN.pdf",
+     "sha256": "6f68238227ebafba",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "2.66",
+       "unita": "g/cm³",
+       "g_cm3": 2.66
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "ti-gr2",
+   "nome": "Titanio grado 2 (CP)",
+   "famiglia": "Titanio",
+   "designazioni": {
+    "EN": "",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "UNS R50400",
+     "ASTM Grade II",
+     "CP Grade 2",
+     "ATI 40"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Limiti massimi riportati da ATI (specifiche ASTM B265, F67), % in massa",
+    "elementi": {
+     "Fe": {
+      "max": 0.3
+     },
+     "O": {
+      "max": 0.25
+     },
+     "C": {
+      "max": 0.08
+     },
+     "N": {
+      "max": 0.03
+     },
+     "H": {
+      "max": 0.015
+     },
+     "Ti": "resto"
+    },
+    "nota": "Valori massimi dalla pagina prodotto ATI; la scheda tecnica ATI riporta solo valori tipici."
+   },
+   "densita_g_cm3": 4.515,
+   "densita_intervallo_g_cm3": [
+    4.51,
+    4.52
+   ],
+   "nota_intervallo": "ATI: 4,51 g/cm³ per barra e billetta e 4,52 g/cm³ per lamiera, nastro e piatto (pagina prodotto); scheda tecnica 4,51.",
+   "fonti": [
+    {
+     "id": "ATI-CP2W",
+     "emittente": "ATI (Allegheny Technologies)",
+     "documento": "Pagina prodotto «ATI 40, CP Grade 2», sezione Product Specifications By Form",
+     "riferimento": "composizione (pagina web); densita (pagina web); designazioni (pagina web)",
+     "url": "https://www.atimaterials.com/Products/ati-cp2",
+     "sha256": "b50307d71e75a1de",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "4.51",
+       "unita": "g/cm³",
+       "g_cm3": 4.51
+      },
+      {
+       "valore": "4.52",
+       "unita": "g/cm³",
+       "g_cm3": 4.52
+      }
+     ]
+    },
+    {
+     "id": "ATI-CP2T",
+     "emittente": "ATI (Allegheny Technologies)",
+     "documento": "Technical Data Sheet ATI 30, CP Grade 1, ATI 40, CP Grade 2, ATI 55, CP Grade 3, ATI 70, CP Grade 4, version 1 (2/21/2012)",
+     "riferimento": "densita p. 1; designazioni p. 1",
+     "url": "https://www.atimaterials.com/Products/Documents/datasheets/titanium/commerciallypure/ati_cp2_tds_en.pdf",
+     "sha256": "922952adbd439370",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "4.51",
+       "unita": "g/cm³",
+       "g_cm3": 4.51
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "ti-6al-4v",
+   "nome": "Titanio Ti-6Al-4V (grado 5)",
+   "famiglia": "Titanio",
+   "designazioni": {
+    "EN": "",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "UNS R56400",
+     "Grade 5",
+     "ATI 6-4"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Limiti riportati da ATI per forma (specifiche ASTM B265, AMS 4911), % in massa",
+    "elementi": {
+     "Al": {
+      "min": 5.5,
+      "max": 6.75
+     },
+     "V": {
+      "min": 3.5,
+      "max": 4.5
+     },
+     "Fe": {
+      "max": 0.4
+     },
+     "O": {
+      "max": 0.2
+     },
+     "C": {
+      "max": 0.08
+     },
+     "N": {
+      "max": 0.05
+     },
+     "H": {
+      "max": 0.015
+     },
+     "Ti": "resto"
+    },
+    "nota": "Fe max 0,40 % per barra e billetta, 0,30 % per lamiera (pagina prodotto ATI)."
+   },
+   "densita_g_cm3": 4.45,
+   "densita_intervallo_g_cm3": [
+    4.43,
+    4.47
+   ],
+   "nota_intervallo": "ATI: 4,43 g/cm³ (pagina prodotto, 0,160 lb/in³) e 4,47 g/cm³ (scheda tecnica 2012, 0,160 lb/in³): valori diversi per la stessa densità in lb/in³.",
+   "fonti": [
+    {
+     "id": "ATI-64W",
+     "emittente": "ATI (Allegheny Technologies)",
+     "documento": "Pagina prodotto «ATI 6-4 Titanium», sezione Product Specifications By Form",
+     "riferimento": "composizione (pagina web); densita (pagina web); designazioni (pagina web)",
+     "url": "https://www.atimaterials.com/Products/Pages/ati-6-4-grade5.aspx",
+     "sha256": "094c694c9e28346f",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "4.43",
+       "unita": "g/cm³",
+       "g_cm3": 4.43
+      }
+     ]
+    },
+    {
+     "id": "ATI-64T",
+     "emittente": "ATI (Allegheny Technologies)",
+     "documento": "Technical Data Sheet ATI Ti-6Al-4V, Grade 5, version 1 (1/31/2012)",
+     "riferimento": "densita p. 1; designazioni p. 1",
+     "url": "https://www.atimaterials.com/Products/Documents/datasheets/titanium/alloyed/ati_6-4_tds_en_v1.pdf",
+     "sha256": "a882cd75915682f6",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "4.47",
+       "unita": "g/cm³",
+       "g_cm3": 4.47
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "cuzn39pb3",
+   "nome": "Ottone CuZn39Pb3 (CW614N)",
+   "famiglia": "Rame, ottone, bronzo",
+   "designazioni": {
+    "EN": "CuZn39Pb3 (CW614N)",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "UNS C38500"
+    ]
+   },
+   "nome_commerciale": "Wieland-Z32, Wieland-Z33; Diehl Brass Solutions 002",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Componenti principali riportati da Wieland (info sheet), % in massa",
+    "elementi": {
+     "Cu": {
+      "min": 57.0,
+      "max": 59.0
+     },
+     "Pb": {
+      "min": 2.5,
+      "max": 3.5
+     },
+     "Ni": {
+      "max": 0.3
+     },
+     "Zn": "resto"
+    },
+    "nota": "Solo i componenti elencati nella scheda Wieland; limiti completi EN 12164 non verificati. Diehl riporta solo valori di riferimento (Cu 58,0; Pb 3,0)."
+   },
+   "densita_g_cm3": 8.48,
+   "densita_intervallo_g_cm3": [
+    8.46,
+    8.5
+   ],
+   "nota_intervallo": "Wieland 8,46 g/cm³; Diehl 8,5 g/cm³.",
+   "fonti": [
+    {
+     "id": "WIE-Z32",
+     "emittente": "Wieland-Werke AG",
+     "documento": "Safety data sheet Wieland-Z32 (CuZn39Pb3), 06/14/2022, vers. 12",
+     "riferimento": "composizione p. 2; densita p. 5; designazioni p. 2; nome_commerciale p. 1",
+     "url": "https://www.wieland.com/en/content/download/11066/file/Wieland-Z32-USA_EN.pdf",
+     "sha256": "4bfb43b4bf19cebb",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "8.46",
+       "unita": "g/cm³",
+       "g_cm3": 8.46
+      }
+     ]
+    },
+    {
+     "id": "WIE-Z33",
+     "emittente": "Wieland-Werke AG",
+     "documento": "Safety data sheet Wieland-Z33 (CuZn39Pb3), 06/14/2022, vers. 11",
+     "riferimento": "densita p. 5; nome_commerciale p. 1",
+     "url": "https://www.wieland.com/en/content/download/11067/file/Wieland-Z33-USA_EN.pdf",
+     "sha256": "b6dc5e48c7ef53d7",
+     "campi": [
+      "densita",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "8.46",
+       "unita": "g/cm³",
+       "g_cm3": 8.46
+      }
+     ]
+    },
+    {
+     "id": "DIE-002",
+     "emittente": "Diehl Brass Solutions",
+     "documento": "Material Datasheet 002 (CuZn39Pb3)",
+     "riferimento": "densita p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "url": "https://www.diehl.com/cms/files/Diehl_Brass_Solutions_Material_Datasheet_002.pdf",
+     "sha256": "4e26c5246db2f11b",
+     "campi": [
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "8.5",
+       "unita": "g/cm³",
+       "g_cm3": 8.5
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "cu-etp",
+   "nome": "Rame Cu-ETP (CW004A)",
+   "famiglia": "Rame, ottone, bronzo",
+   "designazioni": {
+    "EN": "Cu-ETP (CW004A)",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "UNS C11000"
+    ]
+   },
+   "nome_commerciale": "Wieland-K32",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Composizione riportata da Kemper (datasheet), % in massa",
+    "elementi": {
+     "Cu": {
+      "min": 99.9
+     },
+     "O": {
+      "max": 0.04
+     }
+    }
+   },
+   "densita_g_cm3": 8.9,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "fonti": [
+    {
+     "id": "KEM-CUETP",
+     "emittente": "Gebr. Kemper GmbH + Co KG",
+     "documento": "Datenblatt Cu-ETP / datasheet Cu-ETP, Stand 03/2024",
+     "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1",
+     "url": "https://www.kemper-group.com/media/de-at/content/04-produkte/walzprodukte/datenblaetter/cu-etp.pdf",
+     "sha256": "a7aedf24af52a72c",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "8,9",
+       "unita": "g/cm³",
+       "g_cm3": 8.9
+      }
+     ]
+    },
+    {
+     "id": "WIE-K32",
+     "emittente": "Wieland-Werke AG",
+     "documento": "Safety data sheet Wieland-K32 (Cu-ETP), 05/09/2022, vers. 6",
+     "riferimento": "densita p. 4; composizione p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "url": "https://www.wieland.com/en/content/download/10983/file/Wieland-K32-USA_EN.pdf",
+     "sha256": "b2f9771c17296039",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "8.9",
+       "unita": "g/cm³",
+       "g_cm3": 8.9
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "sn",
+   "nome": "Stagno (Sn)",
+   "famiglia": "Stagno",
+   "designazioni": {
+    "EN": "",
+    "WNr": "",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "Sn"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "elemento",
+    "simbolo": "Sn",
+    "riferimento": "Elemento puro (simbolo); densità dello stagno bianco β a temperatura ambiente"
+   },
+   "densita_g_cm3": 7.3,
+   "densita_intervallo_g_cm3": [
+    7.29,
+    7.31
+   ],
+   "nota_intervallo": "NIST 7,310 g/cm³ (costante usata nei calcoli); Indium 7,29 g/cm³ (β-stagno). Lo stagno grigio α (5,77 g/cm³, Indium) non è considerato.",
+   "fonti": [
+    {
+     "id": "NIST-T1",
+     "emittente": "NIST (National Institute of Standards and Technology)",
+     "documento": "X-Ray Mass Attenuation Coefficients, Table 1 (costanti dei materiali, Z=50 Sn)",
+     "riferimento": "densita (pagina web); designazioni (pagina web)",
+     "url": "https://physics.nist.gov/PhysRefData/XrayMassCoef/tab1.html",
+     "sha256": "8c1dc9991ac0e9c2",
+     "campi": [
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.310",
+       "unita": "g/cm³",
+       "g_cm3": 7.31
+      }
+     ]
+    },
+    {
+     "id": "IND-SN",
+     "emittente": "Indium Corporation",
+     "documento": "Product Data Sheet Commercial Tin Metal, Form No. 98803 R0",
+     "riferimento": "densita p. 2",
+     "url": "https://www.indium.com/wp-content/uploads/2025/03/Commercial-Tin-Metal-PDS-98803-R0-1.pdf",
+     "sha256": "4f675a76afb1062c",
+     "campi": [
+      "densita"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.29",
+       "unita": "g/cm³",
+       "g_cm3": 7.29
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "inconel718",
+   "nome": "Inconel 718",
+   "famiglia": "Altri",
+   "designazioni": {
+    "EN": "",
+    "WNr": "2.4668",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "UNS N07718"
+    ]
+   },
+   "nome_commerciale": "INCONEL® alloy 718",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Table 1, Limiting Chemical Composition (Special Metals SMC-045), % in massa",
+    "elementi": {
+     "Ni": {
+      "min": 50.0,
+      "max": 55.0,
+      "nota": "più Co"
+     },
+     "Cr": {
+      "min": 17.0,
+      "max": 21.0
+     },
+     "Nb": {
+      "min": 4.75,
+      "max": 5.5,
+      "nota": "più Ta"
+     },
+     "Mo": {
+      "min": 2.8,
+      "max": 3.3
+     },
+     "Ti": {
+      "min": 0.65,
+      "max": 1.15
+     },
+     "Al": {
+      "min": 0.2,
+      "max": 0.8
+     },
+     "Co": {
+      "max": 1.0
+     },
+     "C": {
+      "max": 0.08
+     },
+     "Mn": {
+      "max": 0.35
+     },
+     "Si": {
+      "max": 0.35
+     },
+     "P": {
+      "max": 0.015
+     },
+     "S": {
+      "max": 0.015
+     },
+     "B": {
+      "max": 0.006
+     },
+     "Cu": {
+      "max": 0.3
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 8.207,
+   "densita_intervallo_g_cm3": [
+    8.193,
+    8.221
+   ],
+   "nota_intervallo": "Special Metals riporta solo lb/in³: 0,296 (ricotto) = 8,193 g/cm³ e 0,297 (ricotto e invecchiato) = 8,221 g/cm³, convertiti con 1 lb = 0,45359237 kg e 1 in = 25,4 mm.",
+   "fonti": [
+    {
+     "id": "SPE-718",
+     "emittente": "Special Metals Corporation",
+     "documento": "INCONEL® alloy 718, pubblicazione SMC-045 (Sept 07)",
+     "riferimento": "composizione p. 1; densita p. 1; designazioni p. 1; nome_commerciale p. 1",
+     "url": "https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-718.pdf",
+     "sha256": "6c9c60dc272cb4f7",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "nome_commerciale"
+     ],
+     "densita_letta": [
+      {
+       "valore": "0.296",
+       "unita": "lb/in³",
+       "g_cm3": 8.193
+      },
+      {
+       "valore": "0.297",
+       "unita": "lb/in³",
+       "g_cm3": 8.221
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-13"
+  }
+ ]
 }
 </script>
 <!-- DB:FINE -->

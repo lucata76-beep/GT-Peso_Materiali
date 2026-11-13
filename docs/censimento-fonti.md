@@ -1,5 +1,8 @@
 # Censimento fonti – Fase 1, lotto pilota (21 voci)
 
+> **Documento di lavoro, superato da `docs/fonti-fase1.md`** (esito della lettura dei documenti). Molti link qui sotto sono
+> diventati obsoleti o non servono più. Host finali dell'ambiente (23): vedi il report della Fase 1.
+
 Stato: 2026-11-13. **Documenti candidati, NON ancora letti.** Gli URL vengono da ricerche web;
 nessun valore (densità, composizione) è verificato e per questo non ne è riportato nessuno.
 Un valore entra nel DB solo dopo la lettura del documento originale.

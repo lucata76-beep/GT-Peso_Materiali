@@ -355,7 +355,7 @@ test('numero abbreviato: se c\'è una collisione non vale (1.7075 contro l\'allu
   const db3 = copia(); const finto2 = structuredClone(db3.materiali.find((v) => v.id === 's235jr')); finto2.id = 'finto-4668'; finto2.nome = 'Finto 4668'; finto2.designazioni = { EN: '', WNr: '1.4668', UNI: '', AISI_SAE: '', DIN: '', altre: [] }; db3.materiali.push(finto2);
   assert.ok(!cerca('4668', db3).some((x) => x.motivi.includes(ABB)), '1.4668 contro il 2.4668 dell\'Inconel: ambiguo');
   // la mappa del validatore e quella della ricerca coincidono, anche nei casi con collisione
-  for (const d of [DB, db, db2, db3]) assert.deepEqual({ ...Ricerca.numeriAbbreviati(d) }, abbreviatiValidatore(d).mappa);
+  for (const d of [DB, db, db2, db3]) assert.deepEqual({ ...Ricerca.numeriAbbreviati(d) }, { ...abbreviatiValidatore(d).mappa });
 });
 
 test('alias KORV e NCM2: anche in minuscolo, con «una sola fonte»', () => {
@@ -667,4 +667,43 @@ test('«EN» + W.Nr. d\'acciaio vale solo per «EN»: UNI, DIN, AISI, SAE con un
     }
   }
   for (const q of ['DIN 1.4301', 'UNI 1.4301', 'AISI 1.4301', 'SAE 1.4301', 'DIN 1.0503']) assert.deepEqual(rid(cerca(q)), [], q);
+});
+
+// ---------------------------------------------------------------- tabelle senza prototipo (app 0.2.7)
+// Nessuna tabella (mappa da chiave a valore) eredita da Object.prototype: una parola come «constructor» non deve trovare una funzione al posto di «assente».
+const NOMI_PROTOTIPO = Object.getOwnPropertyNames(Object.prototype);
+const NORMALIZZATI = NOMI_PROTOTIPO.map((n) => Ricerca.pulisci(n));   // come li normalizza la ricerca: «__defineGetter__» → «definegetter»
+
+test('tutti i nomi delle proprietà di Object.prototype, come digitati e normalizzati, non rompono la ricerca e non trovano nulla', () => {
+  assert.ok(NOMI_PROTOTIPO.length >= 10 && NOMI_PROTOTIPO.includes('constructor') && NOMI_PROTOTIPO.includes('__proto__'));
+  assert.ok(NORMALIZZATI.includes('constructor'), 'premessa: «constructor» resta «constructor» dopo la normalizzazione (era il caso che andava in errore)');
+  for (const n of new Set([...NOMI_PROTOTIPO, ...NORMALIZZATI, ...NOMI_PROTOTIPO.map((x) => x.toUpperCase())])) {
+    for (const q of [n, `inox ${n}`, `${n} 316`, `UNI ${n}`, `EN ${n}`, `W Nr ${n}`, `AISI ${n}`, `${n} L`, `${n} ${n}`, `x ${n} y`]) {
+      assert.doesNotThrow(() => { cerca(q); digitata(q); }, `«${q}»`);
+    }
+    assert.deepEqual(ids(cerca(n)), [], `«${n}» non è nel DB`);
+  }
+});
+
+test('voci il cui id, nome, designazione o alias coincide con un nome di Object.prototype si trovano normalmente (nessuna scartata come «già vista»)', () => {
+  const nomi = NOMI_PROTOTIPO.filter((n) => Ricerca.pulisci(n) !== Ricerca.pulisci('__proto__') || n === '__proto__');
+  const db = sintetico(nomi.flatMap((n, i) => [
+    voce(n, `Materiale ${n}`, 'Altri', { altre: [n], alias: [{ alias: n, origine: 'produttore' }] }),
+    voce(`derivata-${n}`, `Lega ${n} 5`, 'Altri')
+  ]));
+  for (const n of nomi) {
+    assert.ok(ids(cerca(`Materiale ${n}`, db)).includes(n), `${n}: per nome`);
+    assert.ok(ids(cerca(n, db)).includes(n), `${n}: per designazione e alias`);
+    // trovata solo da una lettura unita («Lega constructor 5» → «Legaconstructor5»): l'id coincide con il nome di una proprietà ereditata
+    assert.ok(ids(cerca(`Lega ${n} 5`, db)).includes(`derivata-${n}`), `${n}: lettura unita`);
+  }
+  // con l'id uguale al nome della proprietà: la voce trovata solo da una lettura unita non viene scartata
+  const dbId = sintetico(NOMI_PROTOTIPO.map((n) => voce(n, `Barra ${n.toLowerCase().replace(/[^a-z]/g, '')} 5`, 'Altri')));
+  for (const n of NOMI_PROTOTIPO) assert.ok(ids(cerca(`Barra ${n.toLowerCase().replace(/[^a-z]/g, '')} 5`, dbId)).includes(n), `id «${n}» trovato solo dalla lettura unita`);
+});
+
+test('le tabelle della ricerca non hanno prototipo (SINONIMI_TAG, SINONIMI_VOCE, FAMIGLIE_NEUTRE, numeri abbreviati)', () => {
+  for (const t of [Ricerca.SINONIMI_TAG, Ricerca.SINONIMI_VOCE, Ricerca.FAMIGLIE_NEUTRE, Ricerca.numeriAbbreviati(DB), abbreviatiValidatore(DB).mappa])
+    assert.equal(Object.getPrototypeOf(t), null);
+  for (const n of NORMALIZZATI) assert.equal(Ricerca.FAMIGLIE_NEUTRE[n], undefined, n);
 });

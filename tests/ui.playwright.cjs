@@ -1004,6 +1004,18 @@ async function caso(browser, c) {
     await page.reload();
     for (const q of ['Lega prova B', 'Lega B', 'prova B']) { rr = await righe(q); verifica(rr.length === 1 && rr[0].nome === 'Lega prova B', `«${q}» trova la scheda personale «Lega prova B» (${nomi(rr)})`); }
     rr = await righe('Lega C'); verifica(rr.length === 0, `«Lega C»: nessuna scheda (${nomi(rr)})`);
+    // nomi uguali alle proprietà di Object.prototype (app 0.2.7): nessun errore, nessun risultato, nessuna scheda scartata come «duplicata»
+    for (const n of ['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__', 'isPrototypeOf', 'CONSTRUCTOR']) {
+      await page.fill('#q', ''); await page.fill('#q', n); await page.waitForSelector('#elenco:not([hidden])');
+      verifica((await page.locator('#elenco .voce').count()) === 0 && /Nessun materiale trovato/.test(await page.textContent('#elenco')), `«${n}»: nessun risultato e nessun errore`);
+    }
+    for (const nome of ['constructor', 'toString']) {
+      await page.click('#btn-nuova'); await page.fill('#e-nome', nome); await page.fill('#e-dens', '7,6'); await page.fill('#e-des', 'valueOf; hasOwnProperty'); await page.click('#btn-salva');
+      verifica(/salvata/.test(await page.textContent('#msg-schede')), `scheda personale «${nome}» salvata`);
+    }
+    await page.reload();
+    for (const nome of ['constructor', 'toString']) { rr = await righe(nome); verifica(rr.length === 1 && rr[0].nome === nome, `«${nome}» trova la scheda personale con quel nome (${nomi(rr)})`); }
+    rr = await righe('valueOf'); verifica(JSON.stringify(nomi(rr)) === JSON.stringify(['constructor', 'toString']), `«valueOf» trova le due schede che lo hanno come designazione (${nomi(rr)})`);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
   }

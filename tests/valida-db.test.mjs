@@ -2,7 +2,11 @@
 // Esecuzione: node --test tests/*.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { estraiDb, validaDb, contaFontiIndipendenti, numeriAbbreviati, enteDi } from '../tools/valida-db.mjs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -405,4 +409,30 @@ test('«tipico» richiede il DB v4 o successivo: una v3 non può contenerlo', ()
   assert.deepEqual(validaDb(d4).errori, []);
   const d5 = copia(); d5.meta.versione = '5';
   assert.deepEqual(validaDb(d5).errori, []);
+});
+
+test('i numeri abbreviati del validatore sono una tabella senza prototipo (come nella ricerca)', () => {
+  const r = numeriAbbreviati(copia());
+  assert.equal(Object.getPrototypeOf(r.mappa), null);
+  for (const n of Object.getOwnPropertyNames(Object.prototype)) assert.equal(r.mappa[n], undefined, n);
+});
+
+test('riepilogo da riga di comando: una famiglia con il nome di una proprietà di Object.prototype si conta come le altre', () => {
+  // il file DB passato al CLI può contenere qualsiasi nome di famiglia (la controlla solo meta.famiglie dello stesso file)
+  const cli = fileURLToPath(new URL('../tools/valida-db.mjs', import.meta.url));
+  const cartella = mkdtempSync(join(tmpdir(), 'gt-peso-famiglia-'));
+  try {
+    for (const nome of ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf']) {
+      const d = copia();
+      d.meta.famiglie = d.meta.famiglie.map((f) => (f === 'Altri' ? nome : f));
+      for (const v of d.materiali) if (v.famiglia === 'Altri') v.famiglia = nome;
+      const file = join(cartella, 'db.html');
+      writeFileSync(file, html.replace(/(<script type="application\/json" id="db-materiali">)[\s\S]*?(<\/script>)/, (_, apre, chiude) => apre + '\n' + JSON.stringify(d) + '\n' + chiude));
+      const righe = execFileSync(process.execPath, [cli, file], { encoding: 'utf8' }).split('\n');
+      assert.ok(righe.some((r) => r.startsWith('DB OK')), nome + ': il file con quella famiglia deve risultare valido');
+      assert.ok(righe.includes('  ' + nome + ': 1'), nome + ': atteso «  ' + nome + ': 1», trovate: ' + JSON.stringify(righe.filter((r) => r.startsWith('  '))));
+    }
+  } finally {
+    rmSync(cartella, { recursive: true, force: true });
+  }
 });

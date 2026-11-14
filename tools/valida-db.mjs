@@ -62,7 +62,7 @@ export function contaFontiIndipendenti(fonti, campo) {
  *  Una collisione c'è se le stesse 4 cifre sono il W.Nr. di due voci, il numero a 4 cifre «da solo» di un'altra voce
  *  (designazioni, alias, nome, nome commerciale: es. un 1.7075 contro l'alluminio 7075) o la coda di un W.Nr. di un'altra famiglia (2.xxxx). */
 export function numeriAbbreviati(db) {
-  const mappa = {};
+  const mappa = Object.create(null);   // tabella senza prototipo, come nella ricerca
   const collisioni = [];
   const ambigui = new Set();   // le cifre in collisione non valgono come numero abbreviato (stessa regola della ricerca)
   const materiali = Array.isArray(db?.materiali) ? db.materiali : [];
@@ -336,7 +336,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.error(`\n${errori.length} errori in ${db.materiali.length} voci.`);
     process.exit(1);
   }
-  const perFamiglia = {};
+  const perFamiglia = Object.create(null);
   for (const v of db.materiali) perFamiglia[v.famiglia] = (perFamiglia[v.famiglia] ?? 0) + 1;
   const nFonti = db.materiali.reduce((s, v) => s + v.fonti.length, 0);
   const nTag = db.materiali.reduce((s, v) => s + v.tag.length, 0);

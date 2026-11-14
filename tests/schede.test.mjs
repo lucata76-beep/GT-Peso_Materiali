@@ -291,3 +291,39 @@ test('il database verificato non accetta schede personali', () => {
   assert.ok(validaDb(db).errori.some((e) => e.includes('personale')), 'una voce «personale» nel DB verificato deve essere rifiutata');
   assert.deepEqual(validaDb(DB).errori, []);
 });
+
+// ---------------------------------------------------------------- tabelle senza prototipo (app 0.2.7)
+const NOMI_PROTOTIPO = Object.getOwnPropertyNames(Object.prototype);
+
+test('nomi, designazioni e id uguali a nomi di Object.prototype: nessuno scarto per un «duplicato» inesistente', () => {
+  assert.ok(NOMI_PROTOTIPO.length >= 10 && NOMI_PROTOTIPO.includes('constructor'));
+  assert.equal(Object.getPrototypeOf(Schede.UNITA_DENSITA), null);
+  for (const n of NOMI_PROTOTIPO) {
+    const r = valida(base({ nome: n, designazioni: NOMI_PROTOTIPO.join('; '), composizione: [{ elemento: 'Fe', valore: 'resto' }] }));
+    assert.ok(r.ok, `nome «${n}»: ${JSON.stringify(r.errori)}`);
+    assert.deepEqual(r.scheda.designazioni, NOMI_PROTOTIPO, `designazioni uguali ai nomi di proprietà (${n})`);
+  }
+  // elementi: un simbolo non può essere un nome di proprietà, ma resta la regola «elemento già inserito»
+  assert.deepEqual(plain(valida(base({ composizione: [{ elemento: 'Fe', valore: 'resto' }, { elemento: 'Fe', valore: '1' }] })).errori.composizione.map((e) => e.messaggio)), ['Elemento già inserito.']);
+  // importazione: schede con nomi e id uguali ai nomi di proprietà entrano tutte; un vero duplicato è ancora rilevato
+  const nuove = NOMI_PROTOTIPO.map((n, i) => archiviata({ nome: n }, i % 2 ? `p-${i + 1}` : n.toLowerCase().replace(/[^a-z0-9-]/g, '') || `p-${i + 1}`));
+  const u = plain(Schede.unisci([], nuove, [], 'seme'));
+  assert.equal(u.aggiunte, nuove.length, JSON.stringify(u.saltate));
+  assert.deepEqual(u.saltate, []);
+  const u2 = plain(Schede.unisci(u.schede, nuove, [], 'seme2'));
+  assert.equal(u2.aggiunte, 0);
+  assert.equal(u2.saltate.length, nuove.length, 'gli stessi nomi, già presenti, sono saltati');
+});
+
+test('file importato: id «constructor» e nomi uguali ai nomi di Object.prototype entrano; un id o un nome davvero ripetuto è scartato', () => {
+  const a = archiviata({ nome: 'constructor' }, 'constructor');
+  const b = archiviata({ nome: 'toString' }, 'valueof');
+  const r = plain(Schede.deserializza(JSON.stringify({ versione: 1, schede: [a, b] })));
+  assert.equal(r.schede.length, 2, JSON.stringify(r.scartate));
+  assert.deepEqual(r.scartate, []);
+  // ripetuti davvero: stesso id, oppure stesso nome
+  const stessoId = plain(Schede.deserializza(JSON.stringify({ versione: 1, schede: [a, archiviata({ nome: 'Altro nome' }, 'constructor')] })));
+  assert.equal(stessoId.schede.length, 1); assert.equal(stessoId.scartate.length, 1);
+  const stessoNome = plain(Schede.deserializza(JSON.stringify({ versione: 1, schede: [a, archiviata({ nome: 'CONSTRUCTOR' }, 'p-9')] })));
+  assert.equal(stessoNome.schede.length, 1); assert.equal(stessoNome.scartate.length, 1);
+});

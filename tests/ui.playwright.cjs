@@ -648,6 +648,8 @@ async function caso(browser, c) {
   // --- schede personali: inserimento, modifica, duplicazione, eliminazione, memoria del browser, esportazione e importazione
   {
     const CHIAVE = 'gtpm.schede-personali.v1';
+    // l'archivio nella memoria del browser; se manca dà un archivio vuoto (così un salvataggio mancato è una verifica fallita, non un'interruzione)
+    const memoria = async () => { const g = await page.evaluate((k) => localStorage.getItem(k), CHIAVE); return g ? JSON.parse(g) : { versione: null, schede: [] }; };
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     verifica(await page.isHidden('#editor') && await page.isVisible('#btn-nuova') && await page.isVisible('#btn-esporta') && await page.isVisible('label[for="file-importa"]'), 'schede personali: pulsanti visibili, modulo nascosto');
@@ -721,7 +723,7 @@ async function caso(browser, c) {
     await page.fill('#q', ''); await page.waitForSelector('#elenco:not([hidden])');
     verifica((await page.$$eval('#elenco .fam', (e) => e.map((x) => x.textContent))).slice(-1)[0] === 'Schede personali' && (await page.locator('#elenco .voce').count()) === dbV.materiali.length + 1, 'elenco completo: i materiali del database più la scheda personale in fondo');
     // memoria del browser: sopravvive alla ricarica
-    const memo = JSON.parse(await page.evaluate((k) => localStorage.getItem(k), CHIAVE));
+    const memo = (await memoria());
     verifica(memo.versione === 1 && memo.schede.length === 1 && /^p-/.test(memo.schede[0].id) && memo.schede[0].densita_g_cm3 === 7.6, 'archivio nella memoria del browser: versione 1, una scheda');
     await page.reload();
     verifica((await righe('zetalloy')).length === 1 && /1 scheda personale$/.test(await page.textContent('#footer')), 'dopo la ricarica la scheda personale c\'è ancora');
@@ -735,7 +737,7 @@ async function caso(browser, c) {
     await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');   // la ricarica ha azzerato le dimensioni
     verifica((await page.innerText('#scheda')).includes('Densità: 8 g/cm³ (inserita come 8000 kg/m³)'), 'modifica: densità 8000 kg/m³ = 8 g/cm³, con l\'unità inserita');
     verifica(vicino(numero(await page.textContent('#peso-grande')), Math.PI / 4 * 100 * 100 * 100 / 1000 * 8 / 1000), 'modifica: il peso si aggiorna con la nuova densità');
-    verifica(JSON.parse(await page.evaluate((k) => localStorage.getItem(k), CHIAVE)).schede.length === 1, 'modifica: la scheda resta una sola');
+    verifica((await memoria()).schede.length === 1, 'modifica: la scheda resta una sola');
     // duplicazione e nomi doppi
     await page.click('#btn-duplica');
     verifica((await page.inputValue('#e-nome')) === 'Copia di Lega di prova <b>x</b>' && (await page.textContent('#editor-titolo')) === 'Nuova scheda personale', 'duplica: nuova scheda con «Copia di …»');
@@ -744,7 +746,7 @@ async function caso(browser, c) {
     await page.fill('#e-nome', dbV.materiali[0].nome); await page.click('#btn-salva');
     verifica(/Esiste già/.test(await page.textContent('#e-nome-i')), 'nome di una voce del database: rifiutato');
     await page.fill('#e-nome', 'Seconda lega'); await page.click('#btn-salva');
-    verifica(JSON.parse(await page.evaluate((k) => localStorage.getItem(k), CHIAVE)).schede.length === 2 && (await page.textContent('#footer')).endsWith('2 schede personali'), 'duplica: due schede personali');
+    verifica((await memoria()).schede.length === 2 && (await page.textContent('#footer')).endsWith('2 schede personali'), 'duplica: due schede personali');
     // esportazione
     const [scarico] = await Promise.all([page.waitForEvent('download'), page.click('#btn-esporta')]);
     verifica(/^schede-personali-\d{4}-\d{2}-\d{2}\.json$/.test(scarico.suggestedFilename()), `file esportato: ${scarico.suggestedFilename()}`);
@@ -755,9 +757,13 @@ async function caso(browser, c) {
     await page.click('#btn-elimina');
     verifica(/Eliminare definitivamente «Seconda lega»\?/.test(await page.innerText('#scheda')), 'elimina: chiede conferma');
     await page.click('#btn-elimina-no');
-    verifica(await page.isVisible('#btn-elimina') && JSON.parse(await page.evaluate((k) => localStorage.getItem(k), CHIAVE)).schede.length === 2, 'annulla: la scheda resta');
+    verifica(await page.isVisible('#btn-elimina') && (await memoria()).schede.length === 2, 'annulla: la scheda resta');
+    await page.click('#btn-elimina');
+    await scegliPerNome(page, 'Lega di prova <b>x</b>');
+    verifica(await page.isVisible('#btn-elimina') && (await page.locator('#btn-elimina-ok').count()) === 0, 'la richiesta di conferma non passa a un\'altra scheda');
+    await scegliPerNome(page, 'Seconda lega');
     await page.click('#btn-elimina'); await page.click('#btn-elimina-ok');
-    verifica(await page.isHidden('#scheda') && (await page.inputValue('#q')) === '' && JSON.parse(await page.evaluate((k) => localStorage.getItem(k), CHIAVE)).schede.length === 1 && (await page.textContent('#footer')).endsWith('1 scheda personale'), 'elimina definitivamente: scheda tolta dall\'archivio e dal piè di pagina');
+    verifica(await page.isHidden('#scheda') && (await page.inputValue('#q')) === '' && (await memoria()).schede.length === 1 && (await page.textContent('#footer')).endsWith('1 scheda personale'), 'elimina definitivamente: scheda tolta dall\'archivio e dal piè di pagina');
     verifica((await page.textContent('#barra-peso')) === '' || await page.isHidden('#barra'), 'dopo l\'eliminazione la barra del peso scompare');
     // importazione: valide, doppie e non valide
     const buona = (nome, id) => ({ id, nome, densita_g_cm3: 5, densita_immessa: { testo: '5', unita: 'g/cm³' }, composizione: [{ elemento: 'Cu', tipo: 'resto' }], designazioni: ['IMP-1'], nome_commerciale: '', fonte: '', note: '', creata: '2026-01-01', modificata: '2026-01-01' });
@@ -766,12 +772,12 @@ async function caso(browser, c) {
     await page.waitForFunction(() => /Importate/.test(document.getElementById('msg-schede').textContent));
     const mi = await page.textContent('#msg-schede');
     verifica(/Importate 1 scheda; 3 non importate/.test(mi) && /nome già presente/.test(mi) && /nome uguale a una scheda del database/.test(mi) && /densità non valida/.test(mi), `importazione: ${mi}`);
-    verifica((await righe('imp-1')).length === 1 && JSON.parse(await page.evaluate((k) => localStorage.getItem(k), CHIAVE)).schede.length === 2, 'importazione: la scheda valida entra e si trova per designazione');
+    verifica((await righe('imp-1')).length === 1 && (await memoria()).schede.length === 2, 'importazione: la scheda valida entra e si trova per designazione');
     await page.setInputFiles('#file-importa', { name: 'rotto.json', mimeType: 'application/json', buffer: Buffer.from('non è json') });
     await page.waitForFunction(() => /non è un archivio/.test(document.getElementById('msg-schede').textContent));
     await page.setInputFiles('#file-importa', { name: 'v9.json', mimeType: 'application/json', buffer: Buffer.from('{"versione":9,"schede":[]}') });
     await page.waitForFunction(() => /non supportata/.test(document.getElementById('msg-schede').textContent));
-    verifica(JSON.parse(await page.evaluate((k) => localStorage.getItem(k), CHIAVE)).schede.length === 2, 'file non valido o di versione ignota: le schede restano 2');
+    verifica((await memoria()).schede.length === 2, 'file non valido o di versione ignota: le schede restano 2');
     // pulsanti e campi del modulo: bersagli e testo grandi come il resto dell'app; contrasti
     await page.click('#btn-nuova');
     const piccoliBtn = await page.evaluate(() => [...document.querySelectorAll('.btn, #editor input[type="text"], #editor select, #editor textarea')].filter((e) => e.offsetParent !== null).map((e) => ({ t: e.id || e.textContent.trim().slice(0, 20), h: Math.round(e.getBoundingClientRect().height), px: parseFloat(getComputedStyle(e).fontSize) })).filter((x) => x.h < 44 || x.px < 16));

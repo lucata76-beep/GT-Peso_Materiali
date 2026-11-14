@@ -206,6 +206,7 @@
   .btn.primario { background: var(--riempimento); color: var(--su-riempimento); border-color: var(--acc); }
   .btn:focus-visible, .btn:focus-within { outline: 3px solid var(--acc); outline-offset: 2px; }
   .azioni-schede { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  details + p { margin-top: 10px; }
   .badge-personale { display: inline-block; margin: 4px 0 8px; padding: 2px 10px; font-size: 0.9rem; font-weight: 600; border: 1.5px solid var(--acc); border-radius: 999px; }
   #editor h3 { margin-top: 0; }
   .riga-dens { display: flex; gap: 8px; }
@@ -4714,6 +4715,7 @@ const Schede = (function () {
     } else { $('q').removeAttribute('aria-activedescendant'); }
   }
   function scegli(m) {
+    confermaElimina = false;   // la richiesta di conferma vale solo per la scheda su cui è stata fatta
     stato.materiale = m;
     $('q').value = m.nome;
     chiudiElenco();
@@ -4722,7 +4724,7 @@ const Schede = (function () {
     aggiorna();
   }
   $('q').addEventListener('input', function () {
-    if (stato.materiale && $('q').value !== stato.materiale.nome) { stato.materiale = null; renderScheda(); aggiorna(); }
+    if (stato.materiale && $('q').value !== stato.materiale.nome) { confermaElimina = false; stato.materiale = null; renderScheda(); aggiorna(); }
     mostraElenco();
   });
   $('q').addEventListener('focus', function () { $('q').select(); mostraElenco(); });

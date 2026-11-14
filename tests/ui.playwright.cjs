@@ -590,7 +590,7 @@ async function caso(browser, c) {
   // --- bersagli touch ≥ 44 px su tutti i controlli visibili
   await page.evaluate(() => window.scrollTo(0, 0));
   const piccoliCtrl = await page.evaluate(() => {
-    const sel = 'input[type="text"], select, textarea, .btn, .forma, summary, ul.fonti a';
+    const sel = 'input[type="text"], select, textarea, .btn, .btn-icona, .forma, summary, ul.fonti a';
     return [...document.querySelectorAll(sel)].filter((e) => e.offsetParent !== null).map((e) => {
       const r = e.getBoundingClientRect();
       return { t: (e.id || e.className || e.tagName) + ':' + (e.textContent || '').trim().slice(0, 20), w: Math.round(r.width), h: Math.round(r.height) };
@@ -841,6 +841,132 @@ async function caso(browser, c) {
     await page.reload();
     verifica(/non erano leggibili e sono state messe da parte/.test(await page.textContent('#msg-schede')) && (await page.evaluate((k) => localStorage.getItem(k + '.illeggibile'), CHIAVE)) === '{rotto', 'archivio illeggibile: messaggio e copia messa da parte');
     verifica((await righe('bonificato')).length === nBonificato, 'archivio illeggibile: il database verificato funziona');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+  }
+
+  // --- Azzera (app 0.2.4): torna alla situazione del primo avvio; non tocca le schede personali; nessuna conferma
+  {
+    const CH = 'gtpm.schede-personali.v1';
+    let dialoghi = 0;
+    const suDialogo = (d) => { dialoghi++; d.dismiss().catch(() => {}); };
+    page.on('dialog', suDialogo);
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    // due schede personali salvate dall'app stessa, poi si riparte dal primo avvio con quelle schede
+    for (const [nome, dens, unita] of [['Lega prova alfa', '7,6', 'g/cm³'], ['Lega prova beta', '7200', 'kg/m³']]) {
+      await page.click('#btn-nuova');
+      await page.fill('#e-nome', nome); await page.fill('#e-dens', dens); await page.selectOption('#e-dens-un', unita);
+      await page.click('#btn-salva');
+    }
+    await page.reload();
+    const archivio0 = await page.evaluate((k) => localStorage.getItem(k), CH);
+    const chiavi0 = JSON.stringify(await page.evaluate(() => Object.keys(localStorage).sort()));
+    verifica(archivio0 !== null && /· 2 schede personali$/.test(await page.textContent('#footer')), 'Azzera: si parte con 2 schede personali salvate');
+    // istantanea di tutto ciò che si vede o si può digitare (senza il focus, controllato a parte)
+    const IST = () => page.evaluate(() => {
+      const el = (i) => document.getElementById(i);
+      const nascosti = {};
+      for (const i of ['elenco', 'scheda', 'barra', 'dettagli', 'editor', 'msg-schede', 'peso-intervallo', 'avviso-forma']) nascosti[i] = el(i) ? el(i).hidden : null;
+      return {
+        testo: document.querySelector('main').innerText,
+        barra: el('barra').hidden ? '' : el('barra').innerText,   // solo ciò che si vede: il testo di una barra nascosta resta nel DOM ma non si vede
+        nascosti,
+        controlli: [...document.querySelectorAll('main input, main select, main textarea')].map((e) => [e.id || e.name, e.type, e.type === 'radio' || e.type === 'checkbox' ? e.checked : e.value]),
+        forme: [...document.querySelectorAll('#forme .forma')].map((l) => l.className + ':' + l.querySelector('input').checked),
+        disegno: el('disegno').innerHTML,
+        ricerca: [el('q').getAttribute('aria-expanded'), el('q').getAttribute('aria-activedescendant')],
+        scorrimento: Math.round(window.scrollY),
+        piede: el('footer').textContent
+      };
+    });
+    const diversi = (a, b) => Object.keys(a).filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+    await page.evaluate(() => window.scrollTo(0, 0));   // dopo un ricaricamento il browser può ripristinare lo scorrimento: il primo avvio è in cima
+    const primo = await IST();
+    // il pulsante «Azzera» sotto l'intestazione: sulla prima schermata, grande almeno 44 px, con nome accessibile
+    const bz = await page.evaluate(() => { const b = document.getElementById('btn-azzera').getBoundingClientRect(); const t = document.querySelector('.testata').getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height), top: b.top, bottom: b.bottom, sotto: t.bottom, nome: document.getElementById('btn-azzera').textContent.trim() }; });
+    verifica(bz.w >= 44 && bz.h >= 44 && bz.top >= bz.sotto && bz.bottom < c.viewport.height && bz.nome === 'Azzera', `Azzera: pulsante sotto l'intestazione, sulla prima schermata, ${bz.w}×${bz.h} px, testo «${bz.nome}»`);
+    verifica(await page.getByRole('button', { name: 'Azzera', exact: true }).first().isVisible(), 'Azzera: nome accessibile «Azzera»');
+    verifica(await page.isHidden('#btn-azzera-barra'), 'Azzera: l\'icona nella barra del peso non c\'è senza un risultato');
+    verifica(await page.evaluate(() => document.querySelector('.testata-riga').getBoundingClientRect().height < 80 && !document.querySelector('.testata-riga').querySelector('button')), 'Azzera: l\'intestazione resta una riga e non contiene il pulsante');
+    await page.click('#btn-azzera');
+    verifica((await diversi(primo, await IST())).length === 0, 'Azzera al primo avvio: nessun cambiamento');
+
+    // stato sporco: ogni ciclo scrive valori NUOVI anche nelle stesse chiavi dei campi (L, D...): se lo stato iniziale fosse un oggetto condiviso,
+    // i campi digitati sporcherebbero la costante e dal secondo azzeramento in poi i campi non tornerebbero vuoti
+    const sporca = async (n) => {
+      if (n === 0) {
+        await scegliPerNome(page, 'C45 (1.0503)');
+        await page.check('input[value="tubo"]', { force: true });
+        await scrivi(page, '#c-De', '40'); await scrivi(page, '#c-s', '3'); await scrivi(page, '#c-L', '1000');
+        await page.selectOption('#unita-lung', 'in'); await page.selectOption('#unita-peso', 'lb'); await scrivi(page, '#pezzi', '7');
+      } else if (n === 1) {
+        await scegliPerNome(page, 'Alluminio 7075');
+        await scrivi(page, '#c-D', '55'); await scrivi(page, '#c-L', '250'); await scrivi(page, '#pezzi', '3');
+      } else {
+        await scegliPerNome(page, 'Lega prova alfa');
+        await page.check('input[value="quadro"]', { force: true });
+        await scrivi(page, '#c-a', '20'); await scrivi(page, '#c-L', '300');
+      }
+      await page.setInputFiles('#file-importa', { name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('non è json') });
+      await page.waitForSelector('#msg-schede:not([hidden])');
+      await page.focus('#q');
+      await page.waitForSelector('#elenco:not([hidden])');
+      await page.evaluate(() => window.scrollTo(0, 500));
+    };
+    for (let n = 0; n < 4; n++) {
+      await sporca(n % 3);
+      const sporco = await IST();
+      const dd = diversi(primo, sporco);
+      verifica(['testo', 'barra', 'nascosti', 'controlli', 'scorrimento'].every((k) => dd.includes(k)) && await page.isVisible('#barra'), `Azzera #${n + 1}: prima il stato è davvero diverso (campi diversi: ${dd.join(', ')}) e c'è un risultato`);
+      if (n === 1) {   // l'icona nella barra: visibile, 44×44, sempre raggiungibile scorrendo, senza schiacciare il peso, con nome e contrasto
+        const ic = await page.evaluate(() => { const b = document.getElementById('btn-azzera-barra').getBoundingClientRect(); const bar = document.getElementById('barra').getBoundingClientRect();
+          return { w: Math.round(b.width), h: Math.round(b.height), dentro: b.top >= 0 && b.bottom <= window.innerHeight && b.left >= 0 && b.right <= window.innerWidth, barTop: Math.round(bar.top), barH: Math.round(bar.height),
+            pos: getComputedStyle(document.getElementById('barra')).position, testoFine: document.getElementById('barra-testo').getBoundingClientRect().right, pesoFine: document.getElementById('barra-peso').getBoundingClientRect().right, btnInizio: b.left,
+            nome: document.getElementById('btn-azzera-barra').getAttribute('aria-label') }; });
+        verifica(ic.w >= 44 && ic.h >= 44 && ic.dentro && ic.pos === 'sticky' && Math.abs(ic.barTop) <= 1, `Azzera: icona nella barra ${ic.w}×${ic.h} px, in alto scorrendo (barra a ${ic.barTop} px, alta ${ic.barH} px)`);
+        verifica(ic.testoFine <= ic.btnInizio + 1 && ic.pesoFine <= ic.btnInizio + 1 && ic.barH <= 48 && /^Azzera/.test(ic.nome), `Azzera: l'icona non schiaccia il peso né il testo della barra e non allarga la barra (alta ${ic.barH} px, come prima), nome «${ic.nome}»`);
+        verifica(await page.locator('#barra').getByRole('button', { name: /^Azzera/ }).count() === 1, 'Azzera: l\'icona nella barra ha un nome accessibile (ruolo «button»)');
+        await contrastoDi(page, '#btn-azzera-barra', 'icona «Azzera» nella barra', 3);
+        await contrastoDi(page, '#btn-azzera', 'pulsante «Azzera»', 7);
+      }
+      if (n === 0) await page.click('#btn-azzera');
+      else if (n === 1) await page.click('#btn-azzera-barra');
+      else if (n === 2) { await page.focus('#btn-azzera'); await page.keyboard.press('Enter'); }
+      else { await page.focus('#btn-azzera-barra'); await page.keyboard.press('Space'); }
+      const dopo = await IST();
+      verifica(diversi(primo, dopo).length === 0, `Azzera #${n + 1} (${['pulsante', 'icona nella barra', 'tastiera: Invio', 'tastiera: Spazio'][n]}): uguale al primo avvio (campi diversi: ${diversi(primo, dopo).join(', ') || 'nessuno'})`);
+      verifica(await page.evaluate(() => document.activeElement.id) === 'btn-azzera', `Azzera #${n + 1}: il focus resta sul pulsante e non va nella ricerca`);
+      verifica(await page.isHidden('#btn-azzera-barra'), `Azzera #${n + 1}: l'icona nella barra sparisce con il risultato`);
+    }
+    // dopo gli azzeramenti l'app funziona: stato e campi sono coerenti
+    await scegliPerNome(page, 'Inox 304 (1.4301)');
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    verifica((await page.textContent('#barra-peso')).trim() === '6,2046 kg', `Azzera: dopo il reset si può scegliere un materiale e calcolare (Inox 304, D100 × L100 mm: ${(await page.textContent('#barra-peso')).trim()}, atteso 6,2046 kg)`);
+    await page.click('#btn-azzera');
+    // la richiesta di conferma di eliminazione di una scheda non resta in sospeso
+    await scegliPerNome(page, 'Lega prova beta');
+    await page.click('#btn-elimina');
+    const inConferma = await page.isVisible('#btn-elimina-no');
+    await page.click('#btn-azzera');
+    await scegliPerNome(page, 'Lega prova beta');
+    verifica(inConferma && await page.isVisible('#btn-elimina') && !(await page.isVisible('#btn-elimina-no')), 'Azzera: la richiesta di conferma di eliminazione non resta in sospeso');
+    await page.click('#btn-azzera');
+    // il modulo di scheda personale aperto resta com'è (testo scritto e non salvato), mentre il calcolo si azzera
+    await page.click('#btn-nuova');
+    await page.fill('#e-nome', 'Bozza non salvata'); await page.fill('#e-note', 'testo scritto a mano');
+    await scegliPerNome(page, 'C45 (1.0503)');
+    await page.click('#btn-azzera');
+    verifica(await page.isVisible('#editor') && (await page.inputValue('#e-nome')) === 'Bozza non salvata' && (await page.inputValue('#e-note')) === 'testo scritto a mano' && (await page.inputValue('#q')) === '' && await page.isHidden('#scheda'),
+      'Azzera: il modulo di scheda personale aperto resta com\'è, il calcolo si azzera');
+    await page.click('#btn-annulla');
+    // le schede personali non sono toccate
+    verifica((await page.evaluate((k) => localStorage.getItem(k), CH)) === archivio0 && JSON.stringify(await page.evaluate(() => Object.keys(localStorage).sort())) === chiavi0,
+      'Azzera: archivio delle schede personali e memoria del browser identici a prima');
+    const trovate = await cerca(page, 'Lega prova');
+    verifica(trovate.includes('Lega prova alfa') && trovate.includes('Lega prova beta') && /· 2 schede personali$/.test(await page.textContent('#footer')), `Azzera: le 2 schede personali ci sono ancora (${trovate})`);
+    verifica(dialoghi === 0, `Azzera: nessuna finestra di conferma (${dialoghi})`);
+    page.off('dialog', suDialogo);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
   }

@@ -90,6 +90,15 @@
   .nome { margin: 0; min-width: 0; font-size: clamp(1rem, 5.3vw, 1.25rem); line-height: 1.15; font-weight: 800; white-space: nowrap; color: var(--acc); }
   .versione { flex: none; padding: 1px 8px; font-size: 0.85rem; font-weight: 700; color: var(--fg); border: 1.5px solid var(--acc); border-radius: 999px; white-space: nowrap; }
   .sottotitolo { margin: 12px 0 0; color: var(--muted); }
+  /* sottotitolo e pulsante «Azzera» sulla stessa riga */
+  .sotto-riga { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+  .sotto-riga .sottotitolo { margin: 0; min-width: 0; }
+  .btn.azzera { flex: none; gap: 8px; min-height: 44px; padding: 6px 14px; }
+  .btn.azzera svg, .btn-icona svg { flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* icona «Azzera» nella barra del peso: bersaglio 44×44 che non allarga la barra (margini negativi) */
+  .btn-icona { flex: none; align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+    margin: -6px -8px -6px 0; padding: 0; color: var(--acc); background: transparent; border: 0; border-radius: 10px; cursor: pointer; }
+  .btn-icona:focus-visible { outline: 3px solid var(--acc); outline-offset: -3px; }
 
   /* barra con il peso, sempre visibile mentre si scrive */
   .barra { position: sticky; top: 0; z-index: 5; background: var(--bg); }
@@ -235,11 +244,14 @@
 </header>
 
 <div class="barra" id="barra" hidden>
-  <div class="colonna"><strong id="barra-peso"></strong><span id="barra-testo"></span></div>
+  <div class="colonna"><strong id="barra-peso"></strong><span id="barra-testo"></span><button type="button" class="btn-icona" id="btn-azzera-barra" aria-label="Azzera: torna alla schermata iniziale" title="Azzera"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 3.5v4.5h4.5"/></svg></button></div>
 </div>
 
 <main class="colonna">
-  <p class="sottotitolo">Peso teorico dei materiali</p>
+  <div class="sotto-riga">
+    <p class="sottotitolo">Peso teorico dei materiali</p>
+    <button type="button" class="btn azzera" id="btn-azzera" title="Torna alla schermata iniziale"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 3.5v4.5h4.5"/></svg><span>Azzera</span></button>
+  </div>
   <noscript><p class="avviso">Serve JavaScript per calcolare il peso.</p></noscript>
 
   <section aria-labelledby="t-materiale">
@@ -4672,14 +4684,17 @@ const Schede = (function () {
 (function () {
   'use strict';
   // Versione dell'app: unico punto del codice, da aggiornare a ogni fase (schema 0.<fase>.<revisione>).
-  const APP_VERSIONE = '0.2.3';
+  const APP_VERSIONE = '0.2.4';
   const DB = JSON.parse(document.getElementById('db-materiali').textContent);
   const $ = function (id) { return document.getElementById(id); };
   const f = Motore.formatta;
   const esc = function (s) {
     return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   };
-  const stato = { materiale: null, forma: 'tonda', testi: {}, unitaL: 'mm', unitaP: 'kg', pezzi: '1' };
+  // Stato iniziale dell'app: una funzione che restituisce sempre una copia NUOVA, mai un oggetto condiviso. Con una costante, i campi digitati
+  // finirebbero nella costante (testi) e un secondo azzeramento non li riporterebbe vuoti. Lo usano l'avvio e «Azzera».
+  function statoIniziale() { return { materiale: null, forma: 'tonda', testi: {}, unitaL: 'mm', unitaP: 'kg', pezzi: '1' }; }
+  const stato = statoIniziale();
   const COMPOSIZIONE_PARZIALE = 'Composizione parziale: solo gli elementi riportati dal documento.';
 
   $('versione').textContent = 'v' + APP_VERSIONE;
@@ -5298,6 +5313,25 @@ const Schede = (function () {
     };
     lettore.readAsText(file);
   });
+
+  // ------------------------------------------------------------------ Azzera: torna alla situazione del primo avvio
+  // Azzera solo lo stato temporaneo: ricerca, materiale aperto, forma, dimensioni, unità e pezzi (più la richiesta di conferma di eliminazione,
+  // il messaggio delle schede e lo scorrimento). Non tocca le schede personali né la memoria del browser; il modulo di scheda personale
+  // eventualmente aperto resta com'è. Nessuna conferma: i dati cancellati sono solo temporanei.
+  function azzera() {
+    Object.assign(stato, statoIniziale());   // una copia nuova a ogni azzeramento
+    confermaElimina = false;
+    $('q').value = ''; chiudiElenco();
+    $('unita-lung').value = stato.unitaL;
+    $('unita-peso').value = stato.unitaP;
+    $('pezzi').value = stato.pezzi;
+    messaggioSchede('');
+    renderForme(); renderDisegno(); renderCampi(); renderScheda(); aggiorna();
+    window.scrollTo(0, 0);
+    $('btn-azzera').focus({ preventScroll: true });   // il focus non va nella ricerca: su iPhone si aprirebbe la tastiera
+  }
+  $('btn-azzera').addEventListener('click', azzera);
+  $('btn-azzera-barra').addEventListener('click', azzera);
 
   leggiArchivio();
   ricostruisciRicerca();

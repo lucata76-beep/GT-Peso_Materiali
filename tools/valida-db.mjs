@@ -7,15 +7,18 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const CAMPI_FONTE = ['densita', 'composizione', 'designazioni', 'nome_commerciale', 'tag', 'alias'];
+const CAMPI_FONTE = ['densita', 'composizione', 'designazioni', 'nome_commerciale', 'tag', 'alias', 'corrispondenze'];
+// Campi che una fonte «solo alias» può sostenere: gli alias e le corrispondenze indicative, mai densità, composizione o tag
+const CAMPI_SOLO_ALIAS = ['alias', 'corrispondenze'];
 const CHIAVI_DESIGNAZIONI = ['EN', 'WNr', 'UNI', 'AISI_SAE', 'DIN'];
 const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
 const RE_ID = /^[a-z0-9][a-z0-9.\-]*$/;
 const RE_HASH = /^[0-9a-f]{16}$/;
 // Ruoli ammessi per i dati (densità, composizione, designazioni, nome commerciale, tag)
 const RE_RUOLO = /^(produttore|fornitore|riferimento scientifico)/;
-// Ruoli ammessi SOLO per gli alias (mai per i dati numerici): distributori, fornitori di lavorazioni, tesi e articoli tecnici
-const RE_RUOLO_ALIAS = /^(distributore|fornitore di lavorazioni|tesi o articolo tecnico)/;
+// Ruoli ammessi SOLO per gli alias (mai per i dati numerici): distributori, fornitori di lavorazioni, tesi e articoli tecnici,
+// cataloghi commerciali il cui documento non dichiara se l'azienda produce o distribuisce
+const RE_RUOLO_ALIAS = /^(distributore|fornitore di lavorazioni|tesi o articolo tecnico|catalogo commerciale)/;
 // Aggregatori e copie: mai fonte, nemmeno per gli alias
 const AGGREGATORI = ['wikipedia.org', 'scribd.com', 'matweb.com', 'makeitfrom.com', 'totalmateria.com', 'xometry.com', 'xometry.pro', 'xometry.eu',
   'xometry.asia', 'mfgrobots.com', 'compraco.com.br', 'alloyfyi.com', 'steelestores.com', 'appluslaboratories.com', 'globalfastener.com',
@@ -37,6 +40,51 @@ export function estraiDb(html) {
 const eNum = (x) => typeof x === 'number' && Number.isFinite(x);
 const eStr = (x) => typeof x === 'string';
 const r3 = (x) => Math.round(x * 1000) / 1000;
+
+/** Ente di una fonte: l'emittente senza le parentesi, in minuscolo. «Swiss Steel Group (Steeltec)» e «Swiss Steel Group» sono lo stesso ente. */
+export const enteDi = (emittente) => String(emittente ?? '').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/** Fonti indipendenti: documenti di enti diversi. Le schede dello stesso ente (anche IT ed EN dello stesso materiale) contano una volta.
+ *  campo = 'densita' conta le fonti con densita_letta; per ogni altro campo, le fonti che lo dichiarano. */
+export function contaFontiIndipendenti(fonti, campo) {
+  const enti = new Set();
+  for (const f of fonti ?? []) {
+    const conta = campo === 'densita' ? Boolean(f.densita_letta) : Array.isArray(f.campi) && f.campi.includes(campo);
+    if (conta) enti.add(enteDi(f.emittente));
+  }
+  return enti.size;
+}
+
+/** Numeri abbreviati: 4 cifre uguali al W.Nr. «1.xxxx» di una voce. Restituisce { mappa: { cifre: id }, collisioni: [messaggi] }.
+ *  Una collisione c'è se le stesse 4 cifre sono il W.Nr. di due voci, il numero a 4 cifre «da solo» di un'altra voce
+ *  (designazioni, alias, nome, nome commerciale: es. un 1.7075 contro l'alluminio 7075) o la coda di un W.Nr. di un'altra famiglia (2.xxxx). */
+export function numeriAbbreviati(db) {
+  const mappa = {};
+  const collisioni = [];
+  const ambigui = new Set();   // le cifre in collisione non valgono come numero abbreviato (stessa regola della ricerca)
+  const materiali = Array.isArray(db?.materiali) ? db.materiali : [];
+  const token = (v) => {
+    const d = v.designazioni ?? {};
+    const testi = [v.nome, v.nome_commerciale, d.EN, d.UNI, d.AISI_SAE, d.DIN, ...(d.altre ?? []), ...(v.alias ?? []).map((a) => a.alias)];
+    return new Set(testi.filter(eStr).flatMap((t) => t.split(/[\s/(),;]+/)).filter((x) => /^\d{4}$/.test(x)));
+  };
+  for (const v of materiali) {
+    const m = /^1\.(\d{4})$/.exec(v.designazioni?.WNr ?? '');
+    if (!m) continue;
+    if (mappa[m[1]]) { collisioni.push(`[${v.id}] numero abbreviato ${m[1]}: stesso W.Nr. 1.${m[1]} della voce ${mappa[m[1]]}`); ambigui.add(m[1]); }
+    mappa[m[1]] = v.id;
+  }
+  for (const q of Object.keys(mappa)) {
+    for (const v of materiali) {
+      if (v.id === mappa[q]) continue;
+      if (token(v).has(q)) { collisioni.push(`[${mappa[q]}] numero abbreviato ${q} in collisione con il numero ${q} della voce ${v.id}`); ambigui.add(q); }
+      const w = /^(\d)\.(\d{4})$/.exec(v.designazioni?.WNr ?? '');
+      if (w && w[1] !== '1' && w[2] === q) { collisioni.push(`[${mappa[q]}] numero abbreviato ${q} in collisione con il W.Nr. ${v.designazioni.WNr} della voce ${v.id}`); ambigui.add(q); }
+    }
+  }
+  for (const q of ambigui) delete mappa[q];
+  return { mappa, collisioni };
+}
 
 /** Valida un oggetto DB. Restituisce { errori: string[], avvisi: string[] }. */
 export function validaDb(db) {
@@ -81,7 +129,15 @@ export function validaDb(db) {
       }
       if (!Array.isArray(d.altre) || d.altre.some((x) => !eStr(x) || !x)) err(id, 'designazioni.altre deve essere un array di stringhe non vuote');
       else if (d.altre.length) haDesignazioni = true;
+      if (d.indicative !== undefined) {
+        if (!Array.isArray(d.indicative) || d.indicative.some((x) => !eStr(x) || !x.trim())) err(id, 'designazioni.indicative deve essere un array di stringhe non vuote');
+        else {
+          const proprie = new Set([...CHIAVI_DESIGNAZIONI.map((k) => d[k]), ...(Array.isArray(d.altre) ? d.altre : [])].filter(Boolean).map((x) => x.toLowerCase()));
+          for (const x of d.indicative) if (proprie.has(x.toLowerCase())) err(id, `corrispondenza indicativa «${x}» già presente tra le designazioni della voce`);
+        }
+      }
     }
+    const haIndicative = Array.isArray(d?.indicative) && d.indicative.length > 0;
     if (!eStr(v.nome_commerciale)) err(id, 'nome_commerciale deve essere una stringa (anche vuota)');
 
     // fonti
@@ -99,11 +155,13 @@ export function validaDb(db) {
       const ruoloDati = eStr(f.ruolo) && RE_RUOLO.test(f.ruolo);
       const ruoloAlias = eStr(f.ruolo) && RE_RUOLO_ALIAS.test(f.ruolo);
       if (!ruoloDati && !ruoloAlias) err(id, `fonte ${fid}: ruolo non ammesso (per i dati: produttore, fornitore, riferimento scientifico; per i soli alias anche distributore, fornitore di lavorazioni, tesi o articolo tecnico)`);
-      if (ruoloAlias && !(Array.isArray(f.campi) && f.campi.length === 1 && f.campi[0] === 'alias')) {
-        err(id, `fonte ${fid}: con ruolo «${f.ruolo}» la fonte può servire solo per gli alias, mai per densità, composizione o altri dati`);
+      if (ruoloAlias && !(Array.isArray(f.campi) && f.campi.length >= 1 && f.campi.every((c) => CAMPI_SOLO_ALIAS.includes(c)))) {
+        err(id, `fonte ${fid}: con ruolo «${f.ruolo}» la fonte può servire solo per gli alias (e le corrispondenze indicative), mai per densità, composizione, tag o altri dati`);
       }
       if (eAggregatore(f.url)) err(id, `fonte ${fid}: gli aggregatori e le copie (${hostDi(f.url)}) non sono mai fonte`);
-      if (!eStr(f.url) || !/^https:\/\/\S+$/.test(f.url)) err(id, `fonte ${fid}: url https mancante`);
+      if (f.fornito_da_utente === true) {
+        if (f.url !== null) err(id, `fonte ${fid}: un documento fornito dall'utente non ha url (deve essere null)`);
+      } else if (!eStr(f.url) || !/^https:\/\/\S+$/.test(f.url)) err(id, `fonte ${fid}: url https mancante`);
       if (!RE_HASH.test(f.sha256 ?? '')) err(id, `fonte ${fid}: sha256 (16 caratteri esadecimali) mancante`);
       if (!Array.isArray(f.campi) || f.campi.length === 0 || f.campi.some((c) => !CAMPI_FONTE.includes(c))) err(id, `fonte ${fid}: campi non validi`);
       else f.campi.forEach((c) => coperti.add(c));
@@ -150,6 +208,10 @@ export function validaDb(db) {
       }
     }
     for (const f of fonti) if (f.campi?.includes('tag') && !fontiCitateDaTag.has(f.id)) err(id, `fonte ${f.id} dichiara «tag» ma nessun tag la cita`);
+    // corrispondenze indicative: servono almeno una fonte che le dichiari, e una fonte «corrispondenze» presuppone il campo
+    const fontiCorr = fonti.filter((f) => f.campi?.includes('corrispondenze'));
+    if (haIndicative && fontiCorr.length === 0) err(id, 'designazioni.indicative senza fonte che dichiari «corrispondenze»');
+    if (!haIndicative && fontiCorr.length) err(id, `fonte ${fontiCorr[0].id} dichiara «corrispondenze» ma la voce non ha corrispondenze indicative`);
 
     // alias gergali o storici: da produttore, oppure da almeno 2 documenti di emittenti indipendenti («alias non da produttore»)
     if (!Array.isArray(v.alias)) err(id, 'alias deve essere un array (anche vuoto)');
@@ -170,10 +232,15 @@ export function validaDb(db) {
       }
       const daProduttore = fa.filter((f) => /^produttore/.test(f.ruolo ?? ''));
       if (a.origine === 'produttore' && daProduttore.length === 0) err(id, `alias «${a.alias}»: origine «produttore» ma nessuna fonte di produttore`);
+      if (a.una_sola_fonte !== undefined && typeof a.una_sola_fonte !== 'boolean') err(id, `alias «${a.alias}»: una_sola_fonte deve essere vero/falso`);
       if (a.origine === 'non da produttore') {
         if (daProduttore.length > 0) err(id, `alias «${a.alias}»: c'è un documento di produttore, l'origine deve essere «produttore»`);
-        const emittenti = new Set(fa.map((f) => (f.emittente ?? '').trim().toLowerCase()));
-        if (fa.length < 2 || emittenti.size < 2) err(id, `alias «${a.alias}»: senza produttore servono almeno 2 documenti di emittenti indipendenti`);
+        // fonti indipendenti = enti diversi: due schede dello stesso ente contano una volta
+        const indipendenti = new Set(fa.map((f) => enteDi(f.emittente))).size;
+        if (indipendenti >= 2 && a.una_sola_fonte === true) err(id, `alias «${a.alias}»: una_sola_fonte ma i documenti sono di ${indipendenti} enti indipendenti`);
+        if (indipendenti < 2 && a.una_sola_fonte !== true) err(id, `alias «${a.alias}»: senza produttore servono almeno 2 fonti indipendenti (enti diversi) oppure un solo documento con una_sola_fonte: true`);
+      } else if (a.una_sola_fonte === true) {
+        err(id, `alias «${a.alias}»: una_sola_fonte vale solo per gli alias «non da produttore»`);
       }
       if (!Array.isArray(a.prove) || a.prove.length === 0) { err(id, `alias «${a.alias}» senza prove (documento, pagina, frase)`); continue; }
       const citate = new Set();
@@ -242,6 +309,7 @@ export function validaDb(db) {
     if (!RE_DATA.test(v.data_verifica ?? '')) err(id, 'data_verifica non in formato AAAA-MM-GG');
     else if (RE_DATA.test(meta.data ?? '') && v.data_verifica > meta.data) err(id, 'data_verifica successiva alla data del DB');
   }
+  for (const messaggio of numeriAbbreviati(db).collisioni) errori.push(messaggio);
   return { errori, avvisi };
 }
 
@@ -267,6 +335,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const nFonti = db.materiali.reduce((s, v) => s + v.fonti.length, 0);
   const nTag = db.materiali.reduce((s, v) => s + v.tag.length, 0);
   const nAlias = db.materiali.reduce((s, v) => s + v.alias.length, 0);
+  const unaFonte = db.materiali.filter((v) => contaFontiIndipendenti(v.fonti, 'densita') === 1).map((v) => v.id);
   console.log(`DB OK: versione ${db.meta.versione} del ${db.meta.data}, ${db.materiali.length} voci, ${nFonti} riferimenti a fonti, ${nTag} tag, ${nAlias} alias.`);
+  console.log(`  Una sola fonte indipendente di densità (enti diversi, le traduzioni contano una volta): ${unaFonte.length} voci.`);
   for (const f of db.meta.famiglie) if (perFamiglia[f]) console.log(`  ${f}: ${perFamiglia[f]}`);
 }

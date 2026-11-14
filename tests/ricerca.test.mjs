@@ -409,3 +409,117 @@ test('«trovato per»: le designazioni senza colonna propria si chiamano «altra
     assert.ok(suo && suo.motivi.some((m) => /designazione/.test(m) || /^nome|^tag|^alias|^famiglia|^numero|^sinonimo/.test(m)), `${a} non trova ${v.id}`);
   }
 });
+
+// ---------------------------------------------------------------- parole di un solo carattere e letture unite (app 0.2.5)
+const rid = (risultati) => risultati.map((r) => r.m.id + ':' + r.rango);   // «id:rango» nell'ordine restituito
+const nomiConLettera = (l) => DB.materiali.filter((v) => Ricerca.pulisci(v.nome).includes(l)).length;
+const digitata = (testo, db = DB) => ricopia(motore(db).cercaDigitata(testo));   // solo la lettura digitata (senza le letture unite)
+const spazia = (s) => String(s).replace(/([A-Za-z])(?=[0-9])|([0-9])(?=[A-Za-z])/g, '$1$2 ').replace(/\s+/g, ' ').trim();   // «C45E» → «C 45 E»
+const staccaUltima = (s) => String(s).replace(/(\d)([A-Za-z])(?![A-Za-z0-9])/g, '$1 $2');                                  // «C45E» → «C45 E», «316L» → «316 L»
+const valoriDi = (m) => { const d = m.designazioni; return [m.nome, d.EN, d.WNr, d.UNI, d.AISI_SAE, d.DIN].concat(d.altre || [], (m.alias || []).map((a) => a.alias), String(m.nome_commerciale || '').split(';').map((x) => x.trim())).filter(Boolean); };
+// corpus derivato dal DB: ogni valore cercabile con la sua voce d'origine, come scritto e con gli spazi
+const corpusDerivato = () => {
+  const out = [];
+  for (const m of DB.materiali) for (const v of new Set(valoriDi(m))) for (const q of new Set([v, spazia(v), staccaUltima(v)])) out.push({ q, origine: m.id });
+  return out;
+};
+// query in linguaggio naturale, senza parole di un solo carattere
+const NATURALI = ['utensili a caldo', 'utensili a freddo', 'per cuscinetti', 'acciaio da bonifica', 'bonificato e temprato', 'inox', 'hot work', 'ferro', 'acciaio dolce',
+  'ergal', 'korv', 'ncm2', 'titanio grado 2', 'titanio 5', 'grado 5', 'titanio 2', 'ottone', 'rame', 'stagno', 'alluminio 7075', 'acciai al carbonio', 'acciaio per utensili',
+  'inox 304', 'tubo inox', 'la lega', 'il ferro', '1.4301', '4301', 'boehler', 'c45e'];
+
+test('una lettera sola: mai sottostringa del nome, solo prefisso di designazioni e alias (il motivo della regola t.length >= 2)', () => {
+  // la premessa: una lettera compare in quasi tutti i nomi, quindi una ricerca per sottostringa darebbe quasi tutto il database
+  assert.ok(nomiConLettera('n') >= 15 && nomiConLettera('o') >= 15, `la «n» e la «o» compaiono in almeno 15 nomi su ${DB.materiali.length}`);
+  for (const l of 'abcdefghijklmnopqrstuvwxyz') {
+    for (const r of cerca(l)) assert.ok(r.motivi.every((m) => !/^nome/.test(m)), `«${l}»: ${r.m.nome} trovato per nome (${r.motivi})`);
+  }
+  assert.ok(ids(cerca('n')).length <= 5 && ids(cerca('o')).length <= 5, 'una lettera sola dà pochi risultati, non tutto il database');
+  for (const l of ['a', 'e', 'i']) assert.deepEqual(ids(cerca(l)), [], `«${l}» è una parola vuota`);
+});
+
+test('una lettera sola vale come parola INTERA del nome («Lega B» trova «Lega prova B»); una cifra sola no', () => {
+  const db = sintetico([voce('lega-b', 'Lega prova B', 'Altri'), voce('lega-2', 'Lega 2', 'Altri'), voce('altra', 'Altra lega', 'Altri')]);
+  for (const q of ['Lega prova B', 'Lega B', 'prova B', 'lega b prova', 'B']) assert.deepEqual(rid(cerca(q, db)), ['lega-b:6'], q);
+  assert.deepEqual(ids(cerca('Lega C', db)), [], 'una lettera che non è una parola del nome non trova nulla');
+  // una cifra sola non vale come parola intera del nome: «Lega 2» si trova con le parole unite («Lega2»), non con la sola lettura digitata
+  assert.deepEqual(ids(digitata('Lega 2', db)), []);
+  assert.deepEqual(ids(cerca('Lega 2', db)), ['lega-2']);
+});
+
+test('letture unite: «C 45» come «C45»; «C45 E» e «C 45 E» mettono C45E per primo', () => {
+  assert.deepEqual(rid(cerca('C 45')), rid(cerca('C45')));
+  assert.deepEqual(insieme(rid(cerca('C 45'))), ['c45:1', 'c45e:1']);
+  assert.deepEqual(rid(cerca('C45 E')), ['c45e:1', 'c45:1']);
+  assert.deepEqual(rid(cerca('C 45 E')), ['c45e:1', 'c45:3']);
+});
+
+test('letture unite: designazioni e alias scritti con gli spazi trovano la voce giusta', () => {
+  const casi = [['S 235 J R', ['s235jr:1']], ['100 Cr 6', ['100cr6:1']], ['AFNOR XC 48', ['c45e:1']], ['NCM 2', ['39nicrmo3:2']], ['Ti 6 Al 4 V', ['ti-6al-4v:6']], ['S 355 J 2', ['s355j2:1']]];
+  for (const [q, atteso] of casi) assert.deepEqual(rid(cerca(q)), atteso, q);
+  assert.equal(rid(cerca('D 2'))[0], '1.2379:1', 'D 2');
+});
+
+test('ogni valore del DB, come scritto e con gli spazi, ritrova la propria voce', () => {
+  const corpus = corpusDerivato();
+  const falliti = corpus.filter((c) => !ids(cerca(c.q)).includes(c.origine)).map((c) => `«${c.q}» → ${c.origine}`);
+  assert.ok(corpus.length >= 250, `${corpus.length} query nel corpus`);
+  assert.deepEqual(falliti, []);
+});
+
+test('nessuna voce sparisce e nessun rango peggiora rispetto alla sola lettura digitata (corpus del DB e query naturali)', () => {
+  for (const q of [...corpusDerivato().map((c) => c.q), ...NATURALI]) {
+    const tutte = new Map(cerca(q).map((r) => [r.m.id, r.rango]));
+    for (const r of digitata(q)) assert.ok(tutte.has(r.m.id) && tutte.get(r.m.id) <= r.rango, `«${q}»: ${r.m.id} (rango ${r.rango}) ${tutte.has(r.m.id) ? 'peggiora a ' + tutte.get(r.m.id) : 'sparisce'}`);
+  }
+});
+
+test('le query senza parole di un solo carattere non cambiano con le letture unite', () => {
+  for (const q of NATURALI) assert.deepEqual(rid(cerca(q)), rid(digitata(q)), q);
+});
+
+test('le letture unite non usano tag, famiglie, sinonimi né numero abbreviato (valgono solo digitati)', () => {
+  assert.deepEqual(ids(cerca('b o n i f i c a t o')), []);        // «bonificato» è un tag: lo usa solo la lettura digitata
+  assert.ok(ids(cerca('bonificato')).length > 0);
+  assert.deepEqual(ids(cerca('f e r r o')), []);                  // il sinonimo «ferro» → S235JR vale solo digitato
+  assert.deepEqual(ids(cerca('r a m e')), ['cu-etp']);            // trovata per nome; la famiglia «Rame, ottone, bronzo» non vale nelle letture unite
+  assert.deepEqual(rid(cerca('43 01')), ['304:6']);               // il numero abbreviato vale solo se la ricerca è esattamente 4 cifre digitate
+  assert.deepEqual(rid(cerca('4301')), ['304:5']);
+});
+
+test('senza 316L e 304L nel DB: «inox 316 L», «316 L», «304 L» restano a 0 risultati e non ricadono su Inox 316 o Inox 304', () => {
+  assert.ok(!DB.materiali.some((v) => /\b(316|304) ?L\b/i.test(JSON.stringify([v.nome, v.designazioni, v.alias]))), 'premessa: il DB non ha 316L né 304L');
+  assert.ok(DB.materiali.some((v) => v.id === '316') && DB.materiali.some((v) => v.id === '304'), 'premessa: Inox 316 e Inox 304 ci sono');
+  for (const q of ['inox 316 L', '316 L', '316L', 'inox 316L', 'AISI 316 L', '304 L', '304L', 'inox 304 L', 'inox 304L', 'Inox 316 l', '316  L']) assert.deepEqual(rid(cerca(q)), [], q);
+});
+
+test('con una voce 316L: «inox 316 L» e «316 L» trovano solo la 316L, «316» trova Inox 316 e poi la 316L', () => {
+  const db = copia();
+  const v = structuredClone(db.materiali.find((x) => x.id === '316'));
+  v.id = '316l'; v.nome = 'Inox 316L (1.4404)'; v.designazioni = { ...v.designazioni, WNr: '1.4404', AISI_SAE: '316L', altre: [] }; v.alias = [];
+  db.materiali.push(v);
+  for (const q of ['inox 316 L', '316 L', '316L', 'inox 316L']) assert.deepEqual(rid(cerca(q, db)), ['316l:1'], q);
+  assert.deepEqual(rid(cerca('inox 316', db)), ['316:1', '316l:3']);
+  assert.deepEqual(rid(cerca('316', db)), ['316:1', '316l:3']);
+});
+
+test('letture unite: una parola di un carattere si attacca anche se le altre parole non seguono l\'ordine del nome', () => {
+  const db = sintetico([voce('x1', 'Barra C45E extra', 'Altri'), voce('x2', 'Barra C45 extra', 'Altri'), voce('x3', 'Extra C45', 'Altri')]);
+  assert.deepEqual(ids(digitata('C 45 extra', db)), [], 'premessa: la sola lettura digitata non trova nulla');
+  assert.deepEqual(insieme(ids(cerca('C 45 extra', db))), ['x1', 'x2', 'x3']);
+});
+
+test('letture unite: la «e» dopo una cifra si attacca («ypsilon C45 E» mette prima la voce con C45E)', () => {
+  const db = sintetico([voce('y1', 'Barra C45E ypsilon', 'Altri'), voce('y2', 'Barra C45 ypsilon', 'Altri')]);
+  assert.deepEqual(rid(digitata('ypsilon C45 E', db)), ['y2:6', 'y1:6']);   // la sola lettura digitata: la «e» è una parola vuota, vince l'ordine alfabetico
+  assert.deepEqual(rid(cerca('ypsilon C45 E', db)), ['y1:6', 'y2:6']);
+});
+
+test('i gruppi di famiglia seguono la stessa parità: «C45 E» mostra prima C45E (Acciai da bonifica) di C45 (Acciai al carbonio)', () => {
+  const R = motore();
+  const gruppi = Array.from(R.raggruppa(R.cerca('C45 E')), (g) => ({ famiglia: g.famiglia, voci: Array.from(g.voci, (x) => x.m.id) }));
+  assert.deepEqual(gruppi, [{ famiglia: 'Acciai da bonifica', voci: ['c45e'] }, { famiglia: 'Acciai al carbonio', voci: ['c45'] }]);
+  // senza letture unite a parità di rango vale l'ordine delle famiglie del DB
+  const g2 = Array.from(R.raggruppa(R.cercaDigitata('C45 E')), (g) => g.famiglia);
+  assert.deepEqual(g2, ['Acciai al carbonio', 'Acciai da bonifica']);
+});

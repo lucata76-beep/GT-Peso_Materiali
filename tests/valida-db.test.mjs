@@ -286,6 +286,15 @@ test('alias con una sola fonte: serve una_sola_fonte e vale solo con un solo ent
   // flag con origine «produttore»: rifiutato
   d2 = copia(); const k = voceDa(d2, '39nicrmo3'); k.alias[0].una_sola_fonte = true; k.alias[0].origine = 'produttore';
   conErrore(d2, 'nessuna fonte di produttore');
+  // alias valido da produttore: senza flag ammesso, con il flag rifiutato («una sola fonte» vale solo per i «non da produttore»)
+  const daProduttore = (flag) => {
+    const d = copia(); const v = voceDa(d, '7075');
+    v.fonti.find((f) => f.id === 'KAI-7075SP').campi.push('alias');
+    v.alias.push({ alias: 'Provaprod', origine: 'produttore', fonti: ['KAI-7075SP'], prove: [{ fonte: 'KAI-7075SP', pagina: 1, estratto: '7075 detto Provaprod' }], ...(flag ? { una_sola_fonte: true } : {}) });
+    return d;
+  };
+  assert.deepEqual(validaDb(daProduttore(false)).errori, []);
+  conErrore(daProduttore(true), 'vale solo per gli alias «non da produttore»');
   d2 = copia(); voceDa(d2, '1.2379').alias[0].una_sola_fonte = 'sì';
   conErrore(d2, 'vero/falso');
   // due schede dello stesso ente restano «una sola fonte»

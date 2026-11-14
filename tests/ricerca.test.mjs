@@ -348,12 +348,14 @@ test('numero abbreviato: se c\'è una collisione non vale (1.7075 contro l\'allu
   const r = cerca('7075', db);
   assert.deepEqual(ids(r), ['7075'], 'resta solo l\'alluminio, per designazione esatta');
   assert.equal(r[0].rango, Ricerca.CLASSE.DESIG_ESATTA);
-  // stesso W.Nr. su due voci
-  const db2 = copia(); const doppio = structuredClone(db2.materiali.find((v) => v.id === '1.2343')); doppio.id = 'doppio'; doppio.nome = 'Doppio'; db2.materiali.push(doppio);
-  assert.deepEqual(ids(cerca('2343', db2)).filter((id) => id !== '1.2343' && id !== 'doppio'), []);
-  assert.ok(!cerca('2343', db2).some((x) => x.motivi.includes(ABB)));
+  // stesso W.Nr. su due voci (S235JR e una sua copia: nessun altro numero a 4 cifre da solo nei loro testi)
+  const db2 = copia(); const doppio = structuredClone(db2.materiali.find((v) => v.id === 's235jr')); doppio.id = 'doppio'; doppio.nome = 'Doppio'; db2.materiali.push(doppio);
+  assert.ok(!cerca('0038', db2).some((x) => x.motivi.includes(ABB)), 'due voci con 1.0038: «0038» è ambiguo');
+  // coda di un W.Nr. di un'altra famiglia: 1.4668 contro l'Inconel 2.4668
+  const db3 = copia(); const finto2 = structuredClone(db3.materiali.find((v) => v.id === 's235jr')); finto2.id = 'finto-4668'; finto2.nome = 'Finto 4668'; finto2.designazioni = { EN: '', WNr: '1.4668', UNI: '', AISI_SAE: '', DIN: '', altre: [] }; db3.materiali.push(finto2);
+  assert.ok(!cerca('4668', db3).some((x) => x.motivi.includes(ABB)), '1.4668 contro il 2.4668 dell\'Inconel: ambiguo');
   // la mappa del validatore e quella della ricerca coincidono, anche nei casi con collisione
-  for (const d of [DB, db, db2]) assert.deepEqual({ ...Ricerca.numeriAbbreviati(d) }, abbreviatiValidatore(d).mappa);
+  for (const d of [DB, db, db2, db3]) assert.deepEqual({ ...Ricerca.numeriAbbreviati(d) }, abbreviatiValidatore(d).mappa);
 });
 
 test('alias KORV e NCM2: anche in minuscolo, con «una sola fonte»', () => {

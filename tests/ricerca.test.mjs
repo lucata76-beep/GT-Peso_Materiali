@@ -523,3 +523,148 @@ test('i gruppi di famiglia seguono la stessa parità: «C45 E» mostra prima C45
   const g2 = Array.from(R.raggruppa(R.cercaDigitata('C45 E')), (g) => g.famiglia);
   assert.deepEqual(g2, ['Acciai al carbonio', 'Acciai da bonifica']);
 });
+
+// ---------------------------------------------------------------- etichette di norma (app 0.2.6)
+// colonne del DB per ente: [campo del DB, etichetta mostrata, etichetta digitata]
+const COLONNE = [['EN', 'EN', 'EN'], ['WNr', 'W.Nr.', 'W.Nr.'], ['UNI', 'UNI', 'UNI'], ['AISI_SAE', 'AISI/SAE', 'AISI'], ['DIN', 'DIN', 'DIN']];
+const terminiDi = (valore) => { const t = new Set([Ricerca.pulisci(valore)]); String(valore).split(/[\s/()]+/).forEach((w) => { if (Ricerca.pulisci(w)) t.add(Ricerca.pulisci(w)); }); return [...t]; };
+// voci che hanno il valore nella colonna dell'ente (uguale o come inizio), come la lettura con l'etichetta
+const nellaColonna = (campo, v, db = DB) => db.materiali.filter((m) => m.designazioni[campo] && terminiDi(m.designazioni[campo]).some((t) => t.startsWith(Ricerca.pulisci(v)))).map((m) => m.id);
+const coppieColonna = () => { const out = []; for (const m of DB.materiali) for (const [campo, , lab] of COLONNE) if (m.designazioni[campo]) out.push({ id: m.id, campo, lab, v: m.designazioni[campo] }); return out; };
+
+test('etichette: «UNI C45» trova solo le voci con UNI «C45» (C45E), «EN C45» quelle con EN «C45» (C45, poi C45E per inizio)', () => {
+  assert.deepEqual(rid(cerca('UNI C45')), ['c45e:1']);
+  assert.deepEqual(rid(cerca('EN C45')), ['c45:1', 'c45e:3']);
+  assert.deepEqual(rid(cerca('EN C45E')), ['c45e:1']);
+});
+
+test('etichette: AISI, SAE, AISI/SAE, W.Nr. (anche «W Nr» e «WNr») trovano la voce nella colonna giusta', () => {
+  for (const q of ['AISI 316', 'aisi 316', 'SAE 316', 'AISI/SAE 316', 'AISI SAE 316']) assert.deepEqual(rid(cerca(q)), ['316:1'], q);
+  assert.deepEqual(rid(cerca('SAE 1045')), ['c45:1', 'c45e:1']);
+  for (const q of ['W.Nr. 1.4301', 'W.Nr 1.4301', 'W Nr 1.4301', 'WNr 1.4301', 'w.nr. 1.4301']) assert.deepEqual(rid(cerca(q)), ['304:1'], q);
+  assert.deepEqual(rid(cerca('DIN X40CrMoV5-1')), ['1.2344:1']);
+  assert.deepEqual(rid(cerca('EN X5CrNi18-10')), ['304:1']);
+  assert.deepEqual(rid(cerca('EN X 5 CrNi 18-10')), ['304:1'], 'valore scritto con gli spazi');
+});
+
+test('etichette: un valore sotto un ente che non lo riporta resta a 0 risultati («UNI 304», «DIN 304», «UNI 1.4301», «DIN 1.4301»)', () => {
+  for (const q of ['UNI 304', 'DIN 304', 'EN 304', 'UNI 1.4301', 'DIN 1.4301', 'SAE 1.4301', 'UNI 1.0503', 'DIN 1.0503', 'AISI 1.4301', 'W.Nr. 304', 'AISI X5CrNi18-10', 'AISI 316 L', 'SAE 316 L'])
+    assert.deepEqual(rid(cerca(q)), [], q);
+  assert.equal(DB.materiali.filter((v) => /^\d\.\d{4}$/.test(v.designazioni.EN)).length, 0, 'premessa: nessuna colonna EN del DB riporta un numero W.Nr.');
+});
+
+test('etichette: le altre parole restano libere («inox AISI 316», «acciaio UNI C45»); un\'etichetta senza valore non cambia nulla', () => {
+  assert.deepEqual(rid(cerca('inox AISI 316')), ['316:1']);
+  assert.deepEqual(rid(cerca('acciaio UNI C45')), ['c45e:1']);
+  assert.deepEqual(rid(cerca('alluminio UNI C45')), []);
+  for (const q of ['UNI', 'AISI', 'W.Nr.', 'DIN', 'EN SAE']) assert.deepEqual(rid(cerca(q)), rid(digitata(q)), q);
+});
+
+test('etichette: con una voce 316L, «AISI 316 L» e «SAE 316L» trovano solo la 316L; «AISI 316» trova anche la 316L (per inizio)', () => {
+  const db = copia();
+  const v = structuredClone(db.materiali.find((x) => x.id === '316'));
+  v.id = '316l'; v.nome = 'Inox 316L (1.4404)'; v.designazioni = { ...v.designazioni, WNr: '1.4404', AISI_SAE: '316L', altre: [] }; v.alias = [];
+  db.materiali.push(v);
+  for (const q of ['AISI 316 L', 'AISI 316L', 'SAE 316 L', 'AISI/SAE 316L', 'inox AISI 316 L']) assert.deepEqual(rid(cerca(q, db)), ['316l:1'], q);
+  assert.deepEqual(rid(cerca('AISI 316', db)), ['316:1', '316l:3']);
+  assert.deepEqual(rid(cerca('W.Nr. 1.4404', db)), ['316l:1']);
+});
+
+test('etichette: ogni valore di ogni colonna, con la sua etichetta (anche spaziato), ritrova la propria voce e solo voci con quel valore nella colonna', () => {
+  let n = 0;
+  for (const c of coppieColonna()) {
+    // se il valore comincia già con l'etichetta («EN AW-7075 …») non la si scrive due volte
+    const conEtichetta = !Ricerca.pulisci(c.v).startsWith(Ricerca.pulisci(c.lab));
+    for (const q of new Set(conEtichetta ? [`${c.lab} ${c.v}`, `${c.lab} ${spazia(c.v)}`] : [c.v, spazia(c.v)])) {
+      n++;
+      const r = ids(cerca(q));
+      assert.ok(r.includes(c.id), `«${q}» non trova ${c.id}`);
+      const consentite = new Set([...nellaColonna(c.campo, c.v), ...ids(digitata(q))]);
+      for (const id of r) assert.ok(consentite.has(id), `«${q}»: ${id} non ha il valore nella colonna ${c.campo}`);
+    }
+  }
+  assert.ok(n >= 100, `${n} query`);
+});
+
+test('etichette: con l\'etichetta di un altro ente la lettura con etichetta non aggiunge nessuna voce (ignorare l\'etichetta non fa trovare una voce sotto una norma che non la riporta)', () => {
+  let n = 0;
+  for (const c of coppieColonna()) {
+    for (const [campo, , lab] of COLONNE) {
+      if (campo === c.campo || nellaColonna(campo, c.v).length) continue;   // solo gli enti che NON riportano quel valore
+      if (lab === 'EN' && /^1\.\d{4}$/.test(c.v)) continue;                   // eccezione dichiarata: «EN» + W.Nr. d'acciaio (regola dell'app, test sotto)
+      for (const q of new Set([`${lab} ${c.v}`, `${lab} ${spazia(c.v)}`])) {
+        n++;
+        const extra = ids(cerca(q)).filter((id) => !ids(digitata(q)).includes(id));
+        assert.deepEqual(extra, [], `«${q}»: voci aggiunte sotto un ente che non riporta «${c.v}»`);
+      }
+    }
+  }
+  assert.ok(n >= 200, `${n} query con l'etichetta sbagliata`);
+});
+
+test('etichette: nessuna voce sparisce e nessun rango peggiora rispetto alla sola lettura digitata', () => {
+  const q = [];
+  for (const c of coppieColonna()) for (const [, , lab] of COLONNE) q.push(`${lab} ${c.v}`, `${lab} ${spazia(c.v)}`);
+  for (const testo of q) {
+    const tutte = new Map(cerca(testo).map((r) => [r.m.id, r.rango]));
+    for (const r of digitata(testo)) assert.ok(tutte.has(r.m.id) && tutte.get(r.m.id) <= r.rango, `«${testo}»: ${r.m.id} ${tutte.has(r.m.id) ? 'peggiora' : 'sparisce'}`);
+  }
+});
+
+// ---------------------------------------------------------------- «EN» + W.Nr. d'acciaio (regola dell'app, 0.2.6)
+const FAMIGLIE_ACCIAIO = ['Acciai al carbonio', 'Acciai da bonifica', 'Acciai legati', 'Acciai per utensili', 'Acciai inox', 'Acciai speciali'];
+const conWnr = (WNr, nome = 'Voce prova', famiglia = 'Altri') => ({ ...voce(nome, nome, famiglia), designazioni: { EN: '', WNr, UNI: '', AISI_SAE: '', DIN: '', altre: [] } });
+const DICITURA_REGOLA = /^numerazione acciai EN 10027-2 \(regola dell'app, non un dato del DB\): W\.Nr\. «/;
+
+test('«EN» + W.Nr. d\'acciaio 1.xxxx: «EN 1.4301» → Inox 304, «EN 1.0503» → C45, con la dicitura «regola dell\'app, non un dato del DB»', () => {
+  const acciai = DB.materiali.filter((v) => /^1\.\d{4}$/.test(v.designazioni.WNr));
+  assert.ok(acciai.length >= 15 && acciai.every((v) => FAMIGLIE_ACCIAIO.includes(v.famiglia)), 'premessa: tutte le voci con W.Nr. 1.xxxx sono acciai');
+  assert.deepEqual(rid(cerca('EN 1.4301')), ['304:1']);
+  assert.deepEqual(rid(cerca('EN 1.0503')), ['c45:1']);
+  for (const v of acciai) {
+    const r = cerca(`EN ${v.designazioni.WNr}`);
+    assert.deepEqual(rid(r), [`${v.id}:1`], `EN ${v.designazioni.WNr}`);
+    assert.ok(r[0].motivi.some((m) => DICITURA_REGOLA.test(m)), `EN ${v.designazioni.WNr}: motivo della regola assente (${r[0].motivi})`);
+  }
+  // le altre parole restano libere, prima dell'etichetta
+  assert.deepEqual(rid(cerca('inox EN 1.4301')), ['304:1']);
+  assert.deepEqual(rid(cerca('alluminio EN 1.4301')), []);
+});
+
+test('«EN» + W.Nr. d\'acciaio: nessuna voce tolta e nessun rango peggiorato rispetto alla sola lettura digitata (compresi i quattro utensili)', () => {
+  for (const v of DB.materiali.filter((x) => x.designazioni.WNr)) {
+    const q = `EN ${v.designazioni.WNr}`;
+    const tutte = new Map(cerca(q).map((r) => [r.m.id, r.rango]));
+    for (const r of digitata(q)) assert.ok(tutte.has(r.m.id) && tutte.get(r.m.id) <= r.rango, `«${q}»: ${r.m.id} ${tutte.has(r.m.id) ? 'peggiora' : 'sparisce'}`);
+  }
+  for (const id of ['1.2344', '1.2343', '1.2311', '1.2379']) {   // già trovati oggi per coincidenza («en» è dentro «utensili»): restano a rango 1
+    const r = cerca(`EN ${id}`);
+    assert.deepEqual(rid(r), [`${id}:1`], id);
+    assert.ok(r[0].motivi.some((m) => DICITURA_REGOLA.test(m)), `${id}: la regola va detta anche se la voce era già trovata`);
+  }
+});
+
+test('«EN» + W.Nr. non d\'acciaio o non 1.xxxx resta a 0: Inconel 2.4668, 3.xxxx, 1.xxxx fuori dalle famiglie d\'acciaio, 2.xxxx in una famiglia d\'acciaio, «EN 10083»', () => {
+  assert.deepEqual(rid(cerca('EN 2.4668')), []);
+  assert.deepEqual(rid(cerca('W.Nr. 2.4668')), ['inconel718:1'], 'con l\'etichetta propria resta trovato');
+  const db = { meta: { famiglie: ['Acciai legati', 'Alluminio e leghe', 'Altri'] }, materiali: [
+    conWnr('1.9999', 'Acciaio prova', 'Acciai legati'), conWnr('1.9998', 'Lega non acciaio', 'Altri'), conWnr('3.3547', 'Alluminio prova', 'Alluminio e leghe'),
+    conWnr('2.1234', 'Acciaio con numero 2', 'Acciai legati'), conWnr('1.0083', 'Acciaio con norma', 'Acciai legati')] };
+  assert.deepEqual(rid(cerca('EN 1.9999', db)), ['Acciaio prova:1']);
+  assert.deepEqual(rid(cerca('EN 1.9998', db)), [], '1.xxxx ma famiglia non d\'acciaio');
+  assert.deepEqual(rid(cerca('EN 3.3547', db)), [], '3.xxxx');
+  assert.deepEqual(rid(cerca('EN 2.1234', db)), [], '2.xxxx anche in una famiglia d\'acciaio');
+  assert.deepEqual(rid(cerca('EN 10083', db)), [], '«10083» è il numero di una norma, non un W.Nr.');
+  assert.deepEqual(rid(cerca('EN 1.0083', db)), ['Acciaio con norma:1']);
+  assert.deepEqual(rid(cerca('W.Nr. 3.3547', db)), ['Alluminio prova:1']);
+});
+
+test('«EN» + W.Nr. d\'acciaio vale solo per «EN»: UNI, DIN, AISI, SAE con un W.Nr. non aggiungono nulla («DIN 1.4301» resta a 0)', () => {
+  for (const v of DB.materiali.filter((x) => /^1\.\d{4}$/.test(x.designazioni.WNr))) {
+    for (const lab of ['UNI', 'DIN', 'AISI', 'SAE', 'AISI/SAE']) {
+      const q = `${lab} ${v.designazioni.WNr}`;
+      assert.deepEqual(rid(cerca(q)), rid(digitata(q)), q);
+    }
+  }
+  for (const q of ['DIN 1.4301', 'UNI 1.4301', 'AISI 1.4301', 'SAE 1.4301', 'DIN 1.0503']) assert.deepEqual(rid(cerca(q)), [], q);
+});

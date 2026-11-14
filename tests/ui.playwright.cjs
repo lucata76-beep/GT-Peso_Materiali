@@ -981,6 +981,19 @@ async function caso(browser, c) {
     verifica(rr.length === 2 && rr[0].nome === 'C45E' && rr[1].nome === 'C45 (1.0503)', `«C45 E»: C45E per primo, poi C45 (${rr.map((x) => x.nome)})`);
     rr = await righe('S 235 J R'); verifica(rr.length === 1 && rr[0].nome === 'S235JR', `«S 235 J R» trova S235JR (${nomi(rr)})`);
     rr = await righe('100 Cr 6'); verifica(rr.length === 1 && rr[0].nome === '100Cr6', `«100 Cr 6» trova 100Cr6 (${nomi(rr)})`);
+    // etichette di norma: il valore deve stare nella colonna di quell'ente
+    rr = await righe('UNI C45'); verifica(rr.length === 1 && rr[0].nome === 'C45E' && /designazione UNI «C45»/.test(rr[0].trovato), `«UNI C45» trova solo C45E (${nomi(rr)} · ${rr.map((x) => x.trovato)})`);
+    rr = await righe('EN C45'); verifica(JSON.stringify(rr.map((x) => x.nome)) === JSON.stringify(['C45 (1.0503)', 'C45E']) && /designazione EN «C45»/.test(rr[0].trovato), `«EN C45» trova C45 e, per inizio, C45E (${rr.map((x) => x.nome)})`);
+    rr = await righe('AISI 316'); verifica(rr.length === 1 && rr[0].nome === 'Inox 316 (1.4401)' && /designazione AISI\/SAE «316»/.test(rr[0].trovato), `«AISI 316» trova solo Inox 316 (${nomi(rr)})`);
+    rr = await righe('W.Nr. 1.4301'); verifica(rr.length === 1 && rr[0].nome === 'Inox 304 (1.4301)', `«W.Nr. 1.4301» trova solo Inox 304 (${nomi(rr)})`);
+    // «EN» + W.Nr. d'acciaio: regola dell'app, detta nel «trovato per»
+    rr = await righe('EN 1.4301'); verifica(rr.length === 1 && rr[0].nome === 'Inox 304 (1.4301)' && /numerazione acciai EN 10027-2/.test(rr[0].trovato) && /regola dell'app, non un dato del DB/.test(rr[0].trovato), `«EN 1.4301» trova Inox 304 con la dicitura della regola (${nomi(rr)})`);
+    rr = await righe('EN 1.0503'); verifica(rr.length === 1 && rr[0].nome === 'C45 (1.0503)' && /EN 10027-2/.test(rr[0].trovato), `«EN 1.0503» trova C45 (${nomi(rr)})`);
+    rr = await righe('EN 1.2344'); verifica(rr.length === 1 && /1\.2344/.test(rr[0].nome) && /regola dell'app, non un dato del DB/.test(rr[0].trovato), `«EN 1.2344» trova ancora l'acciaio per utensili, con la dicitura della regola (${nomi(rr)})`);
+    for (const q of ['UNI 304', 'DIN 304', 'DIN 1.4301', 'UNI 1.4301', 'EN 2.4668', 'AISI 316 L']) {
+      await page.fill('#q', ''); await page.fill('#q', q); await page.waitForSelector('#elenco:not([hidden])');
+      verifica((await page.locator('#elenco .voce').count()) === 0 && /Nessun materiale trovato/.test(await page.textContent('#elenco')), `«${q}»: nessun risultato (l'ente non riporta quel valore)`);
+    }
     // il DB non ha 316L né 304L: le query con la «L» non trovano nulla e non ricadono su Inox 316 o Inox 304
     for (const q of ['inox 316 L', '316 L', '304 L']) {
       await page.fill('#q', ''); await page.fill('#q', q); await page.waitForSelector('#elenco:not([hidden])');

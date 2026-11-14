@@ -205,3 +205,25 @@ test('passaggi: contengono formula, volume, massa e totale', () => {
   assert.match(t, /Massa = V × ρ/);
   assert.match(t, /Totale = .* × 3 pezzi/);
 });
+
+// ---- fonti indipendenti: stessa regola nel motore (usato dall'interfaccia) e nel validatore
+import { estraiDb, contaFontiIndipendenti, enteDi } from '../tools/valida-db.mjs';
+test('fontiIndipendenti: enti diversi, le schede dello stesso ente (IT/EN, società dello stesso gruppo) contano una volta', () => {
+  const f = (e, campi = ['densita'], d = [{ g_cm3: 7.8 }]) => ({ emittente: e, campi, densita_letta: campi.includes('densita') ? d : undefined });
+  assert.equal(Motore.fontiIndipendenti([f('Lucefin Group'), f('Lucefin Group')], 'densita'), 1);
+  assert.equal(Motore.fontiIndipendenti([f('Lucefin Group'), f('Ovako'), f('Ovako')], 'densita'), 2);
+  assert.equal(Motore.fontiIndipendenti([f('Swiss Steel Group (Steeltec)'), f('Swiss Steel Group (Deutsche Edelstahlwerke)')], 'densita'), 1);
+  assert.equal(Motore.fontiIndipendenti([f('Ovako', ['designazioni'])], 'densita'), 0);
+  assert.equal(Motore.fontiIndipendenti([f('A', ['tag']), f('B', ['tag', 'alias']), f('b', ['alias'])], 'tag'), 2);
+  assert.equal(Motore.fontiIndipendenti([f('A', ['tag']), f('B', ['tag', 'alias']), f('b', ['alias'])], 'alias'), 1);
+  assert.equal(Motore.fontiIndipendenti(undefined, 'densita'), 0);
+  assert.equal(Motore.enteDi('ATI (Allegheny Technologies)'), 'ati');
+});
+
+test('fontiIndipendenti: il motore e il validatore danno lo stesso numero per ogni voce e ogni campo del DB', () => {
+  const db = estraiDb(html);
+  for (const v of db.materiali) for (const campo of ['densita', 'composizione', 'designazioni', 'tag', 'alias', 'nome_commerciale']) {
+    assert.equal(Motore.fontiIndipendenti(v.fonti, campo), contaFontiIndipendenti(v.fonti, campo), `${v.id}/${campo}`);
+  }
+  for (const v of db.materiali) for (const fo of v.fonti) assert.equal(Motore.enteDi(fo.emittente), enteDi(fo.emittente));
+});

@@ -288,7 +288,7 @@
  "meta": {
   "schema": 1,
   "versione": "3",
-  "data": "2026-11-13",
+  "data": "2026-11-14",
   "tag": [
    "da bonifica",
    "da cementazione",
@@ -300,7 +300,8 @@
    "inox",
    "austenitico",
    "indurente per precipitazione",
-   "da costruzione"
+   "da costruzione",
+   "duplex"
   ],
   "regola_nominale": "Se i documenti letti concordano: valore comune. Se discordano: densità nominale = punto medio tra minimo e massimo letti (arrotondato a 3 decimali), con intervallo e fonti.",
   "famiglie": [
@@ -1682,7 +1683,24 @@
      ]
     }
    ],
-   "alias": [],
+   "alias": [
+    {
+     "alias": "KORV",
+     "origine": "non da produttore",
+     "fonti": [
+      "MOR-CWS"
+     ],
+     "prove": [
+      {
+       "fonte": "MOR-CWS",
+       "pagina": 1,
+       "estratto": "griglia delle corrispondenze in alto a sinistra: «Z160CDV12 · AISI D2 · W. nr 1.2379» sopra «KORV · BD2 · X155CrVMo12-1»; cella «KORV» senza etichetta di colonna"
+      }
+     ],
+     "una_sola_fonte": true,
+     "nota": "Cella senza etichetta di colonna; scheda con dati indicativi."
+    }
+   ],
    "fonti": [
     {
      "id": "LUC-12379",
@@ -1727,9 +1745,22 @@
        "g_cm3": 7.67
       }
      ]
+    },
+    {
+     "id": "MOR-CWS",
+     "emittente": "Moretti Acciai S.p.A.",
+     "ruolo": "distributore (il documento presenta un «STOCK PROGRAM» e tagli su misura; non si dichiara produttore)",
+     "documento": "Scheda «CWS 1.2379 Cold Working Steel», Moretti Acciai S.p.A. (PDF del 14.12.2018, fornita da Luca)",
+     "riferimento": "alias p. 1",
+     "url": null,
+     "sha256": "5bfa00348f185e75",
+     "campi": [
+      "alias"
+     ],
+     "fornito_da_utente": true
     }
    ],
-   "data_verifica": "2026-11-13"
+   "data_verifica": "2026-11-14"
   },
   {
    "id": "6082",
@@ -2831,6 +2862,872 @@
     }
    ],
    "data_verifica": "2026-11-13"
+  },
+  {
+   "id": "39nicrmo3",
+   "nome": "39NiCrMo3",
+   "famiglia": "Acciai da bonifica",
+   "designazioni": {
+    "EN": "39NiCrMo3",
+    "WNr": "1.6510",
+    "UNI": "39NiCrMo3",
+    "AISI_SAE": "9840",
+    "DIN": "",
+    "altre": [
+     "UNE F1282",
+     "AFNOR 40NCD3",
+     "GOST 39HNM"
+    ],
+    "indicative": [
+     "36CrNiMo4",
+     "1.6511"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 10083-3:2006, % in massa (norma citata sulle schede Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 0.35,
+      "max": 0.43
+     },
+     "Si": {
+      "max": 0.4
+     },
+     "Mn": {
+      "min": 0.5,
+      "max": 0.8
+     },
+     "P": {
+      "max": 0.025
+     },
+     "S": {
+      "max": 0.035
+     },
+     "Cr": {
+      "min": 0.6,
+      "max": 1.0
+     },
+     "Mo": {
+      "min": 0.15,
+      "max": 0.25
+     },
+     "Ni": {
+      "min": 0.7,
+      "max": 1.0
+     },
+     "Fe": "resto"
+    },
+    "nota": "Può essere fornito con Pb 0,15-0,35 %, S controllato 0,020-0,040 % o Bi 0,030-0,080 %, o con trattamento al calcio (scheda Lucefin)."
+   },
+   "densita_g_cm3": 7.85,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "da bonifica",
+     "prove": [
+      {
+       "fonte": "LUC-39NI-IT",
+       "pagina": 1,
+       "estratto": "«Acciaio da bonifica» (intestazione della scheda)"
+      },
+      {
+       "fonte": "LUC-39NI-EN",
+       "pagina": 1,
+       "estratto": "«Quenching and Tempering Steel» (intestazione della scheda)"
+      }
+     ]
+    }
+   ],
+   "alias": [
+    {
+     "alias": "NCM2",
+     "origine": "non da produttore",
+     "fonti": [
+      "IMS-NCM2"
+     ],
+     "prove": [
+      {
+       "fonte": "IMS-NCM2",
+       "pagina": 1,
+       "estratto": "pag. 61 del catalogo (pagina 1 del PDF), tabella «Corrispondenze / Comparable standards»: colonna SIAU, cella «NCM2» (lettura a vista: PDF fotografico senza testo)"
+      }
+     ],
+     "una_sola_fonte": true,
+     "nota": "Colonna SIAU, catalogo IMS (UNI 7845)."
+    }
+   ],
+   "fonti": [
+    {
+     "id": "LUC-39NI-IT",
+     "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
+     "documento": "Scheda dati 39NiCrMo3 (EN 10083-3:2006), rev. 2018",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2; corrispondenze p. 2; tag p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/152353575939NiCrMo3.pdf",
+     "sha256": "779f0d8b41b866b7",
+     "campi": [
+      "composizione",
+      "corrispondenze",
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.85",
+       "unita": "kg/dm³",
+       "g_cm3": 7.85
+      }
+     ]
+    },
+    {
+     "id": "LUC-39NI-EN",
+     "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
+     "documento": "Technical card 39NiCrMo3 (EN 10083-3:2006), rev. 2018",
+     "riferimento": "densita p. 2; designazioni p. 1,2; tag p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/152353577239NiCrMo3.pdf",
+     "sha256": "4051113e56678995",
+     "campi": [
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.85",
+       "unita": "kg/dm³",
+       "g_cm3": 7.85
+      }
+     ]
+    },
+    {
+     "id": "IMS-NCM2",
+     "emittente": "IMS S.p.A.",
+     "ruolo": "catalogo commerciale (ruolo non dichiarato nel documento)",
+     "documento": "Catalogo IMS S.p.A. acciai speciali, pag. 61-62, scheda 39NiCrMo3 (foto del catalogo fornita da Luca)",
+     "riferimento": "alias p. 1; corrispondenze p. 1 (pag. 61 del catalogo IMS)",
+     "url": null,
+     "sha256": "da15e58b86da4924",
+     "campi": [
+      "alias",
+      "corrispondenze"
+     ],
+     "fornito_da_utente": true
+    }
+   ],
+   "data_verifica": "2026-11-14"
+  },
+  {
+   "id": "1.4462",
+   "nome": "Inox duplex 1.4462 (F51)",
+   "famiglia": "Acciai inox",
+   "designazioni": {
+    "EN": "X2CrNiMoN22-5-3",
+    "WNr": "1.4462",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "UNS S31803",
+     "ASTM A182 F51",
+     "ASTM Type 2205",
+     "BS 318S13",
+     "JIS 329J3L",
+     "AFNOR Z3CND 22-05 Az",
+     "SIS 2377"
+    ]
+   },
+   "nome_commerciale": "SAF 2205 (Alleima)",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 10088-3:2014, % in massa (norma citata sulle schede Lucefin)",
+    "elementi": {
+     "C": {
+      "max": 0.03
+     },
+     "Si": {
+      "max": 1.0
+     },
+     "Mn": {
+      "max": 2.0
+     },
+     "P": {
+      "max": 0.035
+     },
+     "S": {
+      "max": 0.015
+     },
+     "Cr": {
+      "min": 21.0,
+      "max": 23.0
+     },
+     "Ni": {
+      "min": 4.5,
+      "max": 6.5
+     },
+     "Mo": {
+      "min": 2.5,
+      "max": 3.5
+     },
+     "N": {
+      "min": 0.1,
+      "max": 0.22
+     },
+     "Fe": "resto"
+    },
+    "nota": "Swiss Steel indica N 0,12-0,22 % (Lucefin, secondo EN 10088-3: 0,10-0,22 %)."
+   },
+   "densita_g_cm3": 7.8,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "inox",
+     "prove": [
+      {
+       "fonte": "LUC-4462-IT",
+       "pagina": 1,
+       "estratto": "«Acciaio Inossidabile … Austenitico-Ferritico (Duplex)» (intestazione della scheda)"
+      },
+      {
+       "fonte": "LUC-4462-EN",
+       "pagina": 1,
+       "estratto": "«Austenitic-Ferritic Stainless Steel (Duplex)» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-4462",
+       "pagina": 1,
+       "estratto": "«1.4462 Stainless duplex austenitic-ferritic, chromium nickel molybdenum steel»"
+      }
+     ]
+    },
+    {
+     "tag": "duplex",
+     "prove": [
+      {
+       "fonte": "LUC-4462-IT",
+       "pagina": 1,
+       "estratto": "«Austenitico-Ferritico (Duplex)» (intestazione della scheda)"
+      },
+      {
+       "fonte": "LUC-4462-EN",
+       "pagina": 1,
+       "estratto": "«Austenitic-Ferritic Stainless Steel (Duplex)» (intestazione della scheda)"
+      },
+      {
+       "fonte": "SWI-4462",
+       "pagina": 1,
+       "estratto": "«Stainless duplex austenitic-ferritic»"
+      },
+      {
+       "fonte": "ALL-2205",
+       "pagina": 1,
+       "estratto": "«SAF 2205 is a duplex (austenitic-ferritic) stainless steel»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
+   "fonti": [
+    {
+     "id": "LUC-4462-EN",
+     "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
+     "documento": "Technical card 1.4462 X2CrNiMoN22-5-3 (EN 10088-3:2014), 2018",
+     "riferimento": "densita p. 2; composizione p. 1; designazioni p. 1,2; tag p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15235426741.4462Tp2205.pdf",
+     "sha256": "70728194ead6d460",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.80",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "LUC-4462-IT",
+     "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
+     "documento": "Scheda dati 1.4462 X2CrNiMoN22-5-3 (EN 10088-3:2014), rev. 2018",
+     "riferimento": "densita p. 2; designazioni p. 1,2; tag p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15235426851.4462Tp2205.pdf",
+     "sha256": "4d9bdc7292589a12",
+     "campi": [
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.80",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "SWI-4462",
+     "emittente": "Swiss Steel Group (Deutsche Edelstahlwerke)",
+     "ruolo": "produttore",
+     "documento": "Datasheet 1.4462 Stainless duplex austenitic-ferritic, chromium nickel molybdenum steel",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1; tag p. 1",
+     "url": "https://swisssteel-group.com/content-media/documents/Data-Sheets/Stainless-Steel/Datenblatt_4462_UK.pdf",
+     "sha256": "af254aac1bc79f13",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.80",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "ALL-2205",
+     "emittente": "Alleima",
+     "ruolo": "produttore",
+     "documento": "SAF™ 2205 Billets, Datasheet (aggiornato 09.05.2025)",
+     "riferimento": "densita p. 11; designazioni p. 1; nome_commerciale p. 1; tag p. 1",
+     "url": "https://www.alleima.com/contentassets/ec1159b850fd417195a24799c0c0bab5/datasheet-saf-2205-en-v2025-05-09-0638-version-1.pdf/download",
+     "sha256": "148ac37d845e9bbd",
+     "campi": [
+      "densita",
+      "designazioni",
+      "nome_commerciale",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.8",
+       "unita": "g/cm³",
+       "g_cm3": 7.8
+      }
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-14"
+  },
+  {
+   "id": "1.2343",
+   "nome": "Acciaio per utensili 1.2343 (H11)",
+   "famiglia": "Acciai per utensili",
+   "designazioni": {
+    "EN": "X37CrMoV5-1",
+    "WNr": "1.2343",
+    "UNI": "",
+    "AISI_SAE": "H11",
+    "DIN": "X38CrMoV5-1",
+    "altre": [
+     "UNS T20811",
+     "JIS SKD6",
+     "AFNOR Z38CDV5",
+     "BS BH11",
+     "UNE F.520.G"
+    ]
+   },
+   "nome_commerciale": "BÖHLER W300 (ISODISC, ISOBLOC); Thermodur 2343 EFS",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "UNI EN ISO 4957:2002, % in massa (norma citata sulla scheda Lucefin)",
+    "elementi": {
+     "C": {
+      "min": 0.33,
+      "max": 0.41
+     },
+     "Si": {
+      "min": 0.8,
+      "max": 1.2
+     },
+     "Mn": {
+      "min": 0.25,
+      "max": 0.5
+     },
+     "P": {
+      "max": 0.03
+     },
+     "S": {
+      "max": 0.02
+     },
+     "Cr": {
+      "min": 4.8,
+      "max": 5.5
+     },
+     "Mo": {
+      "min": 1.1,
+      "max": 1.5
+     },
+     "V": {
+      "min": 0.3,
+      "max": 0.5
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 7.8,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "per utensili a caldo",
+     "prove": [
+      {
+       "fonte": "BOE-W300B",
+       "pagina": 1,
+       "estratto": "«HOT WORK TOOL STEELS» (W300 ISOBLOC)"
+      },
+      {
+       "fonte": "BOE-W300D",
+       "pagina": 1,
+       "estratto": "«HOT WORK TOOL STEELS» (W300 ISODISC)"
+      },
+      {
+       "fonte": "SWI-2343",
+       "pagina": 1,
+       "estratto": "«Hot work tool steel for universal application»"
+      }
+     ]
+    },
+    {
+     "tag": "da tempra",
+     "prove": [
+      {
+       "fonte": "LUC-12343",
+       "pagina": 1,
+       "estratto": "tabella «Tempering table after quenching at 1020 °C in oil»: HRC 54 53 52,5 52 52 52,5 53,5 54,5 55,5 56 52 46 39 30 (rinvenimento a 50…700 °C)"
+      },
+      {
+       "fonte": "BOE-W300B",
+       "pagina": 2,
+       "estratto": "«Hardness (HRC) 40 to 55 | bars hardened and tempered (BHT)»"
+      },
+      {
+       "fonte": "SWI-2343",
+       "pagina": 2,
+       "estratto": "«Hardening 1010 – 1030 °C … 54 HRC (after quenching)»"
+      }
+     ]
+    }
+   ],
+   "alias": [],
+   "fonti": [
+    {
+     "id": "LUC-12343",
+     "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
+     "documento": "Technical card 1.2343 X37CrMoV5-1 (UNI EN ISO 4957:2002), rev. 2018",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1; tag p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15236074671.2343X37CrMoV51.pdf",
+     "sha256": "16f46c74c0dc70b8",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.80",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "BOE-W300B",
+     "emittente": "voestalpine BÖHLER Edelstahl",
+     "ruolo": "produttore",
+     "documento": "Data sheet BÖHLER W300 ISOBLOC",
+     "riferimento": "densita p. 5; designazioni p. 2; nome_commerciale p. 1; tag p. 1,2",
+     "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w300-isobloc_en_gb.pdf",
+     "sha256": "ab2f5a4b61ad9981",
+     "campi": [
+      "densita",
+      "designazioni",
+      "nome_commerciale",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.8",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "BOE-W300D",
+     "emittente": "voestalpine BÖHLER Edelstahl",
+     "ruolo": "produttore",
+     "documento": "Data sheet BÖHLER W300 ISODISC",
+     "riferimento": "densita p. 5; nome_commerciale p. 1; tag p. 1",
+     "url": "https://www.bohler-edelstahl.com/app/uploads/sites/248/productdb/api/w300-isodisc_en_gb.pdf",
+     "sha256": "166b02130553f82c",
+     "campi": [
+      "densita",
+      "nome_commerciale",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.8",
+       "unita": "kg/dm³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "SWI-2343",
+     "emittente": "Swiss Steel Group",
+     "ruolo": "produttore",
+     "documento": "Technical datasheet Thermodur 2343 EFS, 10.05.23 Rev.00",
+     "riferimento": "designazioni p. 1; nome_commerciale p. 1; tag p. 1,2",
+     "url": "https://swisssteel-group.com/content-media/documents/_import/1.2343_en.pdf",
+     "sha256": "b58af96865a1abdf",
+     "campi": [
+      "designazioni",
+      "nome_commerciale",
+      "tag"
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-14"
+  },
+  {
+   "id": "1.2311",
+   "nome": "Acciaio per utensili 1.2311 (P20)",
+   "famiglia": "Acciai per utensili",
+   "designazioni": {
+    "EN": "",
+    "WNr": "1.2311",
+    "UNI": "",
+    "AISI_SAE": "P20",
+    "DIN": "40CrMnMo7",
+    "altre": [
+     "AFNOR 40CMD8"
+    ]
+   },
+   "nome_commerciale": "Formadur 2311",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "Scheda Lucefin rev. 2018 (norma di riferimento indicata: «Werkstoff»), % in massa",
+    "elementi": {
+     "C": {
+      "min": 0.35,
+      "max": 0.45
+     },
+     "Si": {
+      "min": 0.2,
+      "max": 0.4
+     },
+     "Mn": {
+      "min": 1.3,
+      "max": 1.6
+     },
+     "P": {
+      "max": 0.035
+     },
+     "S": {
+      "max": 0.035
+     },
+     "Cr": {
+      "min": 1.8,
+      "max": 2.1
+     },
+     "Mo": {
+      "min": 0.15,
+      "max": 0.25
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 7.83,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "da bonifica",
+     "prove": [
+      {
+       "fonte": "LUC-12311",
+       "pagina": 1,
+       "estratto": "«Supply conditions: … Quenched and Tempered HB 280-330»"
+      },
+      {
+       "fonte": "SWI-2311",
+       "pagina": 1,
+       "estratto": "«Quenched and tempered» (intestazioni delle proprietà fisiche); durezza alla consegna 280-325 HB"
+      }
+     ]
+    }
+   ],
+   "alias": [],
+   "fonti": [
+    {
+     "id": "LUC-12311",
+     "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
+     "documento": "Technical card 1.2311 40CrMnMo7, rev. 2018",
+     "riferimento": "densita p. 1; composizione p. 1; designazioni p. 1; tag p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/15236072261.231140CrMnMo7.pdf",
+     "sha256": "e0bcb81dfd1f1f2a",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7.83",
+       "unita": "kg/dm³",
+       "g_cm3": 7.83
+      }
+     ]
+    },
+    {
+     "id": "SWI-2311",
+     "emittente": "Swiss Steel Group",
+     "ruolo": "produttore",
+     "documento": "Data Sheet Formadur 2311, 28.04.26 REV.2",
+     "riferimento": "designazioni p. 1; nome_commerciale p. 1; tag p. 1",
+     "url": "https://swisssteel-group.com/content-media/documents/_import/20260428_SSG_DataSheets_Formadur2311_en_02.pdf",
+     "sha256": "04bcb829718929f5",
+     "campi": [
+      "designazioni",
+      "nome_commerciale",
+      "tag"
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-14"
+  },
+  {
+   "id": "s235jr",
+   "nome": "S235JR",
+   "famiglia": "Acciai al carbonio",
+   "designazioni": {
+    "EN": "S235JR",
+    "WNr": "1.0038",
+    "UNI": "",
+    "AISI_SAE": "",
+    "DIN": "",
+    "altre": [
+     "SS 1312",
+     "Fe 360 BFN",
+     "RSt37-2"
+    ]
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "EN 10025-2:2004, % in massa, analisi di colata (norma citata sulle schede Lucefin e Ovako)",
+    "elementi": {
+     "C": {
+      "max": 0.17
+     },
+     "Mn": {
+      "max": 1.4
+     },
+     "P": {
+      "max": 0.035
+     },
+     "S": {
+      "max": 0.035
+     },
+     "N": {
+      "max": 0.012
+     },
+     "Cu": {
+      "max": 0.55
+     },
+     "Fe": "resto"
+    },
+    "nota": "C max 0,20 % per spessori oltre 40 mm; il silicio non è specificato."
+   },
+   "densita_g_cm3": 7.8,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "da costruzione",
+     "prove": [
+      {
+       "fonte": "OVA-S235",
+       "pagina": 1,
+       "estratto": "«Soft structural steel easy to weld and bend»"
+      },
+      {
+       "fonte": "LUC-S235JR",
+       "pagina": 1,
+       "estratto": "«Acciaio da costruzione» (intestazione della scheda)"
+      }
+     ]
+    }
+   ],
+   "alias": [],
+   "fonti": [
+    {
+     "id": "OVA-S235",
+     "emittente": "Ovako",
+     "ruolo": "produttore",
+     "documento": "Steel Navigator, scheda S235JR (PDF dal sito, rev. 31 Jan 2025)",
+     "riferimento": "densita p. 3; composizione p. 1; designazioni p. 1; tag p. 1",
+     "url": "https://steelnavigator.ovako.com/steel-grades/s235/pdf",
+     "sha256": "ba996a03822437eb",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni",
+      "tag"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7800",
+       "unita": "kg/m³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "LUC-S235JR",
+     "emittente": "Lucefin Group",
+     "ruolo": "produttore e distributore (barre trafilate, pelate e rettificate)",
+     "documento": "Scheda dati S235JR (EN 10025-2:2004), rev. 2018",
+     "riferimento": "composizione p. 1; designazioni p. 1; tag p. 1",
+     "url": "https://www.lucefin.com/wp-content/files_mf/1522934592S235JR.pdf",
+     "sha256": "1c4db093c8af9a77",
+     "campi": [
+      "composizione",
+      "designazioni",
+      "tag"
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-14"
+  },
+  {
+   "id": "c45",
+   "nome": "C45 (1.0503)",
+   "famiglia": "Acciai al carbonio",
+   "designazioni": {
+    "EN": "C45",
+    "WNr": "1.0503",
+    "UNI": "",
+    "AISI_SAE": "1045",
+    "DIN": "",
+    "altre": []
+   },
+   "nome_commerciale": "",
+   "composizione": {
+    "tipo": "lega",
+    "riferimento": "ISO 683-1, % in massa (riga «C45 EN ISO 683-1» della scheda Ovako)",
+    "elementi": {
+     "C": {
+      "min": 0.42,
+      "max": 0.5
+     },
+     "Si": {
+      "min": 0.1,
+      "max": 0.4
+     },
+     "Mn": {
+      "min": 0.5,
+      "max": 0.8
+     },
+     "P": {
+      "max": 0.045
+     },
+     "S": {
+      "max": 0.045
+     },
+     "Cr": {
+      "max": 0.4
+     },
+     "Ni": {
+      "max": 0.4
+     },
+     "Mo": {
+      "max": 0.1
+     },
+     "Cu": {
+      "max": 0.3
+     },
+     "Fe": "resto"
+    }
+   },
+   "densita_g_cm3": 7.8,
+   "densita_intervallo_g_cm3": null,
+   "nota_intervallo": "",
+   "tag": [
+    {
+     "tag": "da bonifica",
+     "prove": [
+      {
+       "fonte": "MAR-BON",
+       "pagina": 3,
+       "estratto": "«Non-alloy grades such as C40, C45 and C45E» tra gli «Steels for quenching and tempering / Acciai da bonifica»"
+      },
+      {
+       "fonte": "MAR-BON",
+       "pagina": 4,
+       "estratto": "tabella «EN 683-1 · Non-alloy quenched steels · C40, C45 (+A/+N/+S), C45E (+N/+S)» (C45 e C45E elencate separatamente)"
+      }
+     ]
+    }
+   ],
+   "alias": [],
+   "fonti": [
+    {
+     "id": "OVA-C45",
+     "emittente": "Ovako",
+     "ruolo": "produttore",
+     "documento": "Steel Navigator, scheda C45 (PDF dal sito, rev. 30 Jan 2025)",
+     "riferimento": "densita p. 6; composizione p. 1; designazioni p. 1",
+     "url": "https://steelnavigator.ovako.com/steel-grades/c45/pdf",
+     "sha256": "ff224f8fd5cea4b6",
+     "campi": [
+      "composizione",
+      "densita",
+      "designazioni"
+     ],
+     "densita_letta": [
+      {
+       "valore": "7800",
+       "unita": "kg/m³",
+       "g_cm3": 7.8
+      }
+     ]
+    },
+    {
+     "id": "MAR-BON",
+     "emittente": "Marcegaglia Plates",
+     "ruolo": "produttore",
+     "documento": "Brochure «Steels for quenching and tempering / Acciai da bonifica», Marcegaglia Plates, April 2026 EN-IT",
+     "riferimento": "tag p. 3,4",
+     "url": "https://www.publications.marcegaglia.com/wp-content/uploads/2026/04/Marcegaglia-Plates-Bonifica.pdf",
+     "sha256": "3bdaded4068f9327",
+     "campi": [
+      "tag"
+     ]
+    }
+   ],
+   "data_verifica": "2026-11-14"
   }
  ]
 }
@@ -3085,10 +3982,28 @@ const Motore = (function () {
     return out;
   }
 
+  // Ente di una fonte: l'emittente senza le parentesi, in minuscolo («Swiss Steel Group (Steeltec)» = «Swiss Steel Group»).
+  function enteDi(emittente) {
+    return String(emittente === undefined || emittente === null ? '' : emittente).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+  // Fonti indipendenti: documenti di enti diversi. Le schede dello stesso ente (anche IT ed EN dello stesso materiale) contano una volta.
+  // campo = 'densita' conta le fonti con densita_letta; per ogni altro campo, le fonti che lo dichiarano. Stessa regola del validatore.
+  function fontiIndipendenti(fonti, campo) {
+    const enti = {};
+    let n = 0;
+    (fonti || []).forEach(function (f) {
+      const conta = campo === 'densita' ? Boolean(f.densita_letta) : Array.isArray(f.campi) && f.campi.indexOf(campo) >= 0;
+      const k = enteDi(f.emittente);
+      if (conta && !enti[k]) { enti[k] = true; n++; }
+    });
+    return n;
+  }
+
   return {
     LUNGHEZZA_MM: LUNGHEZZA_MM, MASSA_G: MASSA_G, FORME: FORME, ORDINE_FORME: ORDINE_FORME,
     interpretaNumero: interpretaNumero, formatta: formatta,
-    convertiMassa: convertiMassa, convertiLunghezza: convertiLunghezza, valuta: valuta
+    convertiMassa: convertiMassa, convertiLunghezza: convertiLunghezza, valuta: valuta,
+    enteDi: enteDi, fontiIndipendenti: fontiIndipendenti
   };
 })();
 // ENGINE:FINE
@@ -3102,8 +4017,8 @@ const Ricerca = (function () {
   'use strict';
 
   // Classi di priorità (1 = migliore). Ordine: designazione esatta > alias esatto > designazione parziale
-  // > alias parziale > nome > tag > famiglia (classificazione dell'app).
-  const CLASSE = { DESIG_ESATTA: 1, ALIAS_ESATTO: 2, DESIG_PARZIALE: 3, ALIAS_PARZIALE: 4, NOME: 5, TAG: 6, FAMIGLIA: 7 };
+  // > alias parziale > numero abbreviato (precede il nome) > nome > tag > sinonimo dell'app > famiglia (classificazione dell'app).
+  const CLASSE = { DESIG_ESATTA: 1, ALIAS_ESATTO: 2, DESIG_PARZIALE: 3, ALIAS_PARZIALE: 4, NUMERO_ABBREVIATO: 5, NOME: 6, TAG: 7, SINONIMO: 8, FAMIGLIA: 9 };
 
   const PAROLE_VUOTE = ['da', 'di', 'del', 'della', 'dei', 'delle', 'per', 'a', 'al', 'alla', 'il', 'lo', 'la', 'le', 'i', 'gli',
     'un', 'uno', 'una', 'in', 'e', 'con', 'and', 'for', 'of', 'the'];
@@ -3124,6 +4039,10 @@ const Ricerca = (function () {
     'indurente per precipitazione': ['precipitazione', 'indurente per precipitazione', 'precipitation hardening', 'age hardening'],
     'da costruzione': ['costruzione', 'costruzioni', 'strutturale', 'strutturali', 'da costruzione', 'structural']
   };
+
+  // Sinonimi dell'app per una singola voce (logica della ricerca, non dati di fonte): «ferro» e «acciaio dolce» portano a S235JR.
+  // La famiglia «Ferro» resta nascosta: è riservata al ferro puro.
+  const SINONIMI_VOCE = { 's235jr': ['ferro', 'acciaio dolce'] };
 
   const ACCIAI = ['Acciai al carbonio', 'Acciai da bonifica', 'Acciai legati', 'Acciai per utensili', 'Acciai inox', 'Acciai speciali'];
   // Nomi neutri delle famiglie (non quelli di trattamento): trovano le voci a priorità bassa.
@@ -3174,6 +4093,45 @@ const Ricerca = (function () {
     });
   });
 
+  // Numeri abbreviati: 4 cifre uguali al W.Nr. «1.xxxx» di UNA voce, senza «1.». Se le cifre sono anche il W.Nr. di un'altra voce, il numero
+  // a 4 cifre di un'altra voce (designazioni, alias, nome, nome commerciale) o la coda di un W.Nr. di un'altra famiglia, sono ambigue e non valgono.
+  // Le corrispondenze indicative (designazioni.indicative) non contano: «6511» non porta al 39NiCrMo3. Stessa regola del validatore (tools/valida-db.mjs).
+  function numeriAbbreviati(db) {
+    const mappa = {};
+    const ambigui = {};
+    const token = function (v) {
+      const d = v.designazioni;
+      const testi = [v.nome, v.nome_commerciale, d.EN, d.UNI, d.AISI_SAE, d.DIN].concat(d.altre || [], (v.alias || []).map(function (a) { return a.alias; }));
+      const out = {};
+      testi.filter(Boolean).forEach(function (t) { String(t).split(/[\s/(),;]+/).forEach(function (x) { if (/^\d{4}$/.test(x)) out[x] = true; }); });
+      return out;
+    };
+    db.materiali.forEach(function (v) {
+      const m = /^1\.(\d{4})$/.exec(v.designazioni.WNr || '');
+      if (!m) return;
+      if (mappa[m[1]]) ambigui[m[1]] = true;
+      mappa[m[1]] = v.id;
+    });
+    Object.keys(mappa).forEach(function (q) {
+      db.materiali.forEach(function (v) {
+        if (v.id === mappa[q]) return;
+        if (token(v)[q]) ambigui[q] = true;
+        const w = /^(\d)\.(\d{4})$/.exec(v.designazioni.WNr || '');
+        if (w && w[1] !== '1' && w[2] === q) ambigui[q] = true;
+      });
+    });
+    Object.keys(ambigui).forEach(function (q) { delete mappa[q]; });
+    return mappa;
+  }
+
+  const sinonimiPerFrase = {};   // frase normalizzata → [id di voce]
+  Object.keys(SINONIMI_VOCE).forEach(function (id) {
+    SINONIMI_VOCE[id].forEach(function (s) {
+      const k = parole(s).map(function (w) { return w.norm; }).join(' ');
+      (sinonimiPerFrase[k] = sinonimiPerFrase[k] || []).push(id);
+    });
+  });
+
   function indicizza(db) {
     return db.materiali.map(function (m) {
       const d = m.designazioni;
@@ -3185,17 +4143,20 @@ const Ricerca = (function () {
       return {
         m: m,
         desig: desig.map(function (x) { return { etichetta: x.etichetta, valore: x.valore, termini: termini(x.valore) }; }),
-        alias: (m.alias || []).map(function (a) { return { valore: a.alias, origine: a.origine, termini: termini(a.alias) }; }),
+        alias: (m.alias || []).map(function (a) { return { valore: a.alias, etichetta: etichettaAlias(a), termini: termini(a.alias) }; }),
         nomi: nomi.map(function (x) { return { etichetta: x.etichetta, valore: x.valore, interi: varianti(x.valore) }; }),
         tag: (m.tag || []).map(function (t) { return t.tag; })
       };
     });
   }
 
-  function etichettaAlias(origine) { return origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'; }
+  function etichettaAlias(a) {
+    if (a.origine === 'produttore') return 'alias da produttore';
+    return a.una_sola_fonte ? 'alias non da produttore, una sola fonte' : 'alias non da produttore';
+  }
 
   // Miglior corrispondenza di una parola della ricerca con una voce: { classe, motivo } oppure null
-  function migliore(e, p) {
+  function migliore(e, p, ctx) {
     let best = null;
     const prova = function (classe, motivo) { if (!best || classe < best.classe) best = { classe: classe, motivo: motivo }; };
     const t = p.norm;
@@ -3204,9 +4165,10 @@ const Ricerca = (function () {
       else if (d.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.DESIG_PARZIALE, 'designazione ' + d.etichetta + ' «' + d.valore + '»');
     });
     e.alias.forEach(function (a) {
-      if (a.termini.indexOf(t) >= 0) prova(CLASSE.ALIAS_ESATTO, 'alias «' + a.valore + '» (' + etichettaAlias(a.origine) + ')');
-      else if (a.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.ALIAS_PARZIALE, 'alias «' + a.valore + '» (' + etichettaAlias(a.origine) + ')');
+      if (a.termini.indexOf(t) >= 0) prova(CLASSE.ALIAS_ESATTO, 'alias «' + a.valore + '» (' + a.etichetta + ')');
+      else if (a.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.ALIAS_PARZIALE, 'alias «' + a.valore + '» (' + a.etichetta + ')');
     });
+    if (ctx.q4 && ctx.abbreviati[t] === e.m.id) prova(CLASSE.NUMERO_ABBREVIATO, 'numero abbreviato (regola dell\'app)');
     if (t.length >= 2) {
       e.nomi.forEach(function (n) {
         if (n.interi.some(function (x) { return x.indexOf(t) >= 0; })) prova(CLASSE.NOME, n.etichetta + ' «' + n.valore + '»');
@@ -3233,15 +4195,17 @@ const Ricerca = (function () {
 
   function confronta(a, b) { return a.rango - b.rango || a.m.nome.localeCompare(b.m.nome, 'it'); }
 
-  function cercaIn(indice, testo) {
+  function cercaIn(indice, testo, abbreviati) {
     const grezzo = String(testo === null || testo === undefined ? '' : testo).trim();
     if (!grezzo) return indice.map(function (e) { return { m: e.m, rango: 0, motivi: [] }; });
     const pp = parole(grezzo);
     if (!pp.length) return [];
     const tagFrase = tagDaFrase(pp);
+    const ctx = { q4: /^\d{4}$/.test(grezzo), abbreviati: abbreviati };   // numero abbreviato: la ricerca è esattamente 4 cifre
+    const sinonimi = sinonimiPerFrase[pp.map(function (w) { return w.norm; }).join(' ')] || [];
     const risultati = [];
     indice.forEach(function (e) {
-      const hit = pp.map(function (p) { return migliore(e, p); });
+      const hit = pp.map(function (p) { return migliore(e, p, ctx); });
       let rango = null;
       let motivi = [];
       if (hit.every(Boolean)) {
@@ -3252,6 +4216,10 @@ const Ricerca = (function () {
       if (viaFrase.length && (rango === null || CLASSE.TAG < rango)) {
         rango = CLASSE.TAG;
         motivi = viaFrase.map(function (t) { return 'tag «' + t + '» (cercato: ' + grezzo + ')'; });
+      }
+      if (sinonimi.indexOf(e.m.id) >= 0 && (rango === null || CLASSE.SINONIMO < rango)) {
+        rango = CLASSE.SINONIMO;
+        motivi = ['sinonimo dell\'app'];
       }
       if (rango !== null) risultati.push({ m: e.m, rango: rango, motivi: motivi });
     });
@@ -3269,13 +4237,14 @@ const Ricerca = (function () {
 
   function crea(db) {
     const indice = indicizza(db);
+    const abbreviati = numeriAbbreviati(db);
     return {
-      cerca: function (testo) { return cercaIn(indice, testo); },
+      cerca: function (testo) { return cercaIn(indice, testo, abbreviati); },
       raggruppa: function (risultati) { return raggruppa(risultati, db.meta.famiglie); }
     };
   }
 
-  return { crea: crea, pulisci: pulisci, parole: parole, CLASSE: CLASSE, SINONIMI_TAG: SINONIMI_TAG, FAMIGLIE_NEUTRE: FAMIGLIE_NEUTRE };
+  return { crea: crea, pulisci: pulisci, parole: parole, numeriAbbreviati: numeriAbbreviati, CLASSE: CLASSE, SINONIMI_TAG: SINONIMI_TAG, SINONIMI_VOCE: SINONIMI_VOCE, FAMIGLIE_NEUTRE: FAMIGLIE_NEUTRE };
 })();
 // RICERCA:FINE
 </script>
@@ -3284,7 +4253,7 @@ const Ricerca = (function () {
 (function () {
   'use strict';
   // Versione dell'app: unico punto del codice, da aggiornare a ogni fase (schema 0.<fase>.<revisione>).
-  const APP_VERSIONE = '0.2.1';
+  const APP_VERSIONE = '0.2.2';
   const DB = JSON.parse(document.getElementById('db-materiali').textContent);
   const $ = function (id) { return document.getElementById(id); };
   const f = Motore.formatta;
@@ -3417,6 +4386,7 @@ const Ricerca = (function () {
       let s = '<li><strong>' + esc(x.emittente) + '</strong>, ' + esc(x.ruolo) + ' — ' + esc(x.documento) + '.';
       if (soloDensita) s += ' Densità letta: ' + x.densita_letta.map(lettura).map(esc).join('; ') + esc(paginaDensita(x.riferimento)) + '.';
       else s += ' Riferimenti: ' + esc(x.riferimento) + '.';
+      if (x.fornito_da_utente) return s + ' <span class="piccolo">Copia fornita da Luca: nessun link pubblico.</span></li>';
       return s + ' <a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Apri il documento</a></li>';
     });
     return '<ul class="fonti">' + righe.join('') + '</ul>';
@@ -3428,7 +4398,10 @@ const Ricerca = (function () {
       return esc((fo ? fo.emittente + ', ' + fo.documento : p.fonte) + ', pag. ' + p.pagina + ': «' + p.estratto + '»');
     }).join('; ');
   }
-  function etichettaAlias(a) { return a.origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'; }
+  function etichettaAlias(a) {
+    if (a.origine === 'produttore') return 'alias da produttore';
+    return a.una_sola_fonte ? 'alias non da produttore, una sola fonte' : 'alias non da produttore';
+  }
   function renderScheda() {
     const m = stato.materiale;
     const box = $('scheda');
@@ -3441,6 +4414,7 @@ const Ricerca = (function () {
     if (m.tag.length) h += '<ul class="tag" aria-label="Tag verificati">' + m.tag.map(function (t) { return '<li>' + esc(t.tag) + '</li>'; }).join('') + '</ul>';
     if (des.length) h += '<p class="piccolo">Designazioni: ' + des.join(' · ') + '</p>';
     if (d.altre && d.altre.length) h += '<p class="piccolo">Altre: ' + d.altre.map(esc).join(' · ') + '</p>';
+    if (d.indicative && d.indicative.length) h += '<p class="piccolo">Corrispondenze indicative (non sono identità): ' + d.indicative.map(esc).join(' · ') + '</p>';
     if (m.alias.length) h += '<p class="piccolo">Alias: ' + m.alias.map(function (a) { return esc(a.alias) + ' (' + etichettaAlias(a) + ')'; }).join(' · ') + '</p>';
     m.alias.forEach(function (a) { if (a.nota) h += '<p class="piccolo">Nota su «' + esc(a.alias) + '»: ' + esc(a.nota) + '</p>'; });
     if (m.nome_commerciale) h += '<p class="piccolo">Nome commerciale: ' + esc(m.nome_commerciale) + '</p>';
@@ -3549,7 +4523,7 @@ const Ricerca = (function () {
   function dettagliHTML(m, r) {
     const u = r.unitaPeso;
     const iv = m.densita_intervallo_g_cm3;
-    const nDoc = m.fonti.filter(function (x) { return x.densita_letta; }).length;
+    const nInd = Motore.fontiIndipendenti(m.fonti, 'densita');   // enti diversi: le schede dello stesso ente contano una volta
     let h = '<h3>Pesi e volume</h3><dl>' +
       '<dt>Peso unitario</dt><dd>' + f(r.peso_unitario, 6) + ' ' + u + '</dd>' +
       '<dt>Pezzi</dt><dd>' + r.pezzi + '</dd>' +
@@ -3562,7 +4536,8 @@ const Ricerca = (function () {
       h += '<p>Intervallo delle letture: ' + f(iv[0]) + '–' + f(iv[1]) + ' g/cm³. ' + esc(m.nota_intervallo) +
         ' Con le letture estreme il peso totale sarebbe tra ' + f(r.peso_totale_min, 6) + ' e ' + f(r.peso_totale_max, 6) + ' ' + u + '.</p>';
     }
-    if (nDoc === 1) h += '<p class="avviso">Una sola fonte di densità.</p>';
+    h += '<p class="piccolo">Fonti indipendenti per la densità: ' + nInd + ' (enti diversi; le schede dello stesso ente, anche in lingue diverse, contano una volta).</p>';
+    if (nInd === 1) h += '<p class="avviso">Una sola fonte di densità.</p>';
     h += fontiHTML(m.fonti, true);
     h += '<h3>Formula e passaggi</h3><ol class="passaggi">' + r.passaggi.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>';
     r.avvisi.forEach(function (a) { h += '<p class="avviso">' + esc(a) + '</p>'; });

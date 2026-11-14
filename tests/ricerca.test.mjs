@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import { estraiDb } from '../tools/valida-db.mjs';
+import { estraiDb, numeriAbbreviati as abbreviatiValidatore } from '../tools/valida-db.mjs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const blocco = html.match(/\/\/ RICERCA:INIZIO\n([\s\S]*?)\/\/ RICERCA:FINE/);
@@ -24,7 +24,7 @@ const FAMIGLIA = 'famiglia (classificazione dell\'app)';
 
 // ---------------------------------------------------------------- normalizzazione
 test('maiuscole, accenti e simboli non contano: «BÖHLER», «bohler», «boehler»', () => {
-  const atteso = insieme(['1.2344', '1.2379']);
+  const atteso = insieme(['1.2343', '1.2344', '1.2379']);   // BÖHLER W300, W302, K110
   for (const q of ['BÖHLER', 'böhler', 'bohler', 'BOEHLER', 'Boehler']) assert.deepEqual(insieme(ids(cerca(q))), atteso, q);
 });
 
@@ -48,10 +48,11 @@ test('designazione esatta al primo posto, con il motivo', () => {
   }
 });
 
-test('designazione esatta prima di quella parziale: «C45» mette C45E (UNI C45) prima delle altre', () => {
+test('designazione esatta prima di quella parziale: «C45» trova C45 (EN) e C45E (UNI C45) come designazioni esatte', () => {
   const r = cerca('c45');
-  assert.equal(r[0].m.id, 'c45e');
-  assert.equal(r[0].rango, Ricerca.CLASSE.DESIG_ESATTA);
+  assert.deepEqual(insieme(ids(r).slice(0, 2)), ['c45', 'c45e']);
+  assert.ok(r.slice(0, 2).every((x) => x.rango === Ricerca.CLASSE.DESIG_ESATTA));
+  assert.ok(r.slice(2).every((x) => x.rango > Ricerca.CLASSE.DESIG_ESATTA));
 });
 
 test('una designazione parziale (inizio) si trova ma dopo quella esatta', () => {
@@ -83,7 +84,8 @@ test('ordine dei risultati: designazione esatta, alias, nome, tag, famiglia', ()
   ]);
   const r = cerca('inox', db);
   assert.deepEqual(ids(r), ['a', 'b', 'c', 'd', 'e']);
-  assert.deepEqual(r.map((x) => x.rango), [1, 2, 5, 6, 7]);
+  const C = Ricerca.CLASSE;
+  assert.deepEqual(r.map((x) => x.rango), [C.DESIG_ESATTA, C.ALIAS_ESATTO, C.NOME, C.TAG, C.FAMIGLIA]);
   assert.match(r[1].motivi[0], /alias «Inox» \(alias non da produttore\)/);
   assert.match(r[2].motivi[0], /^nome «Prova inox lega»/);
   assert.match(r[3].motivi[0], /^tag «inox»/);
@@ -139,10 +141,10 @@ test('gli altri tag: ogni parola trova solo le voci con quel tag', () => {
 });
 
 test('frasi con più parole: «utensili a caldo», «utensili a freddo», «per cuscinetti»', () => {
-  assert.deepEqual(ids(cerca('utensili a caldo')), conTag('per utensili a caldo'));
-  assert.deepEqual(ids(cerca('utensili a freddo')), conTag('per utensili a freddo'));
-  assert.deepEqual(ids(cerca('per cuscinetti')), conTag('per cuscinetti'));
-  assert.deepEqual(ids(cerca('hot work')), conTag('per utensili a caldo'));
+  assert.deepEqual(insieme(ids(cerca('utensili a caldo'))), insieme(conTag('per utensili a caldo')));
+  assert.deepEqual(insieme(ids(cerca('utensili a freddo'))), insieme(conTag('per utensili a freddo')));
+  assert.deepEqual(insieme(ids(cerca('per cuscinetti'))), insieme(conTag('per cuscinetti')));
+  assert.deepEqual(insieme(ids(cerca('hot work'))), insieme(conTag('per utensili a caldo')));
 });
 
 test('senza il tag verificato la voce non si trova più (nessuna deduzione dal nome o dalla famiglia)', () => {
@@ -152,7 +154,7 @@ test('senza il tag verificato la voce non si trova più (nessuna deduzione dal n
   // e un tag tolto da una sola voce toglie solo quella
   const db2 = copia();
   db2.materiali.find((v) => v.id === 'c45e').tag = [];
-  assert.deepEqual(ids(cerca('bonificato', db2)), ['42crmo4']);
+  assert.deepEqual(insieme(ids(cerca('bonificato', db2))), insieme(conTag('da bonifica').filter((id) => id !== 'c45e')));
 });
 
 test('i nomi delle famiglie di trattamento non sono testo cercabile', () => {
@@ -263,11 +265,130 @@ test('testo vuoto: tutte le voci, senza motivi', () => {
 test('raggruppa: famiglie senza risultati nascoste, prima quella col risultato migliore', () => {
   const m = motore();
   const gruppi = (testo) => Array.from(m.raggruppa(m.cerca(testo)), (x) => ({ famiglia: x.famiglia, voci: Array.from(x.voci) }));
-  assert.deepEqual(gruppi('bonificato').map((g) => g.famiglia), ['Acciai da bonifica']);
+  const famiglieTag = (tag) => DB.meta.famiglie.filter((f) => DB.materiali.some((v) => v.famiglia === f && v.tag.some((t) => t.tag === tag)));
+  assert.deepEqual(gruppi('bonificato').map((g) => g.famiglia), famiglieTag('da bonifica'));   // stessa priorità: ordine del DB
   const g = gruppi('acciaio');
   assert.ok(g.every((x) => x.voci.length > 0));
   assert.equal(g[0].famiglia, 'Acciai per utensili', 'le voci con «acciaio» nel nome (priorità maggiore) vengono prima');
   assert.ok(!g.map((x) => x.famiglia).includes('Ghise'));
   const tutte = gruppi('');
   assert.deepEqual(tutte.map((x) => x.famiglia), DB.meta.famiglie.filter((f) => DB.materiali.some((v) => v.famiglia === f)));
+});
+
+// ---------------------------------------------------------------- Fase 2c: sinonimi dell'app, numero abbreviato, alias con una sola fonte
+const SIN = 'sinonimo dell\'app';
+const ABB = 'numero abbreviato (regola dell\'app)';
+
+test('«ferro» e «acciaio dolce» trovano S235JR e solo quello, con «sinonimo dell\'app»', () => {
+  for (const q of ['ferro', 'Ferro', 'FERRO', 'acciaio dolce', 'Acciaio Dolce']) {
+    const r = cerca(q);
+    assert.deepEqual(ids(r), ['s235jr'], q);
+    assert.deepEqual(r[0].motivi, [SIN], q);
+    assert.equal(r[0].rango, Ricerca.CLASSE.SINONIMO, q);
+  }
+  for (const q of ['dolce', 'ferrosa', 'acciaio dolci', 'ferro dolce']) assert.deepEqual(ids(cerca(q)), [], q);
+});
+
+test('i sinonimi non creano risultati se la voce non c\'è; la famiglia «Ferro» resta nascosta', () => {
+  const db = copia(); db.materiali = db.materiali.filter((v) => v.id !== 's235jr');
+  assert.deepEqual(ids(cerca('ferro', db)), []);
+  assert.deepEqual(ids(cerca('acciaio dolce', db)), []);
+  const g = Array.from(motore().raggruppa(motore().cerca('ferro')), (x) => x.famiglia);
+  assert.deepEqual(g, ['Acciai al carbonio']);
+  assert.ok(!Array.from(motore().raggruppa(motore().cerca('')), (x) => x.famiglia).includes('Ferro'));
+  assert.ok(!('ferro' in Ricerca.FAMIGLIE_NEUTRE), '«ferro» non è un nome neutro di famiglia: è un sinonimo di una voce');
+});
+
+test('«acciaio» continua a trovare S235JR, per famiglia', () => {
+  const r = cerca('acciaio').find((x) => x.m.id === 's235jr');
+  assert.deepEqual(r.motivi, [FAMIGLIA]);
+});
+
+test('numero abbreviato: 4 cifre uguali al W.Nr. senza «1.», risultato unico, con la precedenza sul nome', () => {
+  for (const q of ['2343', '2311', '2379', '4462']) {
+    const r = cerca(q);
+    const id = { 2343: '1.2343', 2311: '1.2311', 2379: '1.2379', 4462: '1.4462' }[q];
+    assert.deepEqual(ids(r), [id], q);
+    assert.deepEqual(r[0].motivi, [ABB], `${q}: il motivo è il numero abbreviato anche se il nome contiene «1.${q}»`);
+    assert.equal(r[0].rango, Ricerca.CLASSE.NUMERO_ABBREVIATO, q);
+  }
+  assert.ok(Ricerca.CLASSE.NUMERO_ABBREVIATO < Ricerca.CLASSE.NOME && Ricerca.CLASSE.NUMERO_ABBREVIATO > Ricerca.CLASSE.ALIAS_PARZIALE);
+});
+
+test('numero abbreviato: vale per ogni W.Nr. 1.xxxx del DB e per nient\'altro', () => {
+  const wnr = DB.materiali.filter((v) => /^1\.\d{4}$/.test(v.designazioni.WNr));
+  assert.ok(wnr.length >= 17);
+  for (const v of wnr) {
+    const q = v.designazioni.WNr.slice(2);
+    const r = cerca(q);
+    assert.deepEqual(ids(r), [v.id], `${q} → ${v.id}`);
+    assert.deepEqual(r[0].motivi, [ABB], q);
+  }
+  // non per il W.Nr. 2.4668 dell'Inconel (la regola riguarda solo 1.xxxx), non con il punto, non con più o meno di 4 cifre, non con altre parole
+  assert.deepEqual(ids(cerca('4668')), []);
+  assert.deepEqual(cerca('1.2343')[0].motivi, ['designazione W.Nr. «1.2343»']);
+  assert.ok(!cerca('12343').some((x) => x.motivi.includes(ABB)));
+  assert.ok(!cerca('234').some((x) => x.motivi.includes(ABB)));
+  assert.ok(!cerca('2343 acciaio').some((x) => x.motivi.includes(ABB)));
+});
+
+test('«6511» e le corrispondenze indicative non portano al 39NiCrMo3', () => {
+  assert.deepEqual(ids(cerca('6511')), []);
+  assert.deepEqual(ids(cerca('1.6511')), []);
+  assert.deepEqual(ids(cerca('36CrNiMo4')), []);
+  assert.deepEqual(ids(cerca('6510')), ['39nicrmo3'], '1.6510 è il W.Nr. della voce');
+  assert.deepEqual(ids(cerca('9840')), ['39nicrmo3'], 'AISI/SAE 9840 è nella tabella Lucefin senza parentesi');
+});
+
+test('numero abbreviato: se c\'è una collisione non vale (1.7075 contro l\'alluminio 7075); stessa regola del validatore', () => {
+  const db = copia();
+  const finto = structuredClone(db.materiali.find((v) => v.id === '1.2343'));
+  finto.id = 'finto-7075'; finto.nome = 'Finto acciaio'; finto.designazioni = { EN: '', WNr: '1.7075', UNI: '', AISI_SAE: '', DIN: '', altre: [] }; finto.alias = []; finto.tag = [];
+  db.materiali.push(finto);
+  const r = cerca('7075', db);
+  assert.deepEqual(ids(r), ['7075'], 'resta solo l\'alluminio, per designazione esatta');
+  assert.equal(r[0].rango, Ricerca.CLASSE.DESIG_ESATTA);
+  // stesso W.Nr. su due voci (S235JR e una sua copia: nessun altro numero a 4 cifre da solo nei loro testi)
+  const db2 = copia(); const doppio = structuredClone(db2.materiali.find((v) => v.id === 's235jr')); doppio.id = 'doppio'; doppio.nome = 'Doppio'; db2.materiali.push(doppio);
+  assert.ok(!cerca('0038', db2).some((x) => x.motivi.includes(ABB)), 'due voci con 1.0038: «0038» è ambiguo');
+  // coda di un W.Nr. di un'altra famiglia: 1.4668 contro l'Inconel 2.4668
+  const db3 = copia(); const finto2 = structuredClone(db3.materiali.find((v) => v.id === 's235jr')); finto2.id = 'finto-4668'; finto2.nome = 'Finto 4668'; finto2.designazioni = { EN: '', WNr: '1.4668', UNI: '', AISI_SAE: '', DIN: '', altre: [] }; db3.materiali.push(finto2);
+  assert.ok(!cerca('4668', db3).some((x) => x.motivi.includes(ABB)), '1.4668 contro il 2.4668 dell\'Inconel: ambiguo');
+  // la mappa del validatore e quella della ricerca coincidono, anche nei casi con collisione
+  for (const d of [DB, db, db2, db3]) assert.deepEqual({ ...Ricerca.numeriAbbreviati(d) }, abbreviatiValidatore(d).mappa);
+});
+
+test('alias KORV e NCM2: anche in minuscolo, con «una sola fonte»', () => {
+  for (const [q, id, alias] of [['korv', '1.2379', 'KORV'], ['KORV', '1.2379', 'KORV'], ['Korv', '1.2379', 'KORV'], ['ncm2', '39nicrmo3', 'NCM2'], ['NCM2', '39nicrmo3', 'NCM2'], ['Ncm2', '39nicrmo3', 'NCM2']]) {
+    const r = cerca(q);
+    assert.deepEqual(ids(r), [id], q);
+    assert.deepEqual(r[0].motivi, [`alias «${alias}» (alias non da produttore, una sola fonte)`], q);
+    assert.equal(r[0].rango, Ricerca.CLASSE.ALIAS_ESATTO);
+  }
+  assert.deepEqual(cerca('ergal')[0].motivi, ['alias «Ergal» (alias non da produttore)'], 'Ergal ha due fonti indipendenti: nessuna dicitura «una sola fonte»');
+  assert.deepEqual(ids(cerca('ncm')), ['39nicrmo3'], 'inizio dell\'alias');
+  assert.deepEqual(ids(cerca('kor')), ['1.2379']);
+});
+
+test('«bonificato» trova il 39NiCrMo3 e il 1.2311 dal tag; «temprato» trova il 1.2343 dal tag «da tempra»', () => {
+  const b = ids(cerca('bonificato'));
+  for (const id of ['39nicrmo3', '1.2311', 'c45', 'c45e', '42crmo4']) assert.ok(b.includes(id), id);
+  assert.ok(!b.includes('1.2343'));
+  const t = cerca('temprato');
+  assert.ok(ids(t).includes('1.2343'));
+  assert.ok(t.every((x) => x.motivi.every((m) => m.startsWith('tag «da tempra»'))));
+  assert.ok(!ids(t).includes('1.2311'), '1.2311 è «da bonifica», non «da tempra»');
+});
+
+test('«duplex» e «inox duplex» trovano il 1.4462 dal tag; «acciaio inox» non lo scambia per austenitico', () => {
+  assert.deepEqual(ids(cerca('duplex')), ['1.4462']);
+  assert.deepEqual(ids(cerca('inox duplex')), ['1.4462']);
+  assert.ok(!ids(cerca('austenitico')).includes('1.4462'));
+});
+
+test('gli esempi del segnaposto del campo di ricerca trovano tutti qualcosa', () => {
+  const ph = html.match(/placeholder="([^"]*)"/)[1];
+  const esempi = ph.split(',').map((x) => x.replace('…', '').trim()).filter(Boolean);
+  assert.ok(esempi.length >= 4, ph);
+  for (const q of esempi) assert.ok(cerca(q).length > 0, `«${q}» non trova nulla`);
 });

@@ -195,7 +195,7 @@ async function caso(browser, c) {
   const fam = await page.$$eval('#elenco .fam', (els) => els.map((e) => e.textContent));
   verifica(fam.length === 10, `10 famiglie con voci (trovate ${fam.length})`);
   for (const nascosta of ['Acciai speciali', 'Ghise', 'Ferro']) verifica(!fam.includes(nascosta), `famiglia vuota «${nascosta}» nascosta`);
-  verifica((await page.locator('#elenco .voce').count()) === 21, '21 voci nell\'elenco completo');
+  verifica((await page.locator('#elenco .voce').count()) === 27, '27 voci nell\'elenco completo');
 
   // --- bersagli touch con l'elenco aperto
   const piccoli = await page.evaluate(() => [...document.querySelectorAll('#elenco .voce')].filter((e) => e.getBoundingClientRect().height < 44).length);
@@ -203,7 +203,7 @@ async function caso(browser, c) {
   if (OUT && c.nome.startsWith('iphone-chiaro')) await page.screenshot({ path: path.join(OUT, `${c.nome}-elenco.png`) });
 
   // --- ricerca per designazione
-  let r = await cerca(page, 'C45'); verifica(r[0] === 'C45E', `C45 → C45E per primo (${r[0]})`);
+  let r = await cerca(page, 'C45'); verifica(JSON.stringify(r.slice(0, 2).sort()) === JSON.stringify(['C45 (1.0503)', 'C45E']), `C45 → C45 (1.0503) e C45E in testa, designazione esatta (${r.slice(0, 2)})`);
   r = await cerca(page, '1.4301'); verifica(r.length === 1 && /304/.test(r[0]), `1.4301 → Inox 304 (${r})`);
   r = await cerca(page, '304'); verifica(/304/.test(r[0]), `304 → Inox 304 (${r[0]})`);
   r = await cerca(page, '7075'); verifica(r.length === 1 && /7075/.test(r[0]), `7075 (${r})`);
@@ -211,13 +211,15 @@ async function caso(browser, c) {
   r = await cerca(page, 'ti6al4v'); verifica(r.length === 1, `ti6al4v senza trattini (${r})`);
   r = await cerca(page, 'inox 316'); verifica(r.length === 1 && /316/.test(r[0]), `inox 316 (${r})`);
   r = await cerca(page, '316 inox'); verifica(r.length === 1 && /316/.test(r[0]), `316 inox, ordine inverso (${r})`);
-  r = await cerca(page, 'boehler'); verifica(r.length === 2, `boehler → 1.2344 e 1.2379 (${r})`);
+  r = await cerca(page, 'boehler'); verifica(r.length === 3, `boehler → 1.2343, 1.2344 e 1.2379 (${r})`);
   r = await cerca(page, 'Durapur'); verifica(r.length === 1 && /100Cr6/.test(r[0]), `nome commerciale Durapur (${r})`);
   r = await cerca(page, 'H13'); verifica(r.length === 1 && /1\.2344/.test(r[0]), `H13 (${r})`);
   r = await cerca(page, 'CW614N'); verifica(r.length === 1 && /CuZn39Pb3/.test(r[0]), `CW614N (${r})`);
   r = await cerca(page, 'Sn'); verifica(r.some((x) => /Stagno/.test(x)), `Sn trova lo stagno (${r})`);
   r = await cerca(page, '1.0503');
-  verifica(r.length === 0 && /Nessun materiale/.test(await page.textContent('#elenco')), '1.0503: nessun risultato con messaggio (voce esclusa)');
+  verifica(r.length === 1 && r[0] === 'C45 (1.0503)', `1.0503 → C45 (1.0503), non C45E (${r})`);
+  r = await cerca(page, 'zzzzz');
+  verifica(r.length === 0 && /Nessun materiale/.test(await page.textContent('#elenco')), 'testo senza corrispondenze: messaggio «Nessun materiale»');
 
   // --- ricerca intelligente: tag verificati, nomi neutri delle famiglie, «trovato per»
   const db = await leggiDB(page);
@@ -259,10 +261,10 @@ async function caso(browser, c) {
   for (const [q, n] of [['alluminio', nFam('Alluminio e leghe')], ['titanio', nFam('Titanio')], ['inox', nFam('Acciai inox')], ['stagno', nFam('Stagno')]]) { const rr = await righe(q); verifica(rr.length === n, `«${q}» trova ${n} voci (${rr.length})`); }
   verifica((await righe('alluminio')).every((x) => /^trovato per: (nome|famiglia)/.test(x.trovato)), '«alluminio»: motivo mostrato su ogni riga');
   const bohler = ['BÖHLER', 'Böhler', 'bohler', 'BOEHLER'];
-  for (const q of bohler) verifica((await righe(q)).length === 2, `«${q}» trova 1.2344 e 1.2379`);
+  for (const q of bohler) verifica((await righe(q)).length === 3, `«${q}» trova 1.2343, 1.2344 e 1.2379 (W300, W302, K110)`);
   verifica((await righe('')).every((x) => true) && !/\b(EN EN|UNI UNI|DIN DIN)\b/.test(await page.innerText('#elenco')), 'elenco completo: nessuna etichetta ripetuta (es. «EN EN»)');
   const c45 = await righe('C45');
-  verifica(c45[0].nome === 'C45E' && /^trovato per: designazione/.test(c45[0].trovato), `«C45»: designazione per prima, con il motivo (${c45[0].trovato})`);
+  verifica(['C45E', 'C45 (1.0503)'].includes(c45[0].nome) && ['C45E', 'C45 (1.0503)'].includes(c45[1].nome) && /^trovato per: designazione/.test(c45[0].trovato) && /^trovato per: designazione/.test(c45[1].trovato), `«C45»: le due designazioni esatte per prime, con il motivo (${c45[0].trovato} | ${c45[1].trovato})`);
   await page.fill('#q', '');
   await page.waitForSelector('#elenco:not([hidden])');
   verifica((await page.locator('#elenco .trovato').count()) === 0, 'elenco completo: nessun «trovato per»');
@@ -273,6 +275,35 @@ async function caso(browser, c) {
     const rr = await righe(q);
     const motivoAlias = 'trovato per: alias «Ergal» (alias non da produttore)';
     verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && (q === 'Ergal 7075' ? rr[0].trovato.startsWith(motivoAlias + ' · designazione') : rr[0].trovato === motivoAlias), `«${q}»: Alluminio 7075 per alias (${JSON.stringify(rr)})`);
+  }
+
+  // --- Fase 2c: alias con una sola fonte, sinonimi dell'app, numero abbreviato, corrispondenze indicative
+  {
+    const ALIAS1 = (a) => `trovato per: alias «${a}» (alias non da produttore, una sola fonte)`;
+    for (const [q, nome, alias] of [['korv', 'Acciaio per utensili 1.2379 (D2)', 'KORV'], ['KORV', 'Acciaio per utensili 1.2379 (D2)', 'KORV'], ['ncm2', '39NiCrMo3', 'NCM2'], ['NCM2', '39NiCrMo3', 'NCM2']]) {
+      const rr = await righe(q);
+      verifica(rr.length === 1 && rr[0].nome === nome && rr[0].trovato === ALIAS1(alias), `«${q}» → ${nome}, «${rr[0] ? rr[0].trovato : '-'}»`);
+    }
+    for (const q of ['ferro', 'acciaio dolce']) {
+      const rr = await righe(q);
+      verifica(rr.length === 1 && rr[0].nome === 'S235JR' && rr[0].trovato === 'trovato per: sinonimo dell\'app', `«${q}» → S235JR «trovato per: sinonimo dell'app» (${JSON.stringify(rr)})`);
+    }
+    verifica((await page.$$eval('#elenco .fam', (els) => els.map((e) => e.textContent))).join() === 'Acciai al carbonio', '«ferro»: S235JR sotto «Acciai al carbonio» (la famiglia «Ferro» resta nascosta)');
+    for (const [q, nome] of [['2343', 'Acciaio per utensili 1.2343 (H11)'], ['2311', 'Acciaio per utensili 1.2311 (P20)'], ['2379', 'Acciaio per utensili 1.2379 (D2)'], ['4462', 'Inox duplex 1.4462 (F51)'], ['0038', 'S235JR']]) {
+      const rr = await righe(q);
+      verifica(rr.length === 1 && rr[0].nome === nome && rr[0].trovato === 'trovato per: numero abbreviato (regola dell\'app)', `«${q}» → ${nome}, numero abbreviato (${JSON.stringify(rr)})`);
+    }
+    verifica((await righe('6511')).length === 0, '«6511» (corrispondenza indicativa) non trova il 39NiCrMo3');
+    const bon = nomi(await righe('bonificato'));
+    verifica(['39NiCrMo3', 'Acciaio per utensili 1.2311 (P20)', 'C45 (1.0503)', 'C45E', '42CrMo4'].every((n) => bon.includes(n)), `«bonificato» trova 39NiCrMo3, 1.2311, C45, C45E, 42CrMo4 (${bon})`);
+    const tem = await righe('temprato');
+    verifica(tem.some((x) => x.nome === 'Acciaio per utensili 1.2343 (H11)' && /^trovato per: tag «da tempra»/.test(x.trovato)), '«temprato» trova il 1.2343 dal tag «da tempra»');
+    verifica(JSON.stringify(nomi(await righe('duplex'))) === JSON.stringify(['Inox duplex 1.4462 (F51)']), '«duplex» trova l\'inox duplex 1.4462');
+    // segnaposto: ogni esempio trova qualcosa
+    const ph = await page.getAttribute('#q', 'placeholder');
+    const esempi = ph.split(',').map((x) => x.replace('…', '').trim()).filter(Boolean);
+    for (const q of esempi) verifica((await righe(q)).length > 0, `esempio del segnaposto «${q}» trova qualcosa`);
+    verifica(esempi.length >= 4, `segnaposto con ${esempi.length} esempi («${ph}»)`);
   }
 
   // --- tastiera: frecce + Invio
@@ -464,19 +495,60 @@ async function caso(browser, c) {
     verifica(m.tag.length === 0 || fonti.includes('Tag: dove sono documentati'), `${m.nome}: sezione delle prove dei tag`);
     for (const al of m.alias) {
       const scheda = await page.innerText('#scheda');
-      verifica(scheda.includes(`Alias: ${al.alias} (${al.origine === 'produttore' ? 'alias da produttore' : 'alias non da produttore'})`), `${m.nome}: alias «${al.alias}» sulla scheda con la dicitura`);
+      const dicitura = al.origine === 'produttore' ? 'alias da produttore' : (al.una_sola_fonte ? 'alias non da produttore, una sola fonte' : 'alias non da produttore');
+      verifica(scheda.includes(`Alias: ${al.alias} (${dicitura})`), `${m.nome}: alias «${al.alias}» sulla scheda con la dicitura «${dicitura}»`);
       verifica(!al.nota || scheda.includes(al.nota), `${m.nome}: nota sull'alias «${al.alias}» sulla scheda`);
       verifica(fonti.includes('Alias: dove sono documentati'), `${m.nome}: sezione delle prove degli alias`);
       for (const pr of al.prove) {
         const fo = m.fonti.find((x) => x.id === pr.fonte);
         verifica(fonti.includes(`pag. ${pr.pagina}`) && fonti.includes(pr.estratto) && fonti.includes(fo.emittente), `${m.nome}/${al.alias}: ${fo.emittente}, pag. ${pr.pagina}, frase`);
       }
-      verifica(fonti.includes('alias non da produttore') || al.origine === 'produttore', `${m.nome}: «alias non da produttore» anche tra le fonti`);
+      verifica(fonti.includes(dicitura), `${m.nome}: «${dicitura}» anche tra le fonti`);
     }
     await page.click('#det-fonti > summary');
     controlliVoci++;
   }
-  verifica(controlliVoci === db.materiali.length && db.materiali.length === 21, `${controlliVoci} voci controllate`);
+  verifica(controlliVoci === db.materiali.length && db.materiali.length === 27, `${controlliVoci} voci controllate`);
+  // --- documenti forniti da Luca: nessun link, solo la dicitura; corrispondenze indicative; fonti indipendenti per ogni voce
+  await scegliPerNome(page, '39NiCrMo3');
+  const sch = await page.innerText('#scheda');
+  verifica(sch.includes('Alias: NCM2 (alias non da produttore, una sola fonte)') && sch.includes('Nota su «NCM2»: Colonna SIAU, catalogo IMS (UNI 7845).'), 'scheda 39NiCrMo3: alias NCM2 con «una sola fonte» e nota');
+  verifica(sch.includes('Corrispondenze indicative (non sono identità): 36CrNiMo4 · 1.6511'), 'scheda 39NiCrMo3: corrispondenze indicative dichiarate come tali');
+  verifica(!/DIN 36CrNiMo4/.test(sch), '36CrNiMo4 non compare come designazione DIN della voce');
+  await page.click('#det-fonti > summary');
+  const ftIms = await page.innerText('#det-fonti');
+  const liIms = await page.$$eval('#det-fonti ul.fonti > li', (els) => els.map((e) => ({ t: e.textContent, link: !!e.querySelector('a') })));
+  const ims = liIms.find((x) => /IMS S\.p\.A\./.test(x.t));
+  verifica(ims && !ims.link && /Copia fornita da Luca: nessun link pubblico/.test(ims.t) && /catalogo commerciale/.test(ims.t), 'documento IMS: senza link, «Copia fornita da Luca», ruolo «catalogo commerciale»');
+  verifica(ftIms.includes('pag. 1') && ftIms.includes('colonna SIAU, cella «NCM2»'), 'prova dell\'alias NCM2: pagina e cella');
+  await page.click('#det-fonti > summary');
+  await scegliPerNome(page, 'Acciaio per utensili 1.2379 (D2)');
+  const sk = await page.innerText('#scheda');
+  verifica(sk.includes('Alias: KORV (alias non da produttore, una sola fonte)') && sk.includes('Nota su «KORV»: Cella senza etichetta di colonna; scheda con dati indicativi.'), 'scheda 1.2379: alias KORV con «una sola fonte» e nota');
+  await page.click('#det-fonti > summary');
+  const liMor = await page.$$eval('#det-fonti ul.fonti > li', (els) => els.map((e) => ({ t: e.textContent, link: !!e.querySelector('a') })));
+  const mor = liMor.find((x) => /Moretti Acciai/.test(x.t));
+  verifica(mor && !mor.link && /distributore/.test(mor.t) && /Copia fornita da Luca/.test(mor.t), 'documento Moretti: senza link, ruolo «distributore»');
+  await page.click('#det-fonti > summary');
+  await page.check('input[value="tonda"]', { force: true });
+  const ente = (e) => String(e).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  let unaFonte = 0;
+  for (const m of db.materiali) {
+    await scegliPerNome(page, m.nome);
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    const K = new Set(m.fonti.filter((f) => f.densita_letta).map((f) => ente(f.emittente))).size;
+    const det = await page.innerText('#dettagli');
+    verifica(det.includes(`Fonti indipendenti per la densità: ${K}`), `${m.nome}: fonti indipendenti per la densità = ${K}`);
+    verifica(det.includes('Una sola fonte di densità') === (K === 1), `${m.nome}: «Una sola fonte di densità» ${K === 1 ? 'mostrata' : 'assente'} (K = ${K})`);
+    if (K === 1) unaFonte++;
+  }
+  verifica(unaFonte >= 11, `${unaFonte} voci con una sola fonte indipendente di densità`);
+  for (const id of ['39nicrmo3', '1.2311', 's235jr', 'c45']) {
+    const m = db.materiali.find((v) => v.id === id);
+    await scegliPerNome(page, m.nome);
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    verifica((await page.innerText('#dettagli')).includes('Una sola fonte di densità'), `${m.nome}: «Una sola fonte di densità»`);
+  }
   const inc = db.materiali.find((v) => v.id === 'inconel718');
   await scegliPerNome(page, 'Inconel 718');
   verifica(Object.keys(inc.composizione.elementi).length >= 10 && (await page.locator('#det-comp table.comp tbody tr').count()) === Object.keys(inc.composizione.elementi).length, `Inconel 718: composizione con ${Object.keys(inc.composizione.elementi).length} righe visibili`);

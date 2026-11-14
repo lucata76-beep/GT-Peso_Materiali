@@ -115,6 +115,7 @@ export function validaDb(db) {
     if (ids.has(v.id)) err(id, 'id duplicato');
     ids.add(v.id);
     if (!eStr(v.nome) || !v.nome) err(id, 'nome mancante');
+    if (v.personale !== undefined) err(id, 'personale non è ammesso nel database verificato: le schede personali restano nel browser di chi usa l\'app');
     if (!meta.famiglie?.includes(v.famiglia)) err(id, `famiglia «${v.famiglia}» non prevista`);
 
     // designazioni

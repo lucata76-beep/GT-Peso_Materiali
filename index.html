@@ -257,6 +257,7 @@
       <button type="button" class="btn" id="btn-esporta">Esporta schede</button>
       <label class="btn" for="file-importa">Importa schede<input type="file" id="file-importa" accept="application/json,.json" class="sr-only"></label>
     </div>
+    <p class="piccolo" id="nota-schede">Le schede restano solo su questo dispositivo e in questa app (Safari oppure icona Home). Esporta ogni tanto per avere una copia.</p>
     <p id="msg-schede" class="avviso" role="status" aria-live="polite" hidden></p>
     <form id="editor" class="card" hidden novalidate aria-labelledby="editor-titolo">
       <h3 id="editor-titolo">Nuova scheda personale</h3>
@@ -4234,6 +4235,10 @@ const Ricerca = (function () {
     });
   }
 
+  // «designazione EN «C45E»», «designazione W.Nr. «1.0503»»; per le designazioni senza una colonna propria: «altra designazione «UNS S30400»»
+  function motivoDesignazione(d) {
+    return d.etichetta === 'altra' ? 'altra designazione «' + d.valore + '»' : 'designazione ' + d.etichetta + ' «' + d.valore + '»';
+  }
   function etichettaAlias(a) {
     if (a.origine === 'produttore') return 'alias da produttore';
     return a.una_sola_fonte ? 'alias non da produttore, una sola fonte' : 'alias non da produttore';
@@ -4245,8 +4250,8 @@ const Ricerca = (function () {
     const prova = function (classe, motivo) { if (!best || classe < best.classe) best = { classe: classe, motivo: motivo }; };
     const t = p.norm;
     e.desig.forEach(function (d) {
-      if (d.termini.indexOf(t) >= 0) prova(CLASSE.DESIG_ESATTA, 'designazione ' + d.etichetta + ' «' + d.valore + '»');
-      else if (d.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.DESIG_PARZIALE, 'designazione ' + d.etichetta + ' «' + d.valore + '»');
+      if (d.termini.indexOf(t) >= 0) prova(CLASSE.DESIG_ESATTA, motivoDesignazione(d));
+      else if (d.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.DESIG_PARZIALE, motivoDesignazione(d));
     });
     e.alias.forEach(function (a) {
       if (a.termini.indexOf(t) >= 0) prova(CLASSE.ALIAS_ESATTO, 'alias «' + a.valore + '» (' + a.etichetta + ')');

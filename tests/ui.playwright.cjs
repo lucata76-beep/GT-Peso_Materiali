@@ -274,7 +274,7 @@ async function caso(browser, c) {
   for (const q of ['ergal', 'ERGAL', 'Ergal 7075']) {
     const rr = await righe(q);
     const motivoAlias = 'trovato per: alias «Ergal» (alias non da produttore)';
-    verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && (q === 'Ergal 7075' ? rr[0].trovato.startsWith(motivoAlias + ' · designazione') : rr[0].trovato === motivoAlias), `«${q}»: Alluminio 7075 per alias (${JSON.stringify(rr)})`);
+    verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && (q === 'Ergal 7075' ? rr[0].trovato.startsWith(motivoAlias + ' · altra designazione') : rr[0].trovato === motivoAlias), `«${q}»: Alluminio 7075 per alias (${JSON.stringify(rr)})`);
   }
 
   // --- Fase 2c: alias con una sola fonte, sinonimi dell'app, numero abbreviato, corrispondenze indicative
@@ -653,6 +653,11 @@ async function caso(browser, c) {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     verifica(await page.isHidden('#editor') && await page.isVisible('#btn-nuova') && await page.isVisible('#btn-esporta') && await page.isVisible('label[for="file-importa"]'), 'schede personali: pulsanti visibili, modulo nascosto');
+    const avvertenza = 'Le schede restano solo su questo dispositivo e in questa app (Safari oppure icona Home). Esporta ogni tanto per avere una copia.';
+    verifica((await page.textContent('#nota-schede')).trim() === avvertenza && await page.isVisible('#nota-schede'), 'avvertenza sul dispositivo e sull\'app, scritta come richiesto');
+    // su schermo largo i pulsanti vanno a capo (Importa sulla seconda riga): l'avvertenza deve stare sotto entrambi, a meno di 40 px dal più basso
+    verifica(await page.evaluate(() => { const e = document.querySelector('#btn-esporta').getBoundingClientRect(); const i = document.querySelector('label[for="file-importa"]').getBoundingClientRect(); const n = document.querySelector('#nota-schede').getBoundingClientRect(); const fondo = Math.max(e.bottom, i.bottom); return n.top >= e.bottom - 1 && n.top >= i.bottom - 1 && n.top - fondo < 40 && n.width > 150; }), 'l\'avvertenza sta subito sotto i pulsanti «Esporta schede» e «Importa schede»');
+    verifica(await page.evaluate(() => { const a = document.querySelector('.azioni-schede'); return a.nextElementSibling && a.nextElementSibling.id === 'nota-schede'; }), 'l\'avvertenza segue i pulsanti nel documento (anche per chi usa un lettore di schermo)');
     verifica(!/scheda personale|schede personali/.test(await page.textContent('#footer')), 'senza schede personali il piè di pagina non le nomina');
     await page.focus('#q'); await page.waitForSelector('#elenco:not([hidden])');
     verifica(!(await page.$$eval('#elenco .fam', (e) => e.map((x) => x.textContent))).includes('Schede personali'), 'senza schede il gruppo «Schede personali» non compare');
@@ -713,7 +718,7 @@ async function caso(browser, c) {
     verifica(!/Fonti indipendenti|Una sola fonte|Apri il documento/.test(dp), 'dettagli: nessun conteggio di fonti per una scheda personale');
     verifica((await page.textContent('#barra-testo')).includes('Lega di prova'), 'barra del peso con il nome della scheda personale');
     // ricerca
-    for (const [q, motivo] of [['zeta', /^trovato per: (nome|designazione)/], ['Lega di prova', /^trovato per: nome/], ['zeta-7', /^trovato per: designazione/], ['sigla y', /^trovato per: designazione/], ['zetalloy', /^trovato per: nome commerciale/]]) {
+    for (const [q, motivo] of [['zeta', /^trovato per: altra designazione «ZETA-7»$/], ['Lega di prova', /^trovato per: nome/], ['zeta-7', /^trovato per: altra designazione «ZETA-7»$/], ['sigla y', /^trovato per: altra designazione «Sigla Y»$/], ['zetalloy', /^trovato per: nome commerciale/]]) {
       const rr = await righe(q);
       verifica(rr.length === 1 && /^Lega di prova/.test(rr[0].nome) && motivo.test(rr[0].trovato), `ricerca «${q}» trova la scheda personale (${JSON.stringify(rr)})`);
     }
@@ -785,6 +790,7 @@ async function caso(browser, c) {
     verifica(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'il modulo non crea scroll orizzontale');
     await ct('.btn:not(.primario)', 'pulsante');
     await ct('.btn.primario', 'pulsante principale (su sfumatura)');
+    await ct('#nota-schede', 'avvertenza accanto a «Esporta schede»');
     await ct('#editor label', 'etichetta del modulo');
     await ct('#editor .piccolo', 'testo di aiuto del modulo');
     const bordoBtn = await misura(page, '.btn:not(.primario)'); const sfondoBtn = (await misura(page, '#editor')).sfondi[0];

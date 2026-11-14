@@ -392,3 +392,20 @@ test('gli esempi del segnaposto del campo di ricerca trovano tutti qualcosa', ()
   assert.ok(esempi.length >= 4, ph);
   for (const q of esempi) assert.ok(cerca(q).length > 0, `«${q}» non trova nulla`);
 });
+
+// ---------------------------------------------------------------- etichetta delle designazioni senza colonna propria
+test('«trovato per»: le designazioni senza colonna propria si chiamano «altra designazione», le altre «designazione EN/W.Nr./…»', () => {
+  const uns = cerca('S30400');
+  assert.deepEqual(ids(uns), ['304']);
+  assert.deepEqual(uns[0].motivi, ['altra designazione «UNS S30400»']);
+  assert.deepEqual(cerca('1.2343')[0].motivi, ['designazione W.Nr. «1.2343»']);
+  assert.deepEqual(cerca('H11')[0].motivi, ['designazione AISI/SAE «H11»']);
+  // anche per le corrispondenze parziali (inizio della designazione)
+  assert.deepEqual(cerca('S3040')[0].motivi, ['altra designazione «UNS S30400»']);
+  // nessuna forma «designazione altra» in nessun risultato: si cercano tutte le designazioni «altre» del database
+  for (const v of DB.materiali) for (const a of v.designazioni.altre) {
+    for (const x of cerca(a)) assert.ok(x.motivi.every((m) => !/designazione altra/.test(m)), `«${a}» → ${x.motivi}`);
+    const suo = cerca(a).find((x) => x.m.id === v.id);
+    assert.ok(suo && suo.motivi.some((m) => /designazione/.test(m) || /^nome|^tag|^alias|^famiglia|^numero|^sinonimo/.test(m)), `${a} non trova ${v.id}`);
+  }
+});

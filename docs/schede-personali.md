@@ -2,10 +2,21 @@
 
 Chi usa l'app può scrivere le proprie schede materiale (nome, densità o peso specifico, composizione chimica, designazioni, nome commerciale, fonte e note). Sono dati **scritti da chi usa l'app**: non hanno fonti né prove, non sono verificati su documenti e non entrano mai nel database verificato (`index.html`, blocco `DB`).
 
+## Avvertenza: le schede restano solo su questo dispositivo e in questa app
+
+L'app mostra accanto a «Esporta schede»: «Le schede restano solo su questo dispositivo e in questa app (Safari oppure icona Home). Esporta ogni tanto per avere una copia.»
+
+Il motivo, come indicato da Luca per l'iPhone:
+
+- **Safari e l'icona nella schermata Home non condividono i dati.** Le schede scritte aprendo l'app in Safari non compaiono nell'app aperta dall'icona Home, e viceversa: sono due archivi separati. Lo stesso vale per un altro browser o per il computer.
+- **In Safari la memoria può essere cancellata.** Dopo 7 giorni di uso di Safari senza aprire il sito, Safari può cancellare i dati che il sito ha salvato. Esportare ogni tanto dà una copia da importare di nuovo.
+
+Questo comportamento di iOS è quello indicato da Luca e qui **non è verificato**: i test dell'app girano solo su Chromium (non c'è Safari su iPhone né WebKit), quindi l'esportazione e l'importazione dei file su iPhone vanno provate su un iPhone.
+
 ## Regole
 
 - Ogni schermata che mostra una scheda personale lo dichiara: «Scheda personale · inserita da te, non verificata su documenti». Nei dettagli del peso compare «Scheda personale: la densità e gli altri dati sono scritti da te e non sono verificati su documenti», senza il conteggio delle fonti.
-- Le schede stanno nella memoria del browser (`localStorage`, chiave `gtpm.schede-personali.v1`) di **quel dispositivo e quel browser**: il telefono e il computer non si sincronizzano. Per tenerne una copia e per portarle da un dispositivo all'altro ci sono «Esporta schede» (file JSON) e «Importa schede».
+- Le schede stanno nella memoria del browser (`localStorage`, chiave `gtpm.schede-personali.v1`) di **quel dispositivo e quella app o quel browser**: il telefono e il computer non si sincronizzano. Per tenerne una copia e per portarle da un dispositivo all'altro ci sono «Esporta schede» (file JSON) e «Importa schede». Vedi l'avvertenza sopra.
 - Il nome non può ripetere quello di un'altra scheda personale né di una voce del database (maiuscole, accenti e simboli non contano): una scheda personale non può ridefinire una voce verificata.
 - Le schede personali non partecipano al **numero abbreviato** (4 cifre del W.Nr.) e non cambiano i risultati di nessuna ricerca sulle voci del database; compaiono nel gruppo «Schede personali», in fondo all'elenco, e solo se ce ne sono.
 - Il validatore del database rifiuta una voce con `personale` nel DB verificato.

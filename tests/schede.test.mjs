@@ -187,6 +187,8 @@ test('ricerca: una scheda personale si trova per nome, designazione, sigla e nom
   const s = archiviata({ nome: 'Lega Zeta', designazioni: 'ZETA-7; Sigla Y', nome_commerciale: 'Zetalloy' }, 'p-zeta');
   const db = dbUnito([s]);
   for (const q of ['zeta', 'Lega Zeta', 'zeta-7', 'sigla y', 'zetalloy']) assert.deepEqual(trova(db, q).map((x) => x.id), ['p-zeta'], q);
+  assert.deepEqual(trova(db, 'zeta-7')[0].motivi, ['altra designazione «ZETA-7»']);
+  assert.deepEqual(trova(db, 'zeta')[0].motivi, ['altra designazione «ZETA-7»'], 'inizio della designazione');
   const g = Ricerca.crea(db); const gruppi = Array.from(g.raggruppa(g.cerca('zeta')), (x) => x.famiglia);
   assert.deepEqual(gruppi, ['Schede personali']);
   assert.ok(!Array.from(g.raggruppa(Ricerca.crea(dbUnito([])).cerca('')), (x) => x.famiglia).includes('Schede personali'), 'senza schede il gruppo non compare');

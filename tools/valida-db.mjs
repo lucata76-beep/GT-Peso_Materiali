@@ -12,6 +12,9 @@ const CAMPI_FONTE = ['densita', 'composizione', 'designazioni', 'nome_commercial
 const CAMPI_SOLO_ALIAS = ['alias', 'corrispondenze'];
 const CHIAVI_DESIGNAZIONI = ['EN', 'WNr', 'UNI', 'AISI_SAE', 'DIN'];
 const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
+const RE_VERSIONE = /^[1-9][0-9]*$/;
+// Il campo «tipico» sulle letture di densità è stato introdotto con la v4 del DB: una v3 non può contenerlo.
+const VERSIONE_TIPICO = 4;
 const RE_ID = /^[a-z0-9][a-z0-9.\-]*$/;
 const RE_HASH = /^[0-9a-f]{16}$/;
 // Ruoli ammessi per i dati (densità, composizione, designazioni, nome commerciale, tag)
@@ -95,7 +98,7 @@ export function validaDb(db) {
   if (!db || typeof db !== 'object') return { errori: ['DB non è un oggetto'], avvisi };
   const meta = db.meta ?? {};
   if (meta.schema !== 1) err('meta', 'schema deve essere 1');
-  if (!eStr(meta.versione) || !meta.versione) err('meta', 'versione mancante');
+  if (!eStr(meta.versione) || !RE_VERSIONE.test(meta.versione)) err('meta', 'versione: serve un numero intero positivo («3», «4»…)');
   if (!RE_DATA.test(meta.data ?? '')) err('meta', 'data non in formato AAAA-MM-GG');
   if (!Array.isArray(meta.famiglie) || meta.famiglie.length === 0) err('meta', 'famiglie mancanti');
   if (!Array.isArray(meta.tag) || meta.tag.length === 0 || meta.tag.some((t) => !eStr(t) || !t.trim()) || new Set(meta.tag).size !== meta.tag.length) {
@@ -115,6 +118,7 @@ export function validaDb(db) {
     if (ids.has(v.id)) err(id, 'id duplicato');
     ids.add(v.id);
     if (!eStr(v.nome) || !v.nome) err(id, 'nome mancante');
+    if (v.personale !== undefined) err(id, 'personale non è ammesso nel database verificato: le schede personali restano nel browser di chi usa l\'app');
     if (!meta.famiglie?.includes(v.famiglia)) err(id, `famiglia «${v.famiglia}» non prevista`);
 
     // designazioni
@@ -175,6 +179,8 @@ export function validaDb(db) {
         else for (const x of f.densita_letta) {
           if (!eStr(x.valore) || !eStr(x.unita) || !eNum(x.g_cm3) || x.g_cm3 <= 0) err(id, `fonte ${fid}: densita_letta non valida`);
           else letture.push(x.g_cm3);
+          if (x.tipico !== undefined && x.tipico !== true) err(id, `fonte ${fid}: densita_letta: «tipico» ammesso solo come true (valore dichiarato tipico dal documento)`);
+          else if (x.tipico === true && !(Number(meta.versione) >= VERSIONE_TIPICO)) err(id, `fonte ${fid}: densita_letta: «tipico» richiede il DB v${VERSIONE_TIPICO} o successivo (versione dichiarata: ${meta.versione})`);
         }
         if (!f.campi?.includes('densita')) err(id, `fonte ${fid}: ha densita_letta ma non dichiara il campo «densita»`);
       } else if (f.campi?.includes('densita')) {

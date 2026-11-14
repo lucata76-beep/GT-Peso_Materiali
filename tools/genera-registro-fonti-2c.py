@@ -6,6 +6,8 @@ import json, sys, os, hashlib
 
 docs = json.load(open(sys.argv[1], encoding='utf8'))
 BASE = sys.argv[2]
+DB_JSON = sys.argv[1][:-len('_docs.json')] + '.json'   # il DB prodotto da costruisci_db.py accanto al dump
+db = json.load(open(DB_JSON, encoding='utf8'))
 IDS_2C = ['LUC-39NI-IT', 'LUC-39NI-EN', 'IMS-NCM2', 'LUC-4462-IT', 'LUC-4462-EN', 'SWI-4462', 'ALL-2205', 'LUC-12343', 'BOE-W300B', 'BOE-W300D', 'SWI-2343',
           'LUC-12311', 'SWI-2311', 'OVA-S235', 'LUC-S235JR', 'OVA-C45', 'MAR-BON', 'MOR-CWS']
 NOMI_CAMPO = {'densita': 'densità', 'composizione': 'composizione', 'designazioni': 'designazioni', 'nome_commerciale': 'nome commerciale',
@@ -30,6 +32,7 @@ out.append('- Nessun valore a memoria: ogni valore ha pagina e frase o tabella; 
 out.append('- **Fonti indipendenti** = documenti di produttori o enti diversi. Due schede dello stesso ente (per esempio Lucefin in italiano e in inglese) contano come UNA fonte.')
 out.append('- I due PDF forniti da Luca (IMS e Moretti) valgono solo come fonte di alias e di corrispondenze indicative, non di densità, tag o composizione.')
 out.append('- Un alias con un solo documento non-aggregatore entra con l\'etichetta «una sola fonte» (uso personale, decisione di Luca); la regola vale solo per gli alias.')
+out.append('- **Valore tipico**: una lettura di densità porta `tipico: true` solo se il documento la dichiara tale (dal DB v4: vedi la sezione «Valore tipico» più sotto). L\'app scrive «valore tipico» solo se tutte le letture della voce lo sono.')
 out.append('')
 out.append('## Documenti usati')
 out.append('')
@@ -56,6 +59,30 @@ for i in IDS_2C:
         vistes.add(chiave)
         out.append(f"- voce `{p['voce']}`, {NOMI_CAMPO.get(p['campo'], p['campo'])}, pag. {p['pagina']}: {p['estratto']}")
     out.append('')
+
+out.append('## Valore tipico (DB v4)')
+out.append('')
+out.append('Letture di densità che il documento dichiara «valore tipico» (campo `tipico: true` nel DB). Elenco ricavato dal DB (blocco `db-materiali` di `index.html`): ogni voce con il flag ha qui documento, pagina e frase. L\'app scrive «valore tipico» solo se lo sono tutte le letture della voce.')
+out.append('')
+for v in db['materiali']:
+    for f in v['fonti']:
+        if not any(x.get('tipico') for x in f.get('densita_letta', [])):
+            continue
+        d = docs[f['id']]
+        out.append(f"### {v['nome']} — {f['id']} ({d['emittente']})")
+        out.append('')
+        out.append(f"{d['titolo']}. {d['url']} — SHA-256 `{d['sha256']}`")
+        out.append('')
+        letture = '; '.join(f"{x['valore']} {x['unita']}" + (' (tipico)' if x.get('tipico') else '') for x in f['densita_letta'])
+        out.append(f"Letture nel DB: {letture}.")
+        out.append('')
+        visti = set()
+        for p in d['prove']:
+            if p['voce'] != v['id'] or p['campo'] != 'densita' or (p['pagina'], p['estratto']) in visti:
+                continue
+            visti.add((p['pagina'], p['estratto']))
+            out.append(f"- densità, pag. {p['pagina']}: {p['estratto']}")
+        out.append('')
 
 out.append('## Letti e non usati')
 out.append('')

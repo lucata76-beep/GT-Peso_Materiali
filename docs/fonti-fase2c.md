@@ -9,6 +9,7 @@ Le pagine sono quelle del PDF (non quelle stampate), tranne dove indicato. Ogni 
 - **Fonti indipendenti** = documenti di produttori o enti diversi. Due schede dello stesso ente (per esempio Lucefin in italiano e in inglese) contano come UNA fonte.
 - I due PDF forniti da Luca (IMS e Moretti) valgono solo come fonte di alias e di corrispondenze indicative, non di densità, tag o composizione.
 - Un alias con un solo documento non-aggregatore entra con l'etichetta «una sola fonte» (uso personale, decisione di Luca); la regola vale solo per gli alias.
+- **Valore tipico**: una lettura di densità porta `tipico: true` solo se il documento la dichiara tale (dal DB v4: vedi la sezione «Valore tipico» più sotto). L'app scrive «valore tipico» solo se tutte le letture della voce lo sono.
 
 ## Documenti usati
 
@@ -169,7 +170,7 @@ Data Sheet Formadur 2311, 28.04.26 REV.2
 
 Steel Navigator, scheda S235JR (PDF dal sito, rev. 31 Jan 2025)
 
-- voce `s235jr`, densità, pag. 3: Density (kg/m3) 210 0.3 80 7800
+- voce `s235jr`, densità, pag. 3: Other properties (typical values) Youngs module (GPa) Poisson´s ratio (-) Shear module (GPa) Density (kg/m3) 210 0.3 80 7800
 - voce `s235jr`, composizione, pag. 1: S235JR EN10025-2 (ref) Std Pcm 0.25max Max 0.17 1.40 0.035 0.035 0.55 0.0120
 - voce `s235jr`, designazioni, pag. 1: Similar designations SS 1312, S235JR, 1.0038, Fe 360 BFN, RSt37-2, 40 B, SB1312, IM2191
 - voce `s235jr`, tag, pag. 1: «Soft structural steel easy to weld and bend»
@@ -187,7 +188,7 @@ Scheda dati S235JR (EN 10025-2:2004), rev. 2018
 
 Steel Navigator, scheda C45 (PDF dal sito, rev. 30 Jan 2025)
 
-- voce `c45`, densità, pag. 6: Density (kg/m3) 210 0.3 80 7800
+- voce `c45`, densità, pag. 6: Other properties (typical values) Youngs module (GPa) Poisson´s ratio (-) Shear module (GPa) Density (kg/m3) 210 0.3 80 7800
 - voce `c45`, composizione, pag. 1: C45 EN CEV max Min 0.42 0.10 0.50 - - - - - - - - - - Std ISO 683-1 Pcm max Max 0.50 0.40 0.80 0.045 0.045 0.40 0.40 0.10 - - 0.30
 - voce `c45`, designazioni, pag. 1: Similar designations C43, C44, C45R - 1.1201, C45E - 1.1191, Ck45, St70-2, SAE 1045, 080A42, SS 1672, XC 48, C 45, S 45 C, GOST 45, AISI/SAE
 
@@ -203,6 +204,44 @@ Brochure «Steels for quenching and tempering / Acciai da bonifica», Marcegagli
 Scheda «CWS 1.2379 Cold Working Steel», Moretti Acciai S.p.A. (PDF del 14.12.2018, fornita da Luca)
 
 - voce `1.2379`, alias, pag. 1: griglia delle corrispondenze in alto a sinistra: «Z160CDV12 · AISI D2 · W. nr 1.2379» sopra «KORV · BD2 · X155CrVMo12-1»; cella «KORV» senza etichetta di colonna
+
+## Valore tipico (DB v4)
+
+Letture di densità che il documento dichiara «valore tipico» (campo `tipico: true` nel DB). Elenco ricavato dal DB (blocco `db-materiali` di `index.html`): ogni voce con il flag ha qui documento, pagina e frase. L'app scrive «valore tipico» solo se lo sono tutte le letture della voce.
+
+### S355J2 — OVA-S355J2 (Ovako)
+
+Steel Navigator, scheda S355J2 (PDF dal sito). https://steelnavigator.ovako.com/steel-grades/s355j2/pdf — SHA-256 `67df1b836c18e28fd55034401b1a038e05b12f77be5064d2e6194570e5f5134a`
+
+Letture nel DB: 7800 kg/m³ (tipico).
+
+- densità, pag. 6: Other properties (typical values) Youngs module (GPa) Poisson´s ratio (-) Shear module (GPa) Density (kg/m3) 210 0.3 80 7800
+
+### Inconel 718 — SPE-718 (Special Metals Corporation)
+
+INCONEL® alloy 718, pubblicazione SMC-045 (Sept 07). https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-718.pdf — SHA-256 `6c9c60dc272cb4f7275091e02779879760afcb1801fc9bd04fbfca239907da90`
+
+Letture nel DB: 0.296 lb/in³ (tipico); 0.297 lb/in³ (tipico).
+
+- densità, pag. 1: Annealed..............................................................................0.296
+- densità, pag. 1: Annealed and Aged .............................................................0.297
+- densità, pag. 1: «Some physical constants of INCONEL alloy 718 are shown in Table 2. Modulus data appear in Tables 3 and 4, and thermal properties in Table 5. The values in these tables will vary slightly, depending on the composition and condition of the specimen tested. They are typical but are not suitable for specification purposes.» (sotto «Table 2 - Physical Constants»; il testo sta nella colonna di sinistra, intercalato alle celle della tabella)
+
+### S235JR — OVA-S235 (Ovako)
+
+Steel Navigator, scheda S235JR (PDF dal sito, rev. 31 Jan 2025). https://steelnavigator.ovako.com/steel-grades/s235/pdf — SHA-256 `ba996a03822437ebbd9c4b1ce146fae0f8fabcb5caf3e4877f4d3e077ab1be14`
+
+Letture nel DB: 7800 kg/m³ (tipico).
+
+- densità, pag. 3: Other properties (typical values) Youngs module (GPa) Poisson´s ratio (-) Shear module (GPa) Density (kg/m3) 210 0.3 80 7800
+
+### C45 (1.0503) — OVA-C45 (Ovako)
+
+Steel Navigator, scheda C45 (PDF dal sito, rev. 30 Jan 2025). https://steelnavigator.ovako.com/steel-grades/c45/pdf — SHA-256 `ff224f8fd5cea4b689a8995955ceda01f132b54ee5df33fc52baba084ce8e97e`
+
+Letture nel DB: 7800 kg/m³ (tipico).
+
+- densità, pag. 6: Other properties (typical values) Youngs module (GPa) Poisson´s ratio (-) Shear module (GPa) Density (kg/m3) 210 0.3 80 7800
 
 ## Letti e non usati
 

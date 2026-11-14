@@ -118,6 +118,7 @@ async function caso(browser, c) {
 
   // --- struttura di base
   verifica((await page.textContent('#footer')).startsWith('Database v'), 'footer con versione del database');
+  { const dbF = await leggiDB(page); verifica((await page.textContent('#footer')).startsWith(`Database v${dbF.meta.versione} · ${dbF.meta.data}`) && dbF.meta.versione === '4', `footer: «Database v${dbF.meta.versione} · ${dbF.meta.data}», come nel DB (v4)`); }
   const largh = await page.evaluate(() => { const m = document.querySelector('main').getBoundingClientRect(); return { w: m.width, l: m.left, scroll: document.documentElement.scrollWidth > window.innerWidth }; });
   verifica(!largh.scroll, 'nessuno scroll orizzontale');
   verifica(largh.w <= 480.5, `colonna unica larga al massimo 480 px (${largh.w})`);
@@ -274,7 +275,7 @@ async function caso(browser, c) {
   for (const q of ['ergal', 'ERGAL', 'Ergal 7075']) {
     const rr = await righe(q);
     const motivoAlias = 'trovato per: alias «Ergal» (alias non da produttore)';
-    verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && (q === 'Ergal 7075' ? rr[0].trovato.startsWith(motivoAlias + ' · designazione') : rr[0].trovato === motivoAlias), `«${q}»: Alluminio 7075 per alias (${JSON.stringify(rr)})`);
+    verifica(rr.length === 1 && rr[0].nome === 'Alluminio 7075' && (q === 'Ergal 7075' ? rr[0].trovato.startsWith(motivoAlias + ' · altra designazione') : rr[0].trovato === motivoAlias), `«${q}»: Alluminio 7075 per alias (${JSON.stringify(rr)})`);
   }
 
   // --- Fase 2c: alias con una sola fonte, sinonimi dell'app, numero abbreviato, corrispondenze indicative
@@ -349,7 +350,7 @@ async function caso(browser, c) {
   await scrivi(page, '#c-L', '200');
   const letto2 = numero(await page.textContent('#peso-grande'));
   verifica(vicino(letto2, 2 * atteso), 'il risultato si aggiorna mentre si scrive');
-  verifica((await page.locator('button').count()) === 0, 'nessun pulsante Calcola (nessun <button>)');
+  verifica((await page.locator('button', { hasText: /calcol/i }).count()) === 0, 'nessun pulsante Calcola (il peso si aggiorna mentre si scrive)');
 
   // --- valore interpretato e separatori
   await scrivi(page, '#c-D', '1,5');
@@ -533,6 +534,7 @@ async function caso(browser, c) {
   await page.check('input[value="tonda"]', { force: true });
   const ente = (e) => String(e).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
   let unaFonte = 0;
+  let nTipici = 0;
   for (const m of db.materiali) {
     await scegliPerNome(page, m.nome);
     await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
@@ -541,8 +543,38 @@ async function caso(browser, c) {
     verifica(det.includes(`Fonti indipendenti per la densità: ${K}`), `${m.nome}: fonti indipendenti per la densità = ${K}`);
     verifica(det.includes('Una sola fonte di densità') === (K === 1), `${m.nome}: «Una sola fonte di densità» ${K === 1 ? 'mostrata' : 'assente'} (K = ${K})`);
     if (K === 1) unaFonte++;
+    // «valore tipico»: atteso dal DB (ogni lettura dichiarata tipica dal documento), calcolato qui senza usare il motore
+    const letture = m.fonti.flatMap((f) => f.densita_letta || []);
+    const tip = letture.length > 0 && letture.every((x) => x.tipico === true);
+    verifica((await page.innerText('#scheda')).includes(' · valore tipico') === tip, `${m.nome}: «valore tipico» ${tip ? 'mostrato' : 'assente'} accanto alla densità nella scheda`);
+    verifica(det.includes('Valore tipico: così') === tip, `${m.nome}: «Valore tipico: così …» ${tip ? 'mostrato' : 'assente'} nei dettagli del peso`);
+    const fontiTxt = await page.$$eval('#dettagli ul.fonti', (e) => e.map((x) => x.textContent).join(' '));
+    verifica(fontiTxt.includes('(valore tipico)') === tip, `${m.nome}: «(valore tipico)» ${tip ? 'indicato' : 'assente'} sulle letture delle fonti`);
+    if (tip) nTipici++;
   }
   verifica(unaFonte >= 11, `${unaFonte} voci con una sola fonte indipendente di densità`);
+  verifica(nTipici === 4, `4 voci con densità dichiarata tipica dal documento: C45, S355J2, S235JR, Inconel 718 (${nTipici})`);
+  // pagina del PDF Ovako in cui la riga Density sta sotto «Other properties (typical values)»
+  for (const [id, pagina] of [['c45', 6], ['s355j2', 6], ['s235jr', 3]]) {
+    const c = db.materiali.find((v) => v.id === id);
+    await scegliPerNome(page, c.nome);
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    verifica((await page.innerText('#scheda')).includes('Densità nominale: 7,8 g/cm³ · valore tipico'), `${c.nome}: «Densità nominale: 7,8 g/cm³ · valore tipico» sulla scheda`);
+    const dc = await page.innerText('#dettagli');
+    verifica(dc.includes('7,8 g/cm³ — letture dei documenti concordi. Valore tipico: così è dichiarato nei documenti letti.'), `${c.nome}: «Valore tipico» nei dettagli della densità usata`);
+    verifica(dc.includes(`Densità letta: 7800 kg/m³ = 7,8 g/cm³ (valore tipico), pag. ${pagina}.`), `${c.nome}: la lettura Ovako è indicata come valore tipico, con la pagina ${pagina}`);
+  }
+  {
+    // Inconel 718: due letture dello stesso documento (lb/in³) e un intervallo; l'app scrive solo «valore tipico», senza altre avvertenze
+    const c = db.materiali.find((v) => v.id === 'inconel718');
+    await scegliPerNome(page, c.nome);
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    verifica((await page.innerText('#scheda')).includes('Densità nominale: 8,207 g/cm³ (letture dei documenti: 8,193–8,221) · valore tipico'), 'Inconel 718: «valore tipico» accanto alla densità nominale con l\'intervallo');
+    const dc = await page.innerText('#dettagli');
+    verifica(dc.includes('8,207 g/cm³ — valore nominale: punto medio delle letture dei documenti. Valore tipico: così è dichiarato nei documenti letti.'), 'Inconel 718: «Valore tipico» nei dettagli della densità usata');
+    verifica(dc.includes('Densità letta: 0,296 lb/in³ = 8,193 g/cm³ (valore tipico); 0,297 lb/in³ = 8,221 g/cm³ (valore tipico), pag. 1.'), 'Inconel 718: entrambe le letture in lb/in³ indicate come valore tipico, con la pagina 1');
+    verifica(!/non (è|sono) (adatt|idone)|specific/i.test(dc.split('Fonti')[0] + (await page.innerText('#scheda'))), 'Inconel 718: nessuna avvertenza oltre a «valore tipico» (l\'app non cita le specifiche)');
+  }
   for (const id of ['39nicrmo3', '1.2311', 's235jr', 'c45']) {
     const m = db.materiali.find((v) => v.id === id);
     await scegliPerNome(page, m.nome);
@@ -558,7 +590,7 @@ async function caso(browser, c) {
   // --- bersagli touch ≥ 44 px su tutti i controlli visibili
   await page.evaluate(() => window.scrollTo(0, 0));
   const piccoliCtrl = await page.evaluate(() => {
-    const sel = 'input[type="text"], select, .forma, summary, ul.fonti a';
+    const sel = 'input[type="text"], select, textarea, .btn, .forma, summary, ul.fonti a';
     return [...document.querySelectorAll(sel)].filter((e) => e.offsetParent !== null).map((e) => {
       const r = e.getBoundingClientRect();
       return { t: (e.id || e.className || e.tagName) + ':' + (e.textContent || '').trim().slice(0, 20), w: Math.round(r.width), h: Math.round(r.height) };
@@ -643,6 +675,174 @@ async function caso(browser, c) {
     const ft = await pa.innerText('#det-fonti');
     verifica(ft.includes('Alias: dove sono documentati') && ft.includes('pag. 3') && ft.includes('pag. 7') && ft.includes('Fornitore di prova') && ft.includes('Università di prova'), 'alias: documenti e pagine tra le fonti');
     await pa.close();
+  }
+
+  // --- schede personali: inserimento, modifica, duplicazione, eliminazione, memoria del browser, esportazione e importazione
+  {
+    const CHIAVE = 'gtpm.schede-personali.v1';
+    // l'archivio nella memoria del browser; se manca dà un archivio vuoto (così un salvataggio mancato è una verifica fallita, non un'interruzione)
+    const memoria = async () => { const g = await page.evaluate((k) => localStorage.getItem(k), CHIAVE); return g ? JSON.parse(g) : { versione: null, schede: [] }; };
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    verifica(await page.isHidden('#editor') && await page.isVisible('#btn-nuova') && await page.isVisible('#btn-esporta') && await page.isVisible('label[for="file-importa"]'), 'schede personali: pulsanti visibili, modulo nascosto');
+    const avvertenza = 'Le schede restano solo su questo dispositivo e in questa app (Safari oppure icona Home). Esporta ogni tanto per avere una copia.';
+    verifica((await page.textContent('#nota-schede')).trim() === avvertenza && await page.isVisible('#nota-schede'), 'avvertenza sul dispositivo e sull\'app, scritta come richiesto');
+    // su schermo largo i pulsanti vanno a capo (Importa sulla seconda riga): l'avvertenza deve stare sotto entrambi, a meno di 40 px dal più basso
+    verifica(await page.evaluate(() => { const e = document.querySelector('#btn-esporta').getBoundingClientRect(); const i = document.querySelector('label[for="file-importa"]').getBoundingClientRect(); const n = document.querySelector('#nota-schede').getBoundingClientRect(); const fondo = Math.max(e.bottom, i.bottom); return n.top >= e.bottom - 1 && n.top >= i.bottom - 1 && n.top - fondo < 40 && n.width > 150; }), 'l\'avvertenza sta subito sotto i pulsanti «Esporta schede» e «Importa schede»');
+    verifica(await page.evaluate(() => { const a = document.querySelector('.azioni-schede'); return a.nextElementSibling && a.nextElementSibling.id === 'nota-schede'; }), 'l\'avvertenza segue i pulsanti nel documento (anche per chi usa un lettore di schermo)');
+    verifica(!/scheda personale|schede personali/.test(await page.textContent('#footer')), 'senza schede personali il piè di pagina non le nomina');
+    await page.focus('#q'); await page.waitForSelector('#elenco:not([hidden])');
+    verifica(!(await page.$$eval('#elenco .fam', (e) => e.map((x) => x.textContent))).includes('Schede personali'), 'senza schede il gruppo «Schede personali» non compare');
+    const dbV = await leggiDB(page);
+    const nBonificato = (await righe('bonificato')).length;
+
+    // modulo e controlli
+    await page.click('#btn-nuova');
+    verifica(await page.isVisible('#editor') && (await page.textContent('#editor-titolo')) === 'Nuova scheda personale' && (await page.locator('.riga-comp').count()) === 2, 'modulo di inserimento aperto con 2 righe di composizione');
+    verifica(await page.evaluate(() => document.activeElement.id) === 'e-nome', 'il cursore va sul nome');
+    await page.click('#btn-salva');
+    verifica(/Scrivi il nome/.test(await page.textContent('#e-nome-i')) && /Scrivi la densità/.test(await page.textContent('#e-dens-i')), 'salvando vuoto: errori su nome e densità');
+    verifica((await page.getAttribute('#e-nome', 'aria-invalid')) === 'true' && (await page.getAttribute('#e-dens', 'aria-invalid')) === 'true', 'campi errati segnalati con aria-invalid');
+    verifica(await page.isVisible('#editor') && (await page.evaluate((k) => localStorage.getItem(k), CHIAVE)) === null, 'con errori il modulo resta aperto e nulla viene salvato');
+    await page.fill('#e-dens', '7850'); await page.selectOption('#e-dens-un', 'kg/m³');
+    verifica((await page.textContent('#e-dens-i')).trim() === '= 7,85 g/cm³', `densità 7850 kg/m³ → = 7,85 g/cm³ (${await page.textContent('#e-dens-i')})`);
+    await page.fill('#e-dens', '30'); await page.selectOption('#e-dens-un', 'g/cm³');
+    verifica(/supera 25 g\/cm³/.test(await page.textContent('#e-dens-i')), 'densità oltre 25 g/cm³: errore');
+    await page.fill('#e-dens', '7,6');
+    await page.fill('#e-el-1', 'C'); await page.fill('#e-va-1', '0,35-0,43');
+    verifica((await page.textContent('#e-ri-1')).trim() === '= da 0,35 a 0,43 %', 'riga di composizione: valore interpretato');
+    await page.fill('#e-va-1', '0,5-0,35');
+    verifica(/minimo supera il massimo/.test(await page.textContent('#e-ri-1')) && (await page.getAttribute('#e-va-1', 'aria-invalid')) === 'true', 'riga con minimo > massimo: errore');
+    await page.fill('#e-va-1', '0,35-0,43');
+    await page.fill('#e-el-2', 'cr'); await page.fill('#e-va-2', 'max 1');
+    verifica(/Simbolo non valido/.test(await page.textContent('#e-ri-2')), 'simbolo «cr»: errore');
+    await page.fill('#e-el-2', 'C');
+    verifica(/già inserito/.test(await page.textContent('#e-ri-2')), 'elemento ripetuto: errore');
+    await page.fill('#e-el-2', 'Cr');
+    await page.click('#btn-riga');
+    verifica((await page.locator('.riga-comp').count()) === 3, 'aggiungi elemento: 3 righe');
+    const n3 = await page.locator('.riga-comp').nth(2).getAttribute('data-riga');
+    await page.fill(`#e-el-${n3}`, 'Fe'); await page.fill(`#e-va-${n3}`, 'resto');
+    await page.click('#btn-riga');
+    await page.click('#e-righe .riga-comp:last-child [data-togli]');
+    verifica((await page.locator('.riga-comp').count()) === 3, 'togli riga: torna a 3 righe');
+    await page.fill('#e-nome', 'Lega di prova <b>x</b>');
+    await page.fill('#e-des', 'ZETA-7; Sigla Y'); await page.fill('#e-nc', 'Zetalloy');
+    await page.fill('#e-fonte', 'catalogo del fornitore, pag. 3'); await page.fill('#e-note', 'riga uno\nriga due');
+    await page.click('#btn-salva');
+    verifica(await page.isHidden('#editor') && await page.isVisible('#scheda'), 'scheda salvata: modulo chiuso e scheda mostrata');
+    const sp = await page.innerText('#scheda');
+    verifica(sp.includes('Lega di prova <b>x</b>') && (await page.locator('#scheda b').count()) === 0, 'il nome con codice HTML è mostrato come testo, non interpretato');
+    for (const parte of ['Schede personali', 'Scheda personale · inserita da te, non verificata su documenti', 'Designazioni: ZETA-7 · Sigla Y', 'Nome commerciale: Zetalloy', 'Densità: 7,6 g/cm³', 'Fonte indicata da te: catalogo del fornitore, pag. 3', 'Note: riga uno riga due'])
+      verifica(sp.includes(parte), `scheda personale mostra «${parte}»`);
+    const righeComp = await page.$$eval('#det-comp table.comp tbody tr', (trs) => trs.map((tr) => [...tr.children].map((td) => td.textContent)));
+    verifica(JSON.stringify(righeComp) === JSON.stringify([['C', '0,35–0,43 %'], ['Cr', 'max 1 %'], ['Fe', 'resto']]), `composizione della scheda personale (${JSON.stringify(righeComp)})`);
+    verifica(await page.evaluate(() => document.querySelector('#det-comp').open) && await page.isVisible('#det-comp table.comp'), 'scheda personale: composizione aperta e visibile senza toccare nulla');
+    verifica(!(await page.locator('#scheda ul.tag, #scheda #det-fonti').count()), 'nessun tag né fonti sulla scheda personale');
+    verifica(!/valore tipico/i.test(await page.innerText('#scheda')), 'la scheda personale non è mai presentata come «valore tipico»');
+    verifica(/salvata\. I dati sono tuoi e non sono verificati su documenti/.test(await page.textContent('#msg-schede')), 'messaggio di salvataggio');
+    verifica(/ · 1 scheda personale$/.test(await page.textContent('#footer')), 'il piè di pagina conta le schede personali');
+    // calcolo con la densità inserita
+    await page.check('input[value="tonda"]', { force: true });
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    const kgP = numero(await page.textContent('#peso-grande'));
+    verifica(vicino(kgP, Math.PI / 4 * 100 * 100 * 100 / 1000 * 7.6 / 1000), `peso con la densità personale 7,6: ${kgP} kg`);
+    const dp = await page.innerText('#dettagli');
+    verifica(dp.includes('7,6 g/cm³ — inserita da te') && dp.includes('Scheda personale: la densità e gli altri dati sono scritti da te e non sono verificati su documenti'), 'dettagli: densità «inserita da te» e dicitura non verificata');
+    verifica(!/Fonti indipendenti|Una sola fonte|Apri il documento/.test(dp), 'dettagli: nessun conteggio di fonti per una scheda personale');
+    verifica((await page.textContent('#barra-testo')).includes('Lega di prova'), 'barra del peso con il nome della scheda personale');
+    // ricerca
+    for (const [q, motivo] of [['zeta', /^trovato per: altra designazione «ZETA-7»$/], ['Lega di prova', /^trovato per: nome/], ['zeta-7', /^trovato per: altra designazione «ZETA-7»$/], ['sigla y', /^trovato per: altra designazione «Sigla Y»$/], ['zetalloy', /^trovato per: nome commerciale/]]) {
+      const rr = await righe(q);
+      verifica(rr.length === 1 && /^Lega di prova/.test(rr[0].nome) && motivo.test(rr[0].trovato), `ricerca «${q}» trova la scheda personale (${JSON.stringify(rr)})`);
+    }
+    verifica(JSON.stringify(await page.$$eval('#elenco .fam', (e) => e.map((x) => x.textContent))) === JSON.stringify(['Schede personali']), 'la scheda personale sta nel gruppo «Schede personali»');
+    verifica((await page.textContent('#elenco .voce small')).startsWith('Scheda personale · 7,6 g/cm³'), 'riga dell\'elenco: «Scheda personale · densità»');
+    verifica((await righe('bonificato')).length === nBonificato && (await righe('2343')).length === 1, 'le schede personali non cambiano i risultati del database verificato');
+    await page.fill('#q', ''); await page.waitForSelector('#elenco:not([hidden])');
+    verifica((await page.$$eval('#elenco .fam', (e) => e.map((x) => x.textContent))).slice(-1)[0] === 'Schede personali' && (await page.locator('#elenco .voce').count()) === dbV.materiali.length + 1, 'elenco completo: i materiali del database più la scheda personale in fondo');
+    // memoria del browser: sopravvive alla ricarica
+    const memo = (await memoria());
+    verifica(memo.versione === 1 && memo.schede.length === 1 && /^p-/.test(memo.schede[0].id) && memo.schede[0].densita_g_cm3 === 7.6, 'archivio nella memoria del browser: versione 1, una scheda');
+    await page.reload();
+    verifica((await righe('zetalloy')).length === 1 && /1 scheda personale$/.test(await page.textContent('#footer')), 'dopo la ricarica la scheda personale c\'è ancora');
+
+    // modifica: riapre il modulo con i valori scritti
+    await page.click('#elenco .voce'); await page.click('#btn-modifica');
+    verifica((await page.textContent('#editor-titolo')) === 'Modifica scheda personale' && (await page.inputValue('#e-nome')) === 'Lega di prova <b>x</b>' && (await page.inputValue('#e-dens')) === '7,6' && (await page.inputValue('#e-des')) === 'ZETA-7; Sigla Y', 'modifica: il modulo si riapre con i valori');
+    const righeModulo = await page.$$eval('.riga-comp', (rs) => rs.map((r) => [r.querySelector('[data-comp="elemento"]').value, r.querySelector('[data-comp="valore"]').value]));
+    verifica(JSON.stringify(righeModulo) === JSON.stringify([['C', '0,35-0,43'], ['Cr', 'max 1'], ['Fe', 'resto']]), `modifica: righe di composizione (${JSON.stringify(righeModulo)})`);
+    await page.fill('#e-dens', '8000'); await page.selectOption('#e-dens-un', 'kg/m³'); await page.click('#btn-salva');
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');   // la ricarica ha azzerato le dimensioni
+    verifica((await page.innerText('#scheda')).includes('Densità: 8 g/cm³ (inserita come 8000 kg/m³)'), 'modifica: densità 8000 kg/m³ = 8 g/cm³, con l\'unità inserita');
+    verifica(vicino(numero(await page.textContent('#peso-grande')), Math.PI / 4 * 100 * 100 * 100 / 1000 * 8 / 1000), 'modifica: il peso si aggiorna con la nuova densità');
+    verifica((await memoria()).schede.length === 1, 'modifica: la scheda resta una sola');
+    // duplicazione e nomi doppi
+    await page.click('#btn-duplica');
+    verifica((await page.inputValue('#e-nome')) === 'Copia di Lega di prova <b>x</b>' && (await page.textContent('#editor-titolo')) === 'Nuova scheda personale', 'duplica: nuova scheda con «Copia di …»');
+    await page.fill('#e-nome', 'lega DI prova <b>x</b>'); await page.click('#btn-salva');
+    verifica(/Esiste già un materiale con questo nome/.test(await page.textContent('#e-nome-i')) && await page.isVisible('#editor'), 'nome già usato da un\'altra scheda personale: rifiutato');
+    await page.fill('#e-nome', dbV.materiali[0].nome); await page.click('#btn-salva');
+    verifica(/Esiste già/.test(await page.textContent('#e-nome-i')), 'nome di una voce del database: rifiutato');
+    await page.fill('#e-nome', 'Seconda lega'); await page.click('#btn-salva');
+    verifica((await memoria()).schede.length === 2 && (await page.textContent('#footer')).endsWith('2 schede personali'), 'duplica: due schede personali');
+    // esportazione
+    const [scarico] = await Promise.all([page.waitForEvent('download'), page.click('#btn-esporta')]);
+    verifica(/^schede-personali-\d{4}-\d{2}-\d{2}\.json$/.test(scarico.suggestedFilename()), `file esportato: ${scarico.suggestedFilename()}`);
+    const esportato = JSON.parse(fs.readFileSync(await scarico.path(), 'utf8'));
+    verifica(esportato.versione === 1 && esportato.schede.length === 2 && esportato.schede.some((x) => x.nome === 'Seconda lega'), 'il file esportato contiene le 2 schede');
+    verifica(/Esportate 2 schede/.test(await page.textContent('#msg-schede')), 'messaggio di esportazione');
+    // eliminazione con conferma
+    await page.click('#btn-elimina');
+    verifica(/Eliminare definitivamente «Seconda lega»\?/.test(await page.innerText('#scheda')), 'elimina: chiede conferma');
+    await page.click('#btn-elimina-no');
+    verifica(await page.isVisible('#btn-elimina') && (await memoria()).schede.length === 2, 'annulla: la scheda resta');
+    await page.click('#btn-elimina');
+    await scegliPerNome(page, 'Lega di prova <b>x</b>');
+    verifica(await page.isVisible('#btn-elimina') && (await page.locator('#btn-elimina-ok').count()) === 0, 'la richiesta di conferma non passa a un\'altra scheda');
+    await scegliPerNome(page, 'Seconda lega');
+    await page.click('#btn-elimina'); await page.click('#btn-elimina-ok');
+    verifica(await page.isHidden('#scheda') && (await page.inputValue('#q')) === '' && (await memoria()).schede.length === 1 && (await page.textContent('#footer')).endsWith('1 scheda personale'), 'elimina definitivamente: scheda tolta dall\'archivio e dal piè di pagina');
+    verifica((await page.textContent('#barra-peso')) === '' || await page.isHidden('#barra'), 'dopo l\'eliminazione la barra del peso scompare');
+    // importazione: valide, doppie e non valide
+    const buona = (nome, id) => ({ id, nome, densita_g_cm3: 5, densita_immessa: { testo: '5', unita: 'g/cm³' }, composizione: [{ elemento: 'Cu', tipo: 'resto' }], designazioni: ['IMP-1'], nome_commerciale: '', fonte: '', note: '', creata: '2026-01-01', modificata: '2026-01-01' });
+    const archivio = { versione: 1, schede: [buona('Importata uno', 'p-imp1'), buona('LEGA DI PROVA <b>X</b>', 'p-imp2'), { ...buona('Rotta', 'p-imp3'), densita_g_cm3: 99 }, buona(dbV.materiali[1].nome, 'p-imp4')] };
+    await page.setInputFiles('#file-importa', { name: 'schede.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(archivio)) });
+    await page.waitForFunction(() => /Importate/.test(document.getElementById('msg-schede').textContent));
+    const mi = await page.textContent('#msg-schede');
+    verifica(/Importate 1 scheda; 3 non importate/.test(mi) && /nome già presente/.test(mi) && /nome uguale a una scheda del database/.test(mi) && /densità non valida/.test(mi), `importazione: ${mi}`);
+    verifica((await righe('imp-1')).length === 1 && (await memoria()).schede.length === 2, 'importazione: la scheda valida entra e si trova per designazione');
+    await page.setInputFiles('#file-importa', { name: 'rotto.json', mimeType: 'application/json', buffer: Buffer.from('non è json') });
+    await page.waitForFunction(() => /non è un archivio/.test(document.getElementById('msg-schede').textContent));
+    await page.setInputFiles('#file-importa', { name: 'v9.json', mimeType: 'application/json', buffer: Buffer.from('{"versione":9,"schede":[]}') });
+    await page.waitForFunction(() => /non supportata/.test(document.getElementById('msg-schede').textContent));
+    verifica((await memoria()).schede.length === 2, 'file non valido o di versione ignota: le schede restano 2');
+    // pulsanti e campi del modulo: bersagli e testo grandi come il resto dell'app; contrasti
+    await page.click('#btn-nuova');
+    const piccoliBtn = await page.evaluate(() => [...document.querySelectorAll('.btn, #editor input[type="text"], #editor select, #editor textarea')].filter((e) => e.offsetParent !== null).map((e) => ({ t: e.id || e.textContent.trim().slice(0, 20), h: Math.round(e.getBoundingClientRect().height), px: parseFloat(getComputedStyle(e).fontSize) })).filter((x) => x.h < 44 || x.px < 16));
+    verifica(piccoliBtn.length === 0, `pulsanti e campi del modulo: altezza ≥ 44 px e testo ≥ 16 px (sotto soglia: ${JSON.stringify(piccoliBtn)})`);
+    verifica(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'il modulo non crea scroll orizzontale');
+    await ct('.btn:not(.primario)', 'pulsante');
+    await ct('.btn.primario', 'pulsante principale (su sfumatura)');
+    await ct('#nota-schede', 'avvertenza accanto a «Esporta schede»');
+    await ct('#editor label', 'etichetta del modulo');
+    await ct('#editor .piccolo', 'testo di aiuto del modulo');
+    const bordoBtn = await misura(page, '.btn:not(.primario)'); const sfondoBtn = (await misura(page, '#editor')).sfondi[0];
+    verifica(contrasto(pixel(bordoBtn.bordo), sfondoBtn) >= 3, `bordo dei pulsanti: ${contrasto(pixel(bordoBtn.bordo), sfondoBtn).toFixed(2)}:1`);
+    await page.click('#btn-salva');
+    await ct('#editor .interp.errore', 'errore nel modulo');
+    await page.click('#btn-annulla');
+    verifica(await page.isHidden('#editor'), 'annulla chiude il modulo senza salvare');
+    await page.fill('#q', 'Importata'); await page.waitForSelector('#elenco:not([hidden])'); await page.click('#elenco .voce');
+    await ct('.badge-personale', 'dicitura «scheda personale»');
+    const bPers = await misura(page, '.badge-personale'); verifica(contrasto(pixel(bPers.bordo), (await misura(page, '#scheda')).sfondi[0]) >= 3, 'bordo della dicitura «scheda personale» ≥ 3:1');
+    // memoria illeggibile: viene messa da parte, l'app funziona
+    await page.evaluate((k) => localStorage.setItem(k, '{rotto'), CHIAVE);
+    await page.reload();
+    verifica(/non erano leggibili e sono state messe da parte/.test(await page.textContent('#msg-schede')) && (await page.evaluate((k) => localStorage.getItem(k + '.illeggibile'), CHIAVE)) === '{rotto', 'archivio illeggibile: messaggio e copia messa da parte');
+    verifica((await righe('bonificato')).length === nBonificato, 'archivio illeggibile: il database verificato funziona');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
   }
 
   verifica(errori.length === 0, `nessun errore in console (${errori.join(' | ')})`);

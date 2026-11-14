@@ -210,7 +210,7 @@ rolledalloys.com, www.rolledalloys.com, ucpcdn.thyssenkrupp.com, en.saarstahl.co
   - composizione, p. 1: «EN 10025-2: 2014»
   - designazioni, p. 1: «Number 1.0577»
 - OVA-S355J2 (Ovako):
-  - densita, p. 6: «Density (kg/m3) 210 0.3 80 7800»
+  - densita, p. 6: «Other properties (typical values) Youngs module (GPa) Poisson´s ratio (-) Shear module (GPa) Density (kg/m3) 210 0.3 80 7800» (lettura dichiarata «valore tipico»: flag `tipico`, DB v4)
 
 ### 11SMnPb30 (`11smnpb30`, Acciai al carbonio)
 
@@ -454,5 +454,6 @@ rolledalloys.com, www.rolledalloys.com, ucpcdn.thyssenkrupp.com, en.saarstahl.co
   - composizione, p. 1: «Iron .....................................................................................Balance»
   - densita, p. 1: «Annealed..............................................................................0.296»
   - densita, p. 1: «Annealed and Aged .............................................................0.297»
+  - densita, p. 1: «Some physical constants of INCONEL alloy 718 are shown in Table 2. Modulus data appear in Tables 3 and 4, and thermal properties in Table 5. The values in these tables will vary slightly, depending on the composition and condition of the specimen tested. They are typical but are not suitable for specification purposes.» (sotto «Table 2 - Physical Constants»; il testo sta nella colonna di sinistra, intercalato alle celle della tabella). Le due letture sono dichiarate «valore tipico»: flag `tipico`, DB v4.
   - designazioni, p. 1: «INCONEL® alloy 718 (UNS N07718/W.Nr. 2.4668)»
   - nome_commerciale, p. 1: «INCONEL® alloy 718»

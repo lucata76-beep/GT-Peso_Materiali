@@ -244,3 +244,28 @@ test('densitaTipica: vera solo se ogni lettura di densità è dichiarata tipica 
   assert.equal(Motore.densitaTipica(undefined), false);
   assert.equal(Motore.densitaTipica([{ campi: ['tag'] }]), false, 'nessuna lettura');
 });
+
+// ---------------------------------------------------------------- tabelle senza prototipo (app 0.2.7)
+test('tabelle senza prototipo: forme, unità ed enti con i nomi di Object.prototype non rompono il motore', () => {
+  const nomi = Object.getOwnPropertyNames(Object.prototype);
+  assert.ok(nomi.length >= 10 && nomi.includes('constructor'));
+  for (const t of [Motore.FORME, Motore.LUNGHEZZA_MM, Motore.MASSA_G]) assert.equal(Object.getPrototypeOf(t), null);
+  const rif = Motore.valuta({ forma: 'tonda', testi: { D: '100', L: '100' }, unitaLunghezza: 'mm', pezzi: '1', densita: 7.85, unitaPeso: 'kg' });
+  assert.ok(rif.completo);
+  for (const n of nomi) {
+    const v = Motore.valuta({ forma: n, testi: {}, unitaLunghezza: 'mm', pezzi: '1', densita: 7.85, unitaPeso: 'kg' });
+    assert.equal(v.completo, false, `forma «${n}»`);
+    assert.equal(v.risultato, null, `forma «${n}»`);
+    // un'unità sconosciuta («constructor»…) torna a mm e kg: stesso risultato, non NaN
+    const w = Motore.valuta({ forma: 'tonda', testi: { D: '100', L: '100' }, unitaLunghezza: n, pezzi: '1', densita: 7.85, unitaPeso: n });
+    assert.ok(w.completo, `unità «${n}»`);
+    assert.equal(w.risultato.peso_totale, rif.risultato.peso_totale, `unità «${n}»`);
+    assert.equal(w.risultato.unitaPeso, 'kg', `unità «${n}»`);
+  }
+  // un ente (emittente) che si chiama come una proprietà di Object.prototype conta una volta, non zero
+  for (const n of nomi) {
+    const f = (emittente) => ({ emittente, campi: ['tag'] });
+    assert.equal(Motore.fontiIndipendenti([f(n)], 'tag'), 1, `ente «${n}»`);
+    assert.equal(Motore.fontiIndipendenti([f(n), f(n.toUpperCase()), f('Ovako')], 'tag'), 2, `ente «${n}» e «${n.toUpperCase()}»`);
+  }
+});

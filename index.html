@@ -3842,9 +3842,17 @@
 const Motore = (function () {
   'use strict';
 
+  // Tabelle (mappe da chiave a valore) SENZA prototipo: una chiave come «constructor» o «toString» non deve trovare una proprietà ereditata da
+  // Object.prototype (con un oggetto normale «constructor» darebbe una funzione, non «assente»).
+  function tabella(init) {
+    const t = Object.create(null);
+    Object.keys(init || {}).forEach(function (k) { t[k] = init[k]; });
+    return t;
+  }
+
   // Tutto si converte in mm; V in mm³ → cm³ (÷1000); massa(g) = V(cm³) × ρ(g/cm³).
-  const LUNGHEZZA_MM = { mm: 1, cm: 10, m: 1000, in: 25.4 };
-  const MASSA_G = { g: 1, kg: 1000, t: 1e6, lb: 453.59237, oz: 28.349523125 };
+  const LUNGHEZZA_MM = tabella({ mm: 1, cm: 10, m: 1000, in: 25.4 });
+  const MASSA_G = tabella({ g: 1, kg: 1000, t: 1e6, lb: 453.59237, oz: 28.349523125 });
   const MAX_DIM_MM = 1e8;      // 100 km: oltre è quasi certamente un errore di digitazione
   const MAX_VOLUME_MM3 = 1e24;
   const MAX_PEZZI = 1e9;
@@ -3891,7 +3899,7 @@ const Motore = (function () {
 
   const f6 = function (x) { return formatta(x, 6); };
 
-  const FORME = {
+  const FORME = tabella({
     tonda: {
       nome: 'Barra tonda',
       campi: [['D', 'Diametro D'], ['L', 'Lunghezza L']],
@@ -3962,7 +3970,7 @@ const Motore = (function () {
       cubo: true,
       volume: function (v) { return v.V; }
     }
-  };
+  });
   const ORDINE_FORME = ['tonda', 'quadro', 'esagono', 'piatto', 'tubo', 'tuboq', 'sfera', 'volume'];
 
   function convertiMassa(valore, da, a) { return valore * MASSA_G[da] / MASSA_G[a]; }
@@ -3974,13 +3982,13 @@ const Motore = (function () {
   //   completo  = vero se si può calcolare; risultato = oggetto con numeri e passaggi, oppure null.
   function valuta(ing) {
     const forma = FORME[ing.forma];
-    if (!forma) return { campi: {}, pezzi: { stato: 'vuoto' }, completo: false, mancanti: [], conErrori: [], risultato: null };
+    if (!forma) return { campi: tabella(), pezzi: { stato: 'vuoto' }, completo: false, mancanti: [], conErrori: [], risultato: null };
     const unita = LUNGHEZZA_MM[ing.unitaLunghezza] ? ing.unitaLunghezza : 'mm';
     const unitaPeso = MASSA_G[ing.unitaPeso] ? ing.unitaPeso : 'kg';
     const fL = LUNGHEZZA_MM[unita];
-    const testi = ing.testi || {};
-    const campi = {};
-    const mm = {};
+    const testi = ing.testi || tabella();
+    const campi = tabella();
+    const mm = tabella();
     const mancanti = [];
     const conErrori = [];
 
@@ -4090,7 +4098,7 @@ const Motore = (function () {
   // Fonti indipendenti: documenti di enti diversi. Le schede dello stesso ente (anche IT ed EN dello stesso materiale) contano una volta.
   // campo = 'densita' conta le fonti con densita_letta; per ogni altro campo, le fonti che lo dichiarano. Stessa regola del validatore.
   function fontiIndipendenti(fonti, campo) {
-    const enti = {};
+    const enti = tabella();
     let n = 0;
     (fonti || []).forEach(function (f) {
       const conta = campo === 'densita' ? Boolean(f.densita_letta) : Array.isArray(f.campi) && f.campi.indexOf(campo) >= 0;
@@ -4128,6 +4136,14 @@ const Motore = (function () {
 const Ricerca = (function () {
   'use strict';
 
+  // Tabelle (mappe da chiave a valore) SENZA prototipo: una chiave come «constructor» o «toString» non deve trovare una proprietà ereditata da
+  // Object.prototype (con un oggetto normale «constructor» darebbe una funzione, non «assente»).
+  function tabella(init) {
+    const t = Object.create(null);
+    Object.keys(init || {}).forEach(function (k) { t[k] = init[k]; });
+    return t;
+  }
+
   // Classi di priorità (1 = migliore). Ordine: designazione esatta > alias esatto > designazione parziale
   // > alias parziale > numero abbreviato (precede il nome) > nome > tag > sinonimo dell'app > famiglia (classificazione dell'app).
   const CLASSE = { DESIG_ESATTA: 1, ALIAS_ESATTO: 2, DESIG_PARZIALE: 3, ALIAS_PARZIALE: 4, NUMERO_ABBREVIATO: 5, NOME: 6, TAG: 7, SINONIMO: 8, FAMIGLIA: 9 };
@@ -4136,7 +4152,7 @@ const Ricerca = (function () {
     'un', 'uno', 'una', 'in', 'e', 'con', 'and', 'for', 'of', 'the'];
 
   // Forme digitabili di ogni tag (singole parole o frasi). Solo sinonimi senza ambiguità.
-  const SINONIMI_TAG = {
+  const SINONIMI_TAG = tabella({
     'da bonifica': ['bonifica', 'bonificato', 'bonificata', 'bonificati', 'bonificate', 'bonificare', 'bonificabile', 'bonificabili',
       'da bonifica', 'qt', 'quenched and tempered', 'quenching and tempering'],
     'da cementazione': ['cementazione', 'cementato', 'cementata', 'cementati', 'cementate', 'cementare', 'cementabile', 'cementabili',
@@ -4150,15 +4166,15 @@ const Ricerca = (function () {
     'austenitico': ['austenitico', 'austenitici', 'austenitica', 'austenitiche', 'austenitic'],
     'indurente per precipitazione': ['precipitazione', 'indurente per precipitazione', 'precipitation hardening', 'age hardening'],
     'da costruzione': ['costruzione', 'costruzioni', 'strutturale', 'strutturali', 'da costruzione', 'structural']
-  };
+  });
 
   // Sinonimi dell'app per una singola voce (logica della ricerca, non dati di fonte): «ferro» e «acciaio dolce» portano a S235JR.
   // La famiglia «Ferro» resta nascosta: è riservata al ferro puro.
-  const SINONIMI_VOCE = { 's235jr': ['ferro', 'acciaio dolce'] };
+  const SINONIMI_VOCE = tabella({ 's235jr': ['ferro', 'acciaio dolce'] });
 
   const ACCIAI = ['Acciai al carbonio', 'Acciai da bonifica', 'Acciai legati', 'Acciai per utensili', 'Acciai inox', 'Acciai speciali'];
   // Nomi neutri delle famiglie (non quelli di trattamento): trovano le voci a priorità bassa.
-  const FAMIGLIE_NEUTRE = {
+  const FAMIGLIE_NEUTRE = tabella({
     acciaio: ACCIAI, acciai: ACCIAI,
     alluminio: ['Alluminio e leghe'],
     rame: ['Rame, ottone, bronzo'],
@@ -4166,7 +4182,7 @@ const Ricerca = (function () {
     inox: ['Acciai inox'],
     ottone: ['Rame, ottone, bronzo'],
     stagno: ['Stagno']
-  };
+  });
 
   // ---- normalizzazione: minuscole, senza accenti, solo lettere e cifre (ö e ø anche come «oe»)
   function pulisci(s) {
@@ -4195,7 +4211,7 @@ const Ricerca = (function () {
   }
 
   // ---- indici dei sinonimi
-  const tagPerParola = {};   // parola normalizzata → [tag]
+  const tagPerParola = tabella();   // parola normalizzata → [tag]
   const frasiTag = [];       // { tag, parole: [...] } per le frasi di più parole
   Object.keys(SINONIMI_TAG).forEach(function (tag) {
     SINONIMI_TAG[tag].forEach(function (s) {
@@ -4209,12 +4225,12 @@ const Ricerca = (function () {
   // a 4 cifre di un'altra voce (designazioni, alias, nome, nome commerciale) o la coda di un W.Nr. di un'altra famiglia, sono ambigue e non valgono.
   // Le corrispondenze indicative (designazioni.indicative) non contano: «6511» non porta al 39NiCrMo3. Stessa regola del validatore (tools/valida-db.mjs).
   function numeriAbbreviati(db) {
-    const mappa = {};
-    const ambigui = {};
+    const mappa = tabella();
+    const ambigui = tabella();
     const token = function (v) {
       const d = v.designazioni;
       const testi = [v.nome, v.nome_commerciale, d.EN, d.UNI, d.AISI_SAE, d.DIN].concat(d.altre || [], (v.alias || []).map(function (a) { return a.alias; }));
-      const out = {};
+      const out = tabella();
       testi.filter(Boolean).forEach(function (t) { String(t).split(/[\s/(),;]+/).forEach(function (x) { if (/^\d{4}$/.test(x)) out[x] = true; }); });
       return out;
     };
@@ -4237,7 +4253,7 @@ const Ricerca = (function () {
     return mappa;
   }
 
-  const sinonimiPerFrase = {};   // frase normalizzata → [id di voce]
+  const sinonimiPerFrase = tabella();   // frase normalizzata → [id di voce]
   Object.keys(SINONIMI_VOCE).forEach(function (id) {
     SINONIMI_VOCE[id].forEach(function (s) {
       const k = parole(s).map(function (w) { return w.norm; }).join(' ');
@@ -4364,6 +4380,67 @@ const Ricerca = (function () {
     return risultati.sort(confronta);
   }
 
+  // Etichette di norma: AISI, SAE, EN, UNI, DIN, W.Nr. Il DB conosce l'ente di una designazione dalla COLONNA in cui sta (EN, W.Nr., UNI, AISI/SAE,
+  // DIN); le «altre designazioni» hanno l'ente scritto nel testo («AFNOR XC48»). La stessa sigla può stare sotto enti diversi: «C45» è la designazione
+  // UNI di C45E e la designazione EN di C45. Ignorare l'etichetta farebbe trovare una voce sotto una norma che non la riporta: con l'etichetta il valore
+  // che segue deve stare nella colonna di quell'ente (lettura 4 di cercaIn).
+  const ETICHETTE_NORMA = tabella({ en: 'EN', uni: 'UNI', din: 'DIN', aisi: 'AISI/SAE', sae: 'AISI/SAE', aisisae: 'AISI/SAE', wnr: 'W.Nr.' });
+  function enteDiEtichetta(n) { return ETICHETTE_NORMA[n] || null; }
+
+  // Regola dell'app (NON un dato del DB): con l'etichetta «EN» un W.Nr. d'acciaio scritto 1.xxxx vale come numero della numerazione degli acciai
+  // EN 10027-2, limitata agli acciai: vale solo per le voci di una famiglia d'acciaio e per valori 1.xxxx (con il punto: «EN 10083» è il numero di
+  // una norma, non un W.Nr.). Un W.Nr. non d'acciaio (2.xxxx, 3.xxxx) con «EN» non vale. Il DB non dichiara questi numeri come «EN»: il motivo lo dice.
+  function motivoEnAcciai(valore) { return 'numerazione acciai EN 10027-2 (regola dell\'app, non un dato del DB): W.Nr. «' + valore + '»'; }
+
+  // il valore (normalizzato) nella colonna dell'ente: designazione esatta o parziale (inizio), oppure null
+  function valoreInColonna(e, ente, v) {
+    let best = null;
+    e.desig.forEach(function (d) {
+      if (d.etichetta !== ente) return;
+      if (d.termini.indexOf(v) >= 0) best = { classe: CLASSE.DESIG_ESATTA, motivo: motivoDesignazione(d) };
+      else if (!best && d.termini.some(function (x) { return x.indexOf(v) === 0; })) best = { classe: CLASSE.DESIG_PARZIALE, motivo: motivoDesignazione(d) };
+    });
+    return best;
+  }
+
+  // Lettura 4: la prima etichetta di norma e il valore che la segue («UNI C45», «AISI 316 L», «W.Nr. 1.4301», «W Nr 1.4301»). Il valore sono TUTTE le
+  // parole dopo l'etichetta, unite («316 L» → «316L»), e deve stare nella colonna di quell'ente (uguale o come inizio); le parole prima
+  // dell'etichetta sono libere e valgono come nella ricerca digitata («inox AISI 316»). Il valore non si spezza: «UNI C45 E» cerca «C45E» nella
+  // colonna UNI e non «C45» più una «E» ignorata, che farebbe trovare C45E sotto una norma che non riporta «C45E». Se la colonna non riporta il
+  // valore, nessun risultato: niente ricadute su una ricerca più larga. Limite: parole libere DOPO il valore («AISI 316 inox») non valgono qui.
+  // Eccezione dichiarata nel motivo: «EN 1.4301» con un W.Nr. d'acciaio (vedi motivoEnAcciai).
+  function cercaEtichetta(indice, w) {
+    let i = -1;
+    let k = 0;
+    let ente = null;
+    for (let p = 0; p < w.length && i < 0; p++) {
+      const n = pulisci(w[p]);
+      if (n === 'w' && p + 1 < w.length && pulisci(w[p + 1]) === 'nr') { i = p; k = p + 2; ente = 'W.Nr.'; }
+      else if (enteDiEtichetta(n)) { i = p; k = p + 1; ente = enteDiEtichetta(n); }
+    }
+    if (i < 0) return [];
+    while (k < w.length && enteDiEtichetta(pulisci(w[k])) === ente) k++;   // etichette ripetute: «AISI SAE 304»
+    const valore = pulisci(w.slice(k).join(''));
+    if (!valore) return [];   // etichetta senza valore
+    const libere = parole(w.slice(0, i).join(' '));
+    const enAcciai = ente === 'EN' && /^1\.\d{4}$/.test(w.slice(k).join(''));   // «EN 1.4301»: vedi motivoEnAcciai
+    const trovati = [];
+    indice.forEach(function (e) {
+      let hit = valoreInColonna(e, ente, valore);
+      if (enAcciai && ACCIAI.indexOf(e.m.famiglia) >= 0) {
+        const wnr = e.desig.filter(function (d) { return d.etichetta === 'W.Nr.' && d.termini.indexOf(valore) >= 0; })[0];
+        if (wnr && (!hit || CLASSE.DESIG_ESATTA < hit.classe)) hit = { classe: CLASSE.DESIG_ESATTA, motivo: motivoEnAcciai(wnr.valore), regola: true };
+      }
+      if (!hit) return;
+      const altri = libere.map(function (p) { return migliore(e, p, { q4: false, abbreviati: {}, derivata: false }); });
+      if (!altri.every(Boolean)) return;
+      const motivi = [hit.motivo];
+      altri.forEach(function (x) { if (motivi.indexOf(x.motivo) < 0) motivi.push(x.motivo); });
+      trovati.push({ m: e.m, rango: Math.min.apply(null, [hit.classe].concat(altri.map(function (x) { return x.classe; }))), motivi: motivi, regola: Boolean(hit.regola) });
+    });
+    return trovati;
+  }
+
   // Parole di un solo carattere (lettera o cifra) attaccate a quella prima, o a quella dopo se è la prima («316 L» → «316L», «S 235 J R» →
   // «S235JR»). «a», «e», «i» restano parole vuote, salvo subito dopo una parola che finisce con una cifra («C45 E» → «C45E»).
   function incollaCaratteri(parolaGrezze) {
@@ -4381,9 +4458,10 @@ const Ricerca = (function () {
     return out.join(' ');
   }
 
-  // La ricerca: tre letture della stessa query, valutate con le stesse regole; per ogni voce vale il rango migliore (nessuna voce della
+  // La ricerca: quattro letture della stessa query, valutate con le stesse regole; per ogni voce vale il rango migliore (nessuna voce della
   // lettura digitata sparisce e nessun rango peggiora). Letture: (1) quella digitata; (2) tutte le parole unite («C 45» → «C45», «AFNOR XC 48»
-  // → «AFNOR XC48»); (3) le parole di un solo carattere attaccate alle vicine («316 L» → «316L»). Le letture 2 e 3 sono «derivate».
+  // → «AFNOR XC48»); (3) le parole di un solo carattere attaccate alle vicine («316 L» → «316L»); (4) con un'etichetta di norma, il valore che la
+  // segue nella colonna di quell'ente («UNI C45»). Le letture 2, 3 e 4 sono «derivate».
   // solaDigitata = true restituisce solo la lettura (1): serve ai test.
   function cercaIn(indice, testo, abbreviati, solaDigitata) {
     const base = cercaLettura(indice, testo, abbreviati, false);
@@ -4394,14 +4472,20 @@ const Ricerca = (function () {
     if (w.length >= 2) letture.push(w.join(''));
     const incollata = incollaCaratteri(w);
     if (incollata !== w.join(' ')) letture.push(incollata);
-    if (!letture.length) return base;
-    const migliori = {};
+    const derivate = letture.map(function (l) { return cercaLettura(indice, l, abbreviati, true); });
+    const conEtichetta = cercaEtichetta(indice, w);
+    if (conEtichetta.length) derivate.push(conEtichetta);
+    if (!derivate.length) return base;
+    const migliori = tabella();
     base.forEach(function (r) { migliori[r.m.id] = r; });
-    letture.forEach(function (l) {
-      cercaLettura(indice, l, abbreviati, true).forEach(function (r) {
+    derivate.forEach(function (lista) {
+      lista.forEach(function (r) {
         const o = migliori[r.m.id];
         if (!o || r.rango < o.rango) migliori[r.m.id] = { m: r.m, rango: r.rango, motivi: r.motivi, incollata: true };
-        else if (r.rango === o.rango) o.incollata = true;
+        else if (r.rango === o.rango) {
+          o.incollata = true;
+          if (r.regola) r.motivi.forEach(function (m) { if (o.motivi.indexOf(m) < 0) o.motivi.push(m); });   // la regola dell'app va detta anche se la voce era già trovata
+        }
       });
     });
     return Object.keys(migliori).map(function (k) { return migliori[k]; }).sort(confronta);
@@ -4439,6 +4523,14 @@ const Ricerca = (function () {
 const Schede = (function () {
   'use strict';
 
+  // Tabelle (mappe da chiave a valore) SENZA prototipo: una chiave come «constructor» o «toString» non deve trovare una proprietà ereditata da
+  // Object.prototype (con un oggetto normale «constructor» darebbe una funzione, non «assente»).
+  function tabella(init) {
+    const t = Object.create(null);
+    Object.keys(init || {}).forEach(function (k) { t[k] = init[k]; });
+    return t;
+  }
+
   const FAMIGLIA = 'Schede personali';
   const VERSIONE_ARCHIVIO = 1;
   const MAX_SCHEDE = 200;
@@ -4451,7 +4543,7 @@ const Schede = (function () {
   const MAX_NOTE = 500;
   // lb/in³ → g/cm³ dalle costanti del motore: 1 lb = 453,59237 g, 1 in = 2,54 cm
   const LB_IN3 = Motore.MASSA_G.lb / Math.pow(Motore.LUNGHEZZA_MM['in'] / 10, 3);
-  const UNITA_DENSITA = { 'g/cm³': 1, 'kg/dm³': 1, 'kg/m³': 0.001, 'lb/in³': LB_IN3 };
+  const UNITA_DENSITA = tabella({ 'g/cm³': 1, 'kg/dm³': 1, 'kg/m³': 0.001, 'lb/in³': LB_IN3 });
   const ORDINE_UNITA = ['g/cm³', 'kg/dm³', 'kg/m³', 'lb/in³'];
   const RE_ELEMENTO = /^[A-Z][a-z]?$/;
   const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
@@ -4560,7 +4652,7 @@ const Schede = (function () {
 
     const righe = [];
     const erroriRighe = [];
-    const visti = {};
+    const visti = tabella();
     let resti = 0;
     (Array.isArray(inp.composizione) ? inp.composizione : []).forEach(function (riga, i) {
       const el = pulisciTesto(riga && riga.elemento);
@@ -4615,7 +4707,7 @@ const Schede = (function () {
   // La scheda come la usa il resto dell'app (ricerca, scheda a schermo, calcolo): stessa forma delle voci del database,
   // con «personale: true», nessuna fonte, nessun tag, nessun alias e nessuna intervallo di densità.
   function aMateriale(s) {
-    const elementi = {};
+    const elementi = tabella();
     s.composizione.forEach(function (r) {
       if (r.tipo === 'resto') elementi[r.elemento] = 'resto';
       else if (r.tipo === 'intervallo') elementi[r.elemento] = { min: r.min, max: r.max };
@@ -4654,7 +4746,7 @@ const Schede = (function () {
     const ricontrollo = interpretaDensita(di.testo, di.unita);
     if (ricontrollo.stato !== 'ok' || Math.abs(ricontrollo.g_cm3 - x.densita_g_cm3) > 1e-9 * Math.max(1, x.densita_g_cm3)) return { errore: 'densità incoerente con il valore immesso' };
     if (!Array.isArray(x.composizione) || x.composizione.length > MAX_RIGHE) return { errore: 'composizione non valida' };
-    const visti = {};
+    const visti = tabella();
     let resti = 0;
     const righe = [];
     for (let i = 0; i < x.composizione.length; i++) {
@@ -4694,8 +4786,8 @@ const Schede = (function () {
     if (dati.versione !== VERSIONE_ARCHIVIO) return { schede: [], scartate: [], errore: 'Versione dell\'archivio non supportata (' + String(dati.versione) + ').' };
     const schede = [];
     const scartate = [];
-    const nomi = {};
-    const ids = {};
+    const nomi = tabella();
+    const ids = tabella();
     dati.schede.forEach(function (x, i) {
       if (schede.length >= MAX_SCHEDE) { scartate.push({ posizione: i + 1, motivo: 'oltre il limite di ' + MAX_SCHEDE + ' schede' }); return; }
       const c = controllaArchiviata(x);
@@ -4750,16 +4842,24 @@ const Schede = (function () {
 (function () {
   'use strict';
   // Versione dell'app: unico punto del codice, da aggiornare a ogni fase (schema 0.<fase>.<revisione>).
-  const APP_VERSIONE = '0.2.5';
+  const APP_VERSIONE = '0.2.7';
   const DB = JSON.parse(document.getElementById('db-materiali').textContent);
   const $ = function (id) { return document.getElementById(id); };
   const f = Motore.formatta;
   const esc = function (s) {
     return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
   };
+  // Tabelle (mappe da chiave a valore) SENZA prototipo: una chiave come «constructor» o «toString» non deve trovare una proprietà ereditata da
+  // Object.prototype (con un oggetto normale «constructor» darebbe una funzione, non «assente»).
+  function tabella(init) {
+    const t = Object.create(null);
+    Object.keys(init || {}).forEach(function (k) { t[k] = init[k]; });
+    return t;
+  }
+
   // Stato iniziale dell'app: una funzione che restituisce sempre una copia NUOVA, mai un oggetto condiviso. Con una costante, i campi digitati
   // finirebbero nella costante (testi) e un secondo azzeramento non li riporterebbe vuoti. Lo usano l'avvio e «Azzera».
-  function statoIniziale() { return { materiale: null, forma: 'tonda', testi: {}, unitaL: 'mm', unitaP: 'kg', pezzi: '1' }; }
+  function statoIniziale() { return { materiale: null, forma: 'tonda', testi: tabella(), unitaL: 'mm', unitaP: 'kg', pezzi: '1' }; }
   const stato = statoIniziale();
   const COMPOSIZIONE_PARZIALE = 'Composizione parziale: solo gli elementi riportati dal documento.';
 
@@ -4976,7 +5076,7 @@ const Schede = (function () {
     (tratteggi || []).forEach(function (dy) { s += '<path class="tr" d="M175 ' + (70 + dy) + 'H285"/>'; });
     return s + hq(175, 285, y2 + 14, 'L');
   }
-  const DISEGNI = {
+  const DISEGNI = tabella({
     tonda: '<circle class="sez" cx="85" cy="70" r="40"/>' + hq(45, 125, 124, 'D') + fianco(80),
     quadro: '<rect class="sez" x="45" y="30" width="80" height="80"/>' + hq(45, 125, 124, 'a') + fianco(80),
     esagono: '<polygon class="sez" points="131,70 108,109.8 62,109.8 39,70 62,30.2 108,30.2"/>' + vq(24, 30.2, 109.8, 'S') + fianco(80),
@@ -4988,7 +5088,7 @@ const Schede = (function () {
     sfera: '<circle class="sez" cx="150" cy="68" r="48"/><path class="tr" d="M102 68a48 14 0 0 0 96 0"/>' + hq(102, 198, 124, 'D'),
     volume: '<polygon class="sez" points="105,55 165,55 165,110 105,110"/><polygon class="sez" points="105,55 125,38 185,38 165,55"/>' +
       '<polygon class="sez" points="165,55 185,38 185,93 165,110"/><text class="qt" x="135" y="90" text-anchor="middle" style="font-size:24px">V</text>'
-  };
+  });
   function renderForme() {
     const box = $('forme');
     box.textContent = '';
@@ -5138,7 +5238,7 @@ const Schede = (function () {
   let modifica = null;          // id della scheda aperta nel modulo, null per una nuova
   let confermaElimina = false;
   let nRighe = 0;
-  const toccati = {};
+  const toccati = tabella();
 
   function memoria() { try { return window.localStorage; } catch (e) { return null; } }
   function oggi() {

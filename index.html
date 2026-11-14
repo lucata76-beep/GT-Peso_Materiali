@@ -4245,6 +4245,13 @@ const Ricerca = (function () {
     });
   });
 
+  // parole intere di un nome (separate da spazi o segni), normalizzate: «Lega prova B» → lega, prova, b
+  function paroleDelNome(valore) {
+    const out = [];
+    String(valore).split(/[\s()\/,;.\-_+]+/).forEach(function (w) { varianti(w).forEach(function (x) { if (x && out.indexOf(x) < 0) out.push(x); }); });
+    return out;
+  }
+
   function indicizza(db) {
     return db.materiali.map(function (m) {
       const d = m.designazioni;
@@ -4257,7 +4264,7 @@ const Ricerca = (function () {
         m: m,
         desig: desig.map(function (x) { return { etichetta: x.etichetta, valore: x.valore, termini: termini(x.valore) }; }),
         alias: (m.alias || []).map(function (a) { return { valore: a.alias, etichetta: etichettaAlias(a), termini: termini(a.alias) }; }),
-        nomi: nomi.map(function (x) { return { etichetta: x.etichetta, valore: x.valore, interi: varianti(x.valore) }; }),
+        nomi: nomi.map(function (x) { return { etichetta: x.etichetta, valore: x.valore, interi: varianti(x.valore), parole: paroleDelNome(x.valore) }; }),
         tag: (m.tag || []).map(function (t) { return t.tag; })
       };
     });
@@ -4286,11 +4293,22 @@ const Ricerca = (function () {
       else if (a.termini.some(function (x) { return x.indexOf(t) === 0; })) prova(CLASSE.ALIAS_PARZIALE, 'alias «' + a.valore + '» (' + a.etichetta + ')');
     });
     if (ctx.q4 && ctx.abbreviati[t] === e.m.id) prova(CLASSE.NUMERO_ABBREVIATO, 'numero abbreviato (regola dell\'app)');
+    // NOME. Una parola di una sola lettera NON si cerca come sottostringa del nome. Motivo: nei nomi una lettera compare quasi ovunque
+    // (misura del 14/11/2026 su 27 voci: la «n» in 20 voci, la «o» in 19, la «i» in 16, la «c» in 14, la «a» in 12) e la ricerca darebbe quasi
+    // tutto il database. Per la stessa ragione «a», «e», «i» sono parole vuote. Una lettera sola si abbina quindi solo (1) per prefisso a
+    // designazioni e alias (sopra), (2) a una parola INTERA del nome, qui sotto («Lega B» trova «Lega prova B»), (3) unita alle parole vicine
+    // nelle letture di cercaIn («C 45» → «C45», «316 L» → «316L»). Una cifra sola non vale come parola intera del nome: le cifre isolate si
+    // trovano già come designazioni («titanio grado 2»).
     if (t.length >= 2) {
       e.nomi.forEach(function (n) {
         if (n.interi.some(function (x) { return x.indexOf(t) >= 0; })) prova(CLASSE.NOME, n.etichetta + ' «' + n.valore + '»');
       });
+    } else if (/^[a-z]$/.test(t)) {
+      e.nomi.forEach(function (n) {
+        if (n.parole.indexOf(t) >= 0) prova(CLASSE.NOME, n.etichetta + ' «' + n.valore + '»');
+      });
     }
+    if (ctx.derivata) return best;   // lettura unita: solo designazioni, alias e nomi (niente tag né famiglie)
     const tagDellaParola = tagPerParola[t] || [];
     e.tag.forEach(function (tag) {
       if (tagDellaParola.indexOf(tag) >= 0) prova(CLASSE.TAG, 'tag «' + tag + '» (cercato: ' + p.grezza + ')');
@@ -4310,16 +4328,19 @@ const Ricerca = (function () {
     return out;
   }
 
-  function confronta(a, b) { return a.rango - b.rango || a.m.nome.localeCompare(b.m.nome, 'it'); }
+  // a parità di rango prima le voci trovate da una lettura unita («C45 E» mette C45E prima di C45), poi per nome
+  function confronta(a, b) { return a.rango - b.rango || (b.incollata ? 1 : 0) - (a.incollata ? 1 : 0) || a.m.nome.localeCompare(b.m.nome, 'it'); }
 
-  function cercaIn(indice, testo, abbreviati) {
+  // Una lettura della ricerca. `derivata` = costruita da quella digitata (parole unite): solo designazioni, alias e nomi; niente numero
+  // abbreviato, tag, sinonimi né famiglie (restano regole della sola ricerca digitata).
+  function cercaLettura(indice, testo, abbreviati, derivata) {
     const grezzo = String(testo === null || testo === undefined ? '' : testo).trim();
     if (!grezzo) return indice.map(function (e) { return { m: e.m, rango: 0, motivi: [] }; });
     const pp = parole(grezzo);
     if (!pp.length) return [];
-    const tagFrase = tagDaFrase(pp);
-    const ctx = { q4: /^\d{4}$/.test(grezzo), abbreviati: abbreviati };   // numero abbreviato: la ricerca è esattamente 4 cifre
-    const sinonimi = sinonimiPerFrase[pp.map(function (w) { return w.norm; }).join(' ')] || [];
+    const tagFrase = derivata ? [] : tagDaFrase(pp);
+    const ctx = { q4: !derivata && /^\d{4}$/.test(grezzo), abbreviati: abbreviati, derivata: derivata };   // numero abbreviato: la ricerca è esattamente 4 cifre
+    const sinonimi = derivata ? [] : (sinonimiPerFrase[pp.map(function (w) { return w.norm; }).join(' ')] || []);
     const risultati = [];
     indice.forEach(function (e) {
       const hit = pp.map(function (p) { return migliore(e, p, ctx); });
@@ -4343,20 +4364,65 @@ const Ricerca = (function () {
     return risultati.sort(confronta);
   }
 
-  // Raggruppa per famiglia: prima le famiglie con il risultato migliore, a parità nell'ordine del DB
+  // Parole di un solo carattere (lettera o cifra) attaccate a quella prima, o a quella dopo se è la prima («316 L» → «316L», «S 235 J R» →
+  // «S235JR»). «a», «e», «i» restano parole vuote, salvo subito dopo una parola che finisce con una cifra («C45 E» → «C45E»).
+  function incollaCaratteri(parolaGrezze) {
+    const w = parolaGrezze.filter(function (x) { return pulisci(x); });
+    const out = [];
+    for (let i = 0; i < w.length; i++) {
+      const n = pulisci(w[i]);
+      const uno = /^[a-z0-9]$/.test(n);
+      const vuota = n === 'a' || n === 'e' || n === 'i';
+      const dopoCifra = out.length > 0 && /[0-9]$/.test(pulisci(out[out.length - 1]));
+      if (uno && out.length && (!vuota || dopoCifra)) out[out.length - 1] += w[i];
+      else if (uno && !out.length && !vuota && i + 1 < w.length) { out.push(w[i] + w[i + 1]); i++; }
+      else out.push(w[i]);
+    }
+    return out.join(' ');
+  }
+
+  // La ricerca: tre letture della stessa query, valutate con le stesse regole; per ogni voce vale il rango migliore (nessuna voce della
+  // lettura digitata sparisce e nessun rango peggiora). Letture: (1) quella digitata; (2) tutte le parole unite («C 45» → «C45», «AFNOR XC 48»
+  // → «AFNOR XC48»); (3) le parole di un solo carattere attaccate alle vicine («316 L» → «316L»). Le letture 2 e 3 sono «derivate».
+  // solaDigitata = true restituisce solo la lettura (1): serve ai test.
+  function cercaIn(indice, testo, abbreviati, solaDigitata) {
+    const base = cercaLettura(indice, testo, abbreviati, false);
+    const grezzo = String(testo === null || testo === undefined ? '' : testo).trim();
+    if (solaDigitata || !grezzo) return base;
+    const w = grezzo.split(/\s+/).filter(Boolean);
+    const letture = [];
+    if (w.length >= 2) letture.push(w.join(''));
+    const incollata = incollaCaratteri(w);
+    if (incollata !== w.join(' ')) letture.push(incollata);
+    if (!letture.length) return base;
+    const migliori = {};
+    base.forEach(function (r) { migliori[r.m.id] = r; });
+    letture.forEach(function (l) {
+      cercaLettura(indice, l, abbreviati, true).forEach(function (r) {
+        const o = migliori[r.m.id];
+        if (!o || r.rango < o.rango) migliori[r.m.id] = { m: r.m, rango: r.rango, motivi: r.motivi, incollata: true };
+        else if (r.rango === o.rango) o.incollata = true;
+      });
+    });
+    return Object.keys(migliori).map(function (k) { return migliori[k]; }).sort(confronta);
+  }
+
+  // Raggruppa per famiglia: prima le famiglie con il risultato migliore; a parità prima quella la cui voce migliore è stata trovata da una lettura
+  // unita (come in confronta: «C45 E» mette C45E, della famiglia «Acciai da bonifica», prima di C45), poi nell'ordine del DB
   function raggruppa(risultati, famiglie) {
     return famiglie.map(function (fam, idx) {
       const voci = risultati.filter(function (r) { return r.m.famiglia === fam; }).sort(confronta);
-      return { famiglia: fam, idx: idx, voci: voci, migliore: voci.length ? voci[0].rango : Infinity };
+      return { famiglia: fam, idx: idx, voci: voci, migliore: voci.length ? voci[0].rango : Infinity, incollata: voci.length ? Boolean(voci[0].incollata) : false };
     }).filter(function (g) { return g.voci.length; })
-      .sort(function (a, b) { return a.migliore - b.migliore || a.idx - b.idx; });
+      .sort(function (a, b) { return a.migliore - b.migliore || (b.incollata ? 1 : 0) - (a.incollata ? 1 : 0) || a.idx - b.idx; });
   }
 
   function crea(db) {
     const indice = indicizza(db);
     const abbreviati = numeriAbbreviati(db);
     return {
-      cerca: function (testo) { return cercaIn(indice, testo, abbreviati); },
+      cerca: function (testo) { return cercaIn(indice, testo, abbreviati, false); },
+      cercaDigitata: function (testo) { return cercaIn(indice, testo, abbreviati, true); },   // solo la lettura digitata (per i test)
       raggruppa: function (risultati) { return raggruppa(risultati, db.meta.famiglie); }
     };
   }
@@ -4684,7 +4750,7 @@ const Schede = (function () {
 (function () {
   'use strict';
   // Versione dell'app: unico punto del codice, da aggiornare a ogni fase (schema 0.<fase>.<revisione>).
-  const APP_VERSIONE = '0.2.4';
+  const APP_VERSIONE = '0.2.5';
   const DB = JSON.parse(document.getElementById('db-materiali').textContent);
   const $ = function (id) { return document.getElementById(id); };
   const f = Motore.formatta;

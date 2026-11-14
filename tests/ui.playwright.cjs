@@ -971,6 +971,30 @@ async function caso(browser, c) {
     await page.reload();
   }
 
+  // --- ricerca: parole di un solo carattere e letture unite (app 0.2.5)
+  {
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    let rr = await righe('C 45');
+    verifica(JSON.stringify(nomi(rr)) === JSON.stringify(['C45 (1.0503)', 'C45E']) && rr.every((x) => /designazione/.test(x.trovato)), `«C 45» trova C45 e C45E come «C45» (${nomi(rr)})`);
+    rr = await righe('C45 E');
+    verifica(rr.length === 2 && rr[0].nome === 'C45E' && rr[1].nome === 'C45 (1.0503)', `«C45 E»: C45E per primo, poi C45 (${rr.map((x) => x.nome)})`);
+    rr = await righe('S 235 J R'); verifica(rr.length === 1 && rr[0].nome === 'S235JR', `«S 235 J R» trova S235JR (${nomi(rr)})`);
+    rr = await righe('100 Cr 6'); verifica(rr.length === 1 && rr[0].nome === '100Cr6', `«100 Cr 6» trova 100Cr6 (${nomi(rr)})`);
+    // il DB non ha 316L né 304L: le query con la «L» non trovano nulla e non ricadono su Inox 316 o Inox 304
+    for (const q of ['inox 316 L', '316 L', '304 L']) {
+      await page.fill('#q', ''); await page.fill('#q', q); await page.waitForSelector('#elenco:not([hidden])');
+      verifica((await page.locator('#elenco .voce').count()) === 0 && /Nessun materiale trovato/.test(await page.textContent('#elenco')), `«${q}»: nessun risultato, niente Inox 316 né Inox 304`);
+    }
+    // una scheda personale con una lettera nel nome si trova dal nome intero
+    await page.click('#btn-nuova'); await page.fill('#e-nome', 'Lega prova B'); await page.fill('#e-dens', '7,6'); await page.click('#btn-salva');
+    await page.reload();
+    for (const q of ['Lega prova B', 'Lega B', 'prova B']) { rr = await righe(q); verifica(rr.length === 1 && rr[0].nome === 'Lega prova B', `«${q}» trova la scheda personale «Lega prova B» (${nomi(rr)})`); }
+    rr = await righe('Lega C'); verifica(rr.length === 0, `«Lega C»: nessuna scheda (${nomi(rr)})`);
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+  }
+
   verifica(errori.length === 0, `nessun errore in console (${errori.join(' | ')})`);
   await ctx.close();
 }

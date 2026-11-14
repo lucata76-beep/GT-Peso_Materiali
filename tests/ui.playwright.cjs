@@ -705,6 +705,7 @@ async function caso(browser, c) {
       verifica(sp.includes(parte), `scheda personale mostra «${parte}»`);
     const righeComp = await page.$$eval('#det-comp table.comp tbody tr', (trs) => trs.map((tr) => [...tr.children].map((td) => td.textContent)));
     verifica(JSON.stringify(righeComp) === JSON.stringify([['C', '0,35–0,43 %'], ['Cr', 'max 1 %'], ['Fe', 'resto']]), `composizione della scheda personale (${JSON.stringify(righeComp)})`);
+    verifica(await page.evaluate(() => document.querySelector('#det-comp').open) && await page.isVisible('#det-comp table.comp'), 'scheda personale: composizione aperta e visibile senza toccare nulla');
     verifica(!(await page.locator('#scheda ul.tag, #scheda #det-fonti').count()), 'nessun tag né fonti sulla scheda personale');
     verifica(/salvata\. I dati sono tuoi e non sono verificati su documenti/.test(await page.textContent('#msg-schede')), 'messaggio di salvataggio');
     verifica(/ · 1 scheda personale$/.test(await page.textContent('#footer')), 'il piè di pagina conta le schede personali');

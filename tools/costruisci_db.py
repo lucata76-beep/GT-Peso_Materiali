@@ -9,6 +9,12 @@ BASE, OUT_JSON, OUT_MD = sys.argv[1], sys.argv[2], sys.argv[3]
 SOLO = '--solo-verifica' in sys.argv
 OGGI = '2026-11-13'
 OGGI_2C = '2026-11-14'
+# Etichetta del DB: ogni modifica ai dati dopo una versione pubblicata alza la versione (e aggiorna la data); mai due contenuti con la stessa etichetta.
+#   v3 = 6 nuove voci e alias della Fase 2c (27 voci, 2026-11-14)
+#   v4 = Fase 2d: flag «tipico» sulla densità di C45, S355J2, S235JR (Ovako) e Inconel 718 (Special Metals SMC-045): letture dichiarate tipiche dal documento
+DB_VERSIONE = '4'
+DB_DATA = '2026-11-14'
+TOCCATE_V4 = {'c45', 's355j2', 's235jr', 'inconel718'}   # voci i cui dati sono cambiati nella v4: data_verifica = DB_DATA
 TOCCATE_2C = {'39nicrmo3', '1.4462', '1.2343', '1.2311', 's235jr', 'c45', '1.2379'}
 
 # ---------------------------------------------------------------- documenti
@@ -105,7 +111,13 @@ def prova(docid, campo, rx):
     return dict(campo=campo, pagina=0, estratto='?')
 
 def fonte(docid, prove, densita=None):
-    f = dict(id=docid, prove=[prova(docid, c, rx) for c, rx in prove], campi=sorted({c for c, _ in prove}))
+    # ogni prova è (campo, regex) oppure (campo, regex, frase): con la frase, quella è mostrata nel registro al posto del taglio automatico
+    # a 140 caratteri (serve quando il testo estratto dal PDF è intercalato alle celle di una tabella); la regex resta la verifica sul testo.
+    ps = []
+    for t in prove:
+        pr = prova(docid, t[0], t[1])
+        ps.append(dict(pr, estratto=t[2]) if len(t) > 2 else pr)
+    f = dict(id=docid, prove=ps, campi=sorted({t[0] for t in prove}))
     if densita: f['densita_letta'] = densita if isinstance(densita, list) else [densita]
     return f
 
@@ -113,8 +125,10 @@ def g(val, unita='g/cm³'):  # densità letta già in g/cm³ o kg/dm³ (=g/cm³)
     return dict(valore=val, unita=unita, g_cm3=float(val.replace(',', '.')))
 
 LB_IN3 = 453.59237 / (2.54 ** 3)  # g/cm³ per 1 lb/in³, dalle costanti definite
-def lb(val):
-    return dict(valore=val, unita='lb/in³', g_cm3=round(float(val) * LB_IN3, 3))
+def lb(val, tipico=False):   # tipico=True solo se il documento dichiara quella lettura come «valore tipico» (la prova deve includere la dichiarazione)
+    d = dict(valore=val, unita='lb/in³', g_cm3=round(float(val) * LB_IN3, 3))
+    if tipico: d['tipico'] = True
+    return d
 
 # ---------------------------------------------------------------- voci
 def el(**k): return k
@@ -197,7 +211,7 @@ voce('s355j2', 'S355J2', 'Acciai al carbonio',
      [fonte('LUC-S355J2', [('composizione', r'0,20 a\)\s+0,55\s+1,60\s+0,025\s+0,025\s+0,40'),
                            ('composizione', r'EN 10025-2: 2014'),
                            ('designazioni', r'Number\s+1\.0577')]),
-      fonte('OVA-S355J2', [('densita', r'Density \(kg/m3\)\s+210\s+0\.3\s+80\s+7800')], dict(valore='7800', unita='kg/m³', g_cm3=7.8))],
+      fonte('OVA-S355J2', [('densita', r'Other properties \(typical values\)\s+Youngs module \(GPa\)\s+Poisson.s ratio \(-\)\s+Shear module \(GPa\)\s+Density \(kg/m3\)\s+210\s+0\.3\s+80\s+7800')], dict(valore='7800', unita='kg/m³', g_cm3=7.8, tipico=True))],
      '')
 
 # 6. 11SMnPb30
@@ -425,15 +439,20 @@ voce('inconel718', 'Inconel 718', 'Altri',
                         ('composizione', r'Phosphorus\.+0\.015 max\.'), ('composizione', r'Sulfur\.+0\.015 max\.'),
                         ('composizione', r'Boron \.+0\.006 max\.'), ('composizione', r'Copper\.+0\.30 max\.'), ('composizione', r'Iron \.+Balance'),
                         ('densita', r'Annealed\.+0\.296'), ('densita', r'Annealed and Aged \.+0\.297'),
+                        ('densita', r'Some physical constants of INCONEL alloy 718 are shown\s+in Table 2\. Modulus data appear in Tables 3 and 4, and.{0,300}?thermal properties in Table 5\. The values in these tables will.{0,500}?vary slightly, depending on the composition and condition.{0,500}?of the specimen tested\. They are typical but are not suitable.{0,500}?for specification purposes\.',
+                         '«Some physical constants of INCONEL alloy 718 are shown in Table 2. Modulus data appear in Tables 3 and 4, and thermal properties in Table 5. The values in these tables will vary slightly, depending on the composition and condition of the specimen tested. They are typical but are not suitable for specification purposes.» (sotto «Table 2 - Physical Constants»; il testo sta nella colonna di sinistra, intercalato alle celle della tabella)'),
                         ('designazioni', r'INCONEL® alloy 718 \(UNS N07718/W\.Nr\. 2\.4668\)'),
-                        ('nome_commerciale', r'INCONEL® alloy 718')], [lb('0.296'), lb('0.297')])],
+                        ('nome_commerciale', r'INCONEL® alloy 718')], [lb('0.296', tipico=True), lb('0.297', tipico=True)])],
      'Special Metals riporta solo lb/in³: 0,296 (ricotto) = 8,193 g/cm³ e 0,297 (ricotto e invecchiato) = 8,221 g/cm³, convertiti con 1 lb = 0,45359237 kg e 1 in = 25,4 mm.')
 
 
 # ================================================================ FASE 2c: nuovi materiali (solo con FASE2C=1)
 FASE2C = os.environ.get('FASE2C') != '0'   # la Fase 2c è ora parte del DB (FASE2C=0 ricostruisce il DB v3 della 2b)
-def kgm3(val):  # densità letta in kg/m³ (valore del documento) e il suo equivalente in g/cm³
-    return dict(valore=val, unita='kg/m³', g_cm3=float(val) / 1000)
+def kgm3(val, tipico=False):  # densità letta in kg/m³ (valore del documento) e il suo equivalente in g/cm³
+    # tipico=True solo se il documento dichiara quella riga come «valore tipico» (la prova deve includere la dichiarazione)
+    d = dict(valore=val, unita='kg/m³', g_cm3=float(val) / 1000)
+    if tipico: d['tipico'] = True
+    return d
 if FASE2C:
     LUCW = 'https://www.lucefin.com/wp-content/files_mf/'
     doc('LUC-39NI-IT', '2c/39nicrmo3/lucefin_39NiCrMo3_A.pdf', 'Lucefin Group', 'Scheda dati 39NiCrMo3 (EN 10083-3:2006), rev. 2018', LUCW+'152353575939NiCrMo3.pdf')
@@ -537,9 +556,9 @@ if FASE2C:
          lega('EN 10025-2:2004, % in massa, analisi di colata (norma citata sulle schede Lucefin e Ovako)',
               dict(C=dict(max=0.17), Mn=dict(max=1.40), P=dict(max=0.035), S=dict(max=0.035), N=dict(max=0.012), Cu=dict(max=0.55), Fe='resto'),
               'C max 0,20 % per spessori oltre 40 mm; il silicio non è specificato.'),
-         [fonte('OVA-S235', [('densita', r'Density \(kg/m3\)\s+210\s+0\.3\s+80\s+7800'),
+         [fonte('OVA-S235', [('densita', r'Other properties \(typical values\)\s+Youngs module \(GPa\)\s+Poisson.s ratio \(-\)\s+Shear module \(GPa\)\s+Density \(kg/m3\)\s+210\s+0\.3\s+80\s+7800'),
                              ('composizione', r'S235JR EN10025-2 \(ref\)\s+Std\s+Pcm 0\.25max\s+Max\s+0\.17\s+1\.40\s+0\.035\s+0\.035\s+0\.55\s+0\.0120'),
-                             ('designazioni', r'Similar designations\s+SS 1312, S235JR, 1\.0038, Fe 360 BFN, RSt37-2, 40 B, SB1312, IM2191')], kgm3('7800')),
+                             ('designazioni', r'Similar designations\s+SS 1312, S235JR, 1\.0038, Fe 360 BFN, RSt37-2, 40 B, SB1312, IM2191')], kgm3('7800', tipico=True)),
           fonte('LUC-S235JR', [('composizione', r'0,17 c\)\s+-\s+1,40\s+0,035\s+0,035\s+0,012 a\)\s+0,55'),
                                ('composizione', r'EN 10025-2: 2004'),
                                ('designazioni', r'Numero\s+1\.0038')])],
@@ -550,9 +569,9 @@ if FASE2C:
          dict(EN='C45', WNr='1.0503', UNI='', AISI_SAE='1045', DIN='', altre=[]), '',
          lega('ISO 683-1, % in massa (riga «C45 EN ISO 683-1» della scheda Ovako)',
               dict(C=dict(min=0.42, max=0.50), Si=dict(min=0.10, max=0.40), Mn=dict(min=0.50, max=0.80), P=dict(max=0.045), S=dict(max=0.045), Cr=dict(max=0.40), Ni=dict(max=0.40), Mo=dict(max=0.10), Cu=dict(max=0.30), Fe='resto')),
-         [fonte('OVA-C45', [('densita', r'Density \(kg/m3\)\s+210\s+0\.3\s+80\s+7800'),
+         [fonte('OVA-C45', [('densita', r'Other properties \(typical values\)\s+Youngs module \(GPa\)\s+Poisson.s ratio \(-\)\s+Shear module \(GPa\)\s+Density \(kg/m3\)\s+210\s+0\.3\s+80\s+7800'),
                             ('composizione', r'C45 EN\s+CEV max\s+Min\s+0\.42\s+0\.10\s+0\.50.{0,300}?Std\s+ISO 683-1\s+Pcm max\s+Max\s+0\.50\s+0\.40\s+0\.80\s+0\.045\s+0\.045\s+0\.40\s+0\.40\s+0\.10\s+-\s+-\s+0\.30'),
-                            ('designazioni', r'Similar designations\s+C43, C44, C45R - 1\.1201, C45E - 1\.1191, Ck45, St70-2, SAE 1045, 080A42, SS 1672, XC 48, C 45, S 45\s+C, GOST 45, AISI/SAE/ASTM 1045, 1\.0503')], kgm3('7800')),
+                            ('designazioni', r'Similar designations\s+C43, C44, C45R - 1\.1201, C45E - 1\.1191, Ck45, St70-2, SAE 1045, 080A42, SS 1672, XC 48, C 45, S 45\s+C, GOST 45, AISI/SAE/ASTM 1045, 1\.0503')], kgm3('7800', tipico=True)),
           fonte('MAR-BON', [])],
          'Una sola fonte di densità (Ovako, valore tipico per la sigla C45). Marcegaglia Plates conferma il tag «da bonifica» ma non riporta composizione né W.Nr.')
 
@@ -746,7 +765,7 @@ for v in E:
     else:
         v['densita_g_cm3'] = r3((lo + hi) / 2)
         v['densita_intervallo_g_cm3'] = [lo, hi]
-    v['data_verifica'] = OGGI_2C if (FASE2C and v['id'] in TOCCATE_2C) else OGGI
+    v['data_verifica'] = DB_DATA if v['id'] in TOCCATE_V4 else (OGGI_2C if (FASE2C and v['id'] in TOCCATE_2C) else OGGI)
 
 # ---------------------------------------------------------------- uscita
 if ERRORI:
@@ -790,7 +809,7 @@ def pulisci(v):
              nota_intervallo=v['nota_intervallo'], tag=v['tag'], alias=v.get('alias', []), fonti=fonti, data_verifica=v['data_verifica'])
     return r
 
-DB = dict(meta=dict(schema=1, versione='3', data=(OGGI_2C if FASE2C else OGGI), tag=TAG_VOCAB,
+DB = dict(meta=dict(schema=1, versione=DB_VERSIONE, data=DB_DATA, tag=TAG_VOCAB,
                     regola_nominale='Se i documenti letti concordano: valore comune. Se discordano: densità nominale = punto medio tra minimo e massimo letti (arrotondato a 3 decimali), con intervallo e fonti.',
                     famiglie=FAM),
           materiali=[pulisci(v) for v in E])

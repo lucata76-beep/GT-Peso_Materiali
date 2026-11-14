@@ -371,7 +371,7 @@
 {
  "meta": {
   "schema": 1,
-  "versione": "3",
+  "versione": "4",
   "data": "2026-11-14",
   "tag": [
    "da bonifica",
@@ -975,12 +975,13 @@
       {
        "valore": "7800",
        "unita": "kg/m³",
-       "g_cm3": 7.8
+       "g_cm3": 7.8,
+       "tipico": true
       }
      ]
     }
    ],
-   "data_verifica": "2026-11-13"
+   "data_verifica": "2026-11-14"
   },
   {
    "id": "11smnpb30",
@@ -2935,17 +2936,19 @@
       {
        "valore": "0.296",
        "unita": "lb/in³",
-       "g_cm3": 8.193
+       "g_cm3": 8.193,
+       "tipico": true
       },
       {
        "valore": "0.297",
        "unita": "lb/in³",
-       "g_cm3": 8.221
+       "g_cm3": 8.221,
+       "tipico": true
       }
      ]
     }
    ],
-   "data_verifica": "2026-11-13"
+   "data_verifica": "2026-11-14"
   },
   {
    "id": "39nicrmo3",
@@ -3684,7 +3687,8 @@
       {
        "valore": "7800",
        "unita": "kg/m³",
-       "g_cm3": 7.8
+       "g_cm3": 7.8,
+       "tipico": true
       }
      ]
     },
@@ -3794,7 +3798,8 @@
       {
        "valore": "7800",
        "unita": "kg/m³",
-       "g_cm3": 7.8
+       "g_cm3": 7.8,
+       "tipico": true
       }
      ]
     },
@@ -4083,11 +4088,22 @@ const Motore = (function () {
     return n;
   }
 
+  // «Valore tipico»: vero solo se la voce ha almeno una lettura di densità e OGNI lettura è dichiarata tale dal documento (tipico: true).
+  // Basta una lettura che non lo sia perché il valore nominale non si presenti come tipico.
+  function densitaTipica(fonti) {
+    let n = 0;
+    let tutte = true;
+    (fonti || []).forEach(function (f) {
+      (f.densita_letta || []).forEach(function (x) { n++; if (x.tipico !== true) tutte = false; });
+    });
+    return n > 0 && tutte;
+  }
+
   return {
     LUNGHEZZA_MM: LUNGHEZZA_MM, MASSA_G: MASSA_G, FORME: FORME, ORDINE_FORME: ORDINE_FORME,
     interpretaNumero: interpretaNumero, formatta: formatta,
     convertiMassa: convertiMassa, convertiLunghezza: convertiLunghezza, valuta: valuta,
-    enteDi: enteDi, fontiIndipendenti: fontiIndipendenti
+    enteDi: enteDi, fontiIndipendenti: fontiIndipendenti, densitaTipica: densitaTipica
   };
 })();
 // ENGINE:FINE
@@ -4780,8 +4796,9 @@ const Schede = (function () {
   const UNITA_EQUIVALENTI = ['g/cm³', 'kg/dm³', 'Mg/m³'];
   function lettura(r) {
     const v = String(r.valore).replace('.', ',');
-    if (/^non indicata/.test(r.unita)) return v + ' (unità non indicata nel documento)';
-    return v + ' ' + r.unita + (UNITA_EQUIVALENTI.indexOf(r.unita) >= 0 ? '' : ' = ' + f(r.g_cm3) + ' g/cm³');
+    const tipico = r.tipico === true ? ' (valore tipico)' : '';
+    if (/^non indicata/.test(r.unita)) return v + ' (unità non indicata nel documento)' + tipico;
+    return v + ' ' + r.unita + (UNITA_EQUIVALENTI.indexOf(r.unita) >= 0 ? '' : ' = ' + f(r.g_cm3) + ' g/cm³') + tipico;
   }
   function paginaDensita(rif) {
     const x = /densita (p\. [\d,]+|\(pagina web\))/.exec(rif);
@@ -4846,7 +4863,7 @@ const Schede = (function () {
     if (m.alias.length) h += '<p class="piccolo">Alias: ' + m.alias.map(function (a) { return esc(a.alias) + ' (' + etichettaAlias(a) + ')'; }).join(' · ') + '</p>';
     m.alias.forEach(function (a) { if (a.nota) h += '<p class="piccolo">Nota su «' + esc(a.alias) + '»: ' + esc(a.nota) + '</p>'; });
     if (m.nome_commerciale) h += '<p class="piccolo">Nome commerciale: ' + esc(m.nome_commerciale) + '</p>';
-    h += '<p>Densità nominale: <strong>' + f(m.densita_g_cm3) + ' g/cm³</strong>' + (iv ? ' (letture dei documenti: ' + f(iv[0]) + '–' + f(iv[1]) + ')' : '') + '</p>';
+    h += '<p>Densità nominale: <strong>' + f(m.densita_g_cm3) + ' g/cm³</strong>' + (iv ? ' (letture dei documenti: ' + f(iv[0]) + '–' + f(iv[1]) + ')' : '') + (Motore.densitaTipica(m.fonti) ? ' · valore tipico' : '') + '</p>';
     if (m.composizione.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';
     h += '<details id="det-comp" open><summary>Composizione chimica</summary>' + composizioneHTML(m.composizione) + '</details>';
     let fonti = fontiHTML(m.fonti, false);
@@ -4963,7 +4980,8 @@ const Schede = (function () {
         '<p class="avviso">Scheda personale: la densità e gli altri dati sono scritti da te e non sono verificati su documenti.</p>';
     } else {
       h += '<h3>Densità usata</h3><p><strong>' + f(m.densita_g_cm3) + ' g/cm³</strong> — ' +
-        (iv ? 'valore nominale: punto medio delle letture dei documenti.' : 'letture dei documenti concordi.') + '</p>';
+        (iv ? 'valore nominale: punto medio delle letture dei documenti.' : 'letture dei documenti concordi.') +
+        (Motore.densitaTipica(m.fonti) ? ' Valore tipico: così è dichiarato nei documenti letti.' : '') + '</p>';
       if (iv) {
         h += '<p>Intervallo delle letture: ' + f(iv[0]) + '–' + f(iv[1]) + ' g/cm³. ' + esc(m.nota_intervallo) +
           ' Con le letture estreme il peso totale sarebbe tra ' + f(r.peso_totale_min, 6) + ' e ' + f(r.peso_totale_max, 6) + ' ' + u + '.</p>';

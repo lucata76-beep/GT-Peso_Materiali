@@ -118,6 +118,7 @@ async function caso(browser, c) {
 
   // --- struttura di base
   verifica((await page.textContent('#footer')).startsWith('Database v'), 'footer con versione del database');
+  { const dbF = await leggiDB(page); verifica((await page.textContent('#footer')).startsWith(`Database v${dbF.meta.versione} · ${dbF.meta.data}`) && dbF.meta.versione === '4', `footer: «Database v${dbF.meta.versione} · ${dbF.meta.data}», come nel DB (v4)`); }
   const largh = await page.evaluate(() => { const m = document.querySelector('main').getBoundingClientRect(); return { w: m.width, l: m.left, scroll: document.documentElement.scrollWidth > window.innerWidth }; });
   verifica(!largh.scroll, 'nessuno scroll orizzontale');
   verifica(largh.w <= 480.5, `colonna unica larga al massimo 480 px (${largh.w})`);
@@ -533,6 +534,7 @@ async function caso(browser, c) {
   await page.check('input[value="tonda"]', { force: true });
   const ente = (e) => String(e).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
   let unaFonte = 0;
+  let nTipici = 0;
   for (const m of db.materiali) {
     await scegliPerNome(page, m.nome);
     await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
@@ -541,8 +543,38 @@ async function caso(browser, c) {
     verifica(det.includes(`Fonti indipendenti per la densità: ${K}`), `${m.nome}: fonti indipendenti per la densità = ${K}`);
     verifica(det.includes('Una sola fonte di densità') === (K === 1), `${m.nome}: «Una sola fonte di densità» ${K === 1 ? 'mostrata' : 'assente'} (K = ${K})`);
     if (K === 1) unaFonte++;
+    // «valore tipico»: atteso dal DB (ogni lettura dichiarata tipica dal documento), calcolato qui senza usare il motore
+    const letture = m.fonti.flatMap((f) => f.densita_letta || []);
+    const tip = letture.length > 0 && letture.every((x) => x.tipico === true);
+    verifica((await page.innerText('#scheda')).includes(' · valore tipico') === tip, `${m.nome}: «valore tipico» ${tip ? 'mostrato' : 'assente'} accanto alla densità nella scheda`);
+    verifica(det.includes('Valore tipico: così') === tip, `${m.nome}: «Valore tipico: così …» ${tip ? 'mostrato' : 'assente'} nei dettagli del peso`);
+    const fontiTxt = await page.$$eval('#dettagli ul.fonti', (e) => e.map((x) => x.textContent).join(' '));
+    verifica(fontiTxt.includes('(valore tipico)') === tip, `${m.nome}: «(valore tipico)» ${tip ? 'indicato' : 'assente'} sulle letture delle fonti`);
+    if (tip) nTipici++;
   }
   verifica(unaFonte >= 11, `${unaFonte} voci con una sola fonte indipendente di densità`);
+  verifica(nTipici === 4, `4 voci con densità dichiarata tipica dal documento: C45, S355J2, S235JR, Inconel 718 (${nTipici})`);
+  // pagina del PDF Ovako in cui la riga Density sta sotto «Other properties (typical values)»
+  for (const [id, pagina] of [['c45', 6], ['s355j2', 6], ['s235jr', 3]]) {
+    const c = db.materiali.find((v) => v.id === id);
+    await scegliPerNome(page, c.nome);
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    verifica((await page.innerText('#scheda')).includes('Densità nominale: 7,8 g/cm³ · valore tipico'), `${c.nome}: «Densità nominale: 7,8 g/cm³ · valore tipico» sulla scheda`);
+    const dc = await page.innerText('#dettagli');
+    verifica(dc.includes('7,8 g/cm³ — letture dei documenti concordi. Valore tipico: così è dichiarato nei documenti letti.'), `${c.nome}: «Valore tipico» nei dettagli della densità usata`);
+    verifica(dc.includes(`Densità letta: 7800 kg/m³ = 7,8 g/cm³ (valore tipico), pag. ${pagina}.`), `${c.nome}: la lettura Ovako è indicata come valore tipico, con la pagina ${pagina}`);
+  }
+  {
+    // Inconel 718: due letture dello stesso documento (lb/in³) e un intervallo; l'app scrive solo «valore tipico», senza altre avvertenze
+    const c = db.materiali.find((v) => v.id === 'inconel718');
+    await scegliPerNome(page, c.nome);
+    await scrivi(page, '#c-D', '100'); await scrivi(page, '#c-L', '100');
+    verifica((await page.innerText('#scheda')).includes('Densità nominale: 8,207 g/cm³ (letture dei documenti: 8,193–8,221) · valore tipico'), 'Inconel 718: «valore tipico» accanto alla densità nominale con l\'intervallo');
+    const dc = await page.innerText('#dettagli');
+    verifica(dc.includes('8,207 g/cm³ — valore nominale: punto medio delle letture dei documenti. Valore tipico: così è dichiarato nei documenti letti.'), 'Inconel 718: «Valore tipico» nei dettagli della densità usata');
+    verifica(dc.includes('Densità letta: 0,296 lb/in³ = 8,193 g/cm³ (valore tipico); 0,297 lb/in³ = 8,221 g/cm³ (valore tipico), pag. 1.'), 'Inconel 718: entrambe le letture in lb/in³ indicate come valore tipico, con la pagina 1');
+    verifica(!/non (è|sono) (adatt|idone)|specific/i.test(dc.split('Fonti')[0] + (await page.innerText('#scheda'))), 'Inconel 718: nessuna avvertenza oltre a «valore tipico» (l\'app non cita le specifiche)');
+  }
   for (const id of ['39nicrmo3', '1.2311', 's235jr', 'c45']) {
     const m = db.materiali.find((v) => v.id === id);
     await scegliPerNome(page, m.nome);
@@ -707,6 +739,7 @@ async function caso(browser, c) {
     verifica(JSON.stringify(righeComp) === JSON.stringify([['C', '0,35–0,43 %'], ['Cr', 'max 1 %'], ['Fe', 'resto']]), `composizione della scheda personale (${JSON.stringify(righeComp)})`);
     verifica(await page.evaluate(() => document.querySelector('#det-comp').open) && await page.isVisible('#det-comp table.comp'), 'scheda personale: composizione aperta e visibile senza toccare nulla');
     verifica(!(await page.locator('#scheda ul.tag, #scheda #det-fonti').count()), 'nessun tag né fonti sulla scheda personale');
+    verifica(!/valore tipico/i.test(await page.innerText('#scheda')), 'la scheda personale non è mai presentata come «valore tipico»');
     verifica(/salvata\. I dati sono tuoi e non sono verificati su documenti/.test(await page.textContent('#msg-schede')), 'messaggio di salvataggio');
     verifica(/ · 1 scheda personale$/.test(await page.textContent('#footer')), 'il piè di pagina conta le schede personali');
     // calcolo con la densità inserita

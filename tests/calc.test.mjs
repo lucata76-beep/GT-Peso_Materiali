@@ -227,3 +227,20 @@ test('fontiIndipendenti: il motore e il validatore danno lo stesso numero per og
   }
   for (const v of db.materiali) for (const fo of v.fonti) assert.equal(Motore.enteDi(fo.emittente), enteDi(fo.emittente));
 });
+
+test('densitaTipica: vera solo se ogni lettura di densità è dichiarata tipica dal documento', () => {
+  const l = (tipico, extra = {}) => ({ densita_letta: [{ valore: '7800', unita: 'kg/m³', g_cm3: 7.8, ...(tipico === undefined ? {} : { tipico }) }], ...extra });
+  assert.equal(Motore.densitaTipica([l(true)]), true);
+  assert.equal(Motore.densitaTipica([l(true), l(true)]), true, 'più documenti, tutti tipici');
+  assert.equal(Motore.densitaTipica([l(true), l(undefined)]), false, 'basta un documento non tipico');
+  assert.equal(Motore.densitaTipica([l(undefined), l(true)]), false);
+  assert.equal(Motore.densitaTipica([l(undefined)]), false, 'senza il flag');
+  assert.equal(Motore.densitaTipica([l(false)]), false);
+  assert.equal(Motore.densitaTipica([l('true')]), false, 'solo true vale');
+  assert.equal(Motore.densitaTipica([{ densita_letta: [{ tipico: true }, { tipico: undefined }] }]), false, 'due letture nello stesso documento, una non tipica');
+  assert.equal(Motore.densitaTipica([{ densita_letta: [{ tipico: true }, { tipico: true }] }]), true, 'due letture nello stesso documento, entrambe tipiche');
+  assert.equal(Motore.densitaTipica([l(true), { campi: ['tag'] }]), true, 'un documento senza letture non conta');
+  assert.equal(Motore.densitaTipica([]), false);
+  assert.equal(Motore.densitaTipica(undefined), false);
+  assert.equal(Motore.densitaTipica([{ campi: ['tag'] }]), false, 'nessuna lettura');
+});

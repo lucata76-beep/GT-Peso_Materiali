@@ -1,6 +1,6 @@
 # Tag e alias (Fasi 2b e 2c)
 
-Generato da `node tools/report-tag.mjs` sul DB v3 del 2026-11-14. Non modificare a mano: si rigenera.
+Generato da `node tools/report-tag.mjs` sul DB v4 del 2026-11-14. Non modificare a mano: si rigenera.
 
 ## Regole
 

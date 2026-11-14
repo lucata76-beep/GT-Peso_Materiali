@@ -372,3 +372,37 @@ test('JSON con «</script» nel testo: rifiutato', () => {
   const rotto = html.replace('"Acciai da bonifica"', '"Acciai </script> da bonifica"');
   assert.throws(() => estraiDb(rotto), /romperebbe la pagina/);
 });
+
+test('«valore tipico»: ammesso solo come true sulla lettura di densità; solo C45, S355J2, S235JR e Inconel 718 lo hanno nel DB', () => {
+  const db = copia();
+  const conFlag = db.materiali.filter((v) => v.fonti.some((f) => (f.densita_letta || []).some((x) => 'tipico' in x))).map((v) => v.id);
+  assert.deepEqual(conFlag, ['s355j2', 'inconel718', 's235jr', 'c45'], 'il flag va aggiunto a una voce solo dopo aver letto nel documento che la densità è dichiarata tipica, e alza la versione del DB');
+  const lettura = () => { const d = copia(); return [d, d.materiali.find((v) => v.id === 'c45').fonti[0].densita_letta[0]]; };
+  assert.equal(lettura()[1].tipico, true);
+  for (const valore of [false, 'true', 'sì', 1, null]) {
+    const [d, x] = lettura(); x.tipico = valore;
+    conErrore(d, '«tipico» ammesso solo come true');
+  }
+  const [d2, x2] = lettura(); delete x2.tipico;
+  assert.deepEqual(validaDb(d2).errori, [], 'senza il flag la voce resta valida');
+});
+
+test('versione del DB: numero intero positivo scritto come testo', () => {
+  for (const v of ['', 'x', '3.1', '0', '-1', '04', ' 4', 'v4']) {
+    const d = copia(); d.meta.versione = v;
+    conErrore(d, 'versione: serve un numero intero positivo');
+  }
+  const d = copia(); d.meta.versione = 4;   // un numero, non un testo
+  conErrore(d, 'versione: serve un numero intero positivo');
+  const d9 = copia(); d9.meta.versione = '12';
+  assert.deepEqual(validaDb(d9).errori, [], 'anche versioni a due cifre');
+});
+
+test('«tipico» richiede il DB v4 o successivo: una v3 non può contenerlo', () => {
+  const d = copia(); d.meta.versione = '3';
+  conErrore(d, 'richiede il DB v4 o successivo');
+  const d4 = copia(); d4.meta.versione = '4';
+  assert.deepEqual(validaDb(d4).errori, []);
+  const d5 = copia(); d5.meta.versione = '5';
+  assert.deepEqual(validaDb(d5).errori, []);
+});

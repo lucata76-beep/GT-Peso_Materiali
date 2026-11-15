@@ -2,6 +2,8 @@
 
 *Stagno*
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Identificazione
 
 - Altre: Sn
@@ -18,8 +20,8 @@ Intervallo delle letture: 7,29–7,31 g/cm³. NIST 7,310 g/cm³ (costante usata 
 
 Fonti indipendenti per la densità: 2 (enti diversi; le schede dello stesso ente, anche in lingue diverse, contano una volta).
 
-- **NIST (National Institute of Standards and Technology)**, riferimento scientifico — X-Ray Mass Attenuation Coefficients, Table 1 (costanti dei materiali, Z=50 Sn). Densità letta: 7,310 g/cm³, pagina web. Riferimenti: densita (pagina web); designazioni (pagina web). <https://physics.nist.gov/PhysRefData/XrayMassCoef/tab1.html>
-- **Indium Corporation**, fornitore — Product Data Sheet Commercial Tin Metal, Form No. 98803 R0. Densità letta: 7,29 g/cm³, pag. 2. Riferimenti: densita p. 2. <https://www.indium.com/wp-content/uploads/2025/03/Commercial-Tin-Metal-PDS-98803-R0-1.pdf>
+- **NIST (National Institute of Standards and Technology)**, riferimento scientifico — X-Ray Mass Attenuation Coefficients, Table 1 (costanti dei materiali, Z=50 Sn). Densità letta: 7,310 g/cm³, pagina web. Riferimenti: densità (pagina web); designazioni (pagina web). <https://physics.nist.gov/PhysRefData/XrayMassCoef/tab1.html>
+- **Indium Corporation**, fornitore — Product Data Sheet Commercial Tin Metal, Form No. 98803 R0. Densità letta: 7,29 g/cm³, pag. 2. Riferimenti: densità p. 2. <https://www.indium.com/wp-content/uploads/2025/03/Commercial-Tin-Metal-PDS-98803-R0-1.pdf>
 
 Data di verifica: 2026-11-13.
 
@@ -45,7 +47,7 @@ Data di verifica: 2026-11-13.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

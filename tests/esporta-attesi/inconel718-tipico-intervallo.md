@@ -2,6 +2,8 @@
 
 *Altri*
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Identificazione
 
 - Designazioni: W.Nr. 2.4668
@@ -40,7 +42,7 @@ Fonti indipendenti per la densità: 1 (enti diversi; le schede dello stesso ente
 
 > Una sola fonte di densità.
 
-- **Special Metals Corporation**, produttore — INCONEL® alloy 718, pubblicazione SMC-045 (Sept 07). Densità letta: 0,296 lb/in³ = 8,193 g/cm³ (valore tipico); 0,297 lb/in³ = 8,221 g/cm³ (valore tipico), pag. 1. Riferimenti: composizione p. 1; densita p. 1; designazioni p. 1; nome\_commerciale p. 1; tag p. 1. <https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-718.pdf>
+- **Special Metals Corporation**, produttore — INCONEL® alloy 718, pubblicazione SMC-045 (Sept 07). Densità letta: 0,296 lb/in³ = 8,193 g/cm³ (valore tipico); 0,297 lb/in³ = 8,221 g/cm³ (valore tipico), pag. 1. Riferimenti: composizione p. 1; densità p. 1; designazioni p. 1; nome commerciale p. 1; tag p. 1. <https://www.specialmetals.com/documents/technical-bulletins/inconel/inconel-alloy-718.pdf>
 
 Data di verifica: 2026-11-14.
 
@@ -67,7 +69,7 @@ Data di verifica: 2026-11-14.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

@@ -373,13 +373,13 @@
       <p class="stato" id="peso-stato"></p>
       <p class="stato" id="peso-intervallo" hidden></p>
     </div></div>
+    <p class="dicitura">Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.</p>
     <div class="azioni-esporta">
       <button type="button" class="btn primario" id="btn-scarica-md" aria-describedby="peso-stato" disabled>Scarica scheda (.md)</button>
       <button type="button" class="btn" id="btn-condividi-md" aria-describedby="peso-stato" hidden disabled>Condividi…</button>
     </div>
     <p class="piccolo" id="msg-esporta" role="status" aria-live="polite" hidden></p>
     <div id="dettagli" class="dettagli" hidden></div>
-    <p class="dicitura">Peso teorico da densità nominale, senza tolleranze né raggi.</p>
   </section>
 </main>
 <footer id="footer"></footer>
@@ -4857,13 +4857,20 @@ const Esporta = (function () {
   const f = Motore.formatta;
   const UNITA_EQUIVALENTI = ['g/cm³', 'kg/dm³', 'Mg/m³'];
   const COMPOSIZIONE_PARZIALE = 'Composizione parziale: solo gli elementi riportati dal documento.';
-  const DICITURA_TEORICO = 'Peso teorico da densità nominale, senza tolleranze né raggi.';
+  const DICITURA_TEORICO = 'Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.';
   const DICITURA_PERSONALE = 'SCHEDA PERSONALE: dati inseriti dall\'utente, non verificati su documenti';
   const AVVISO_PERSONALE_DENSITA = 'Scheda personale: la densità e gli altri dati sono scritti da te e non sono verificati su documenti.';
   const COPIA_FORNITA = 'Copia fornita da Luca: nessun link pubblico.';
   const MOTIVO_GENERICO = 'Nessun risultato valido.';
   const MAX_NOME_FILE = 30;
   const TIPO_MARKDOWN = 'text/markdown';
+
+  // Tabelle (mappe da chiave a valore) SENZA prototipo, come negli altri blocchi.
+  function tabella(init) {
+    const t = Object.create(null);
+    Object.keys(init || {}).forEach(function (k) { t[k] = init[k]; });
+    return t;
+  }
 
   // ---------------------------------------------------------------- testi comuni a schermo e file
   // «EN» davanti a un valore che già comincia per «EN » (es. «EN AW-7075») non si ripete
@@ -4896,6 +4903,14 @@ const Esporta = (function () {
     return x ? ', ' + x[1].replace('p. ', 'pag. ').replace('(pagina web)', 'pagina web') : '';
   }
   function unitaCampo(id, unitaLunghezza) { return id === 'V' ? unitaLunghezza + '³' : unitaLunghezza; }
+
+  // Il generatore del DB scrive nel «riferimento» di una fonte i nomi interni dei campi («densita p. 6», «nome_commerciale p. 1»): all'utente si mostrano
+  // con il nome italiano. Solo le forme esatte (stessa mappa di tools/genera-registro-fonti-2c.py): il nome del campo a inizio riferimento o dopo «; »,
+  // seguito da « p. » o da « (pagina web)». Nessun altro testo viene toccato, e il DB resta com'è (v4). Da correggere alla fonte alla prossima versione del DB.
+  const NOMI_CAMPO = tabella({ densita: 'densità', nome_commerciale: 'nome commerciale' });
+  function riferimentoLeggibile(rif) {
+    return String(rif).replace(/(^|; )(densita|nome_commerciale)(?= p\. | \(pagina web\))/g, function (m, sep, campo) { return sep + NOMI_CAMPO[campo]; });
+  }
 
   // Righe di identificazione, nell'ordine della scheda a schermo (i tag, che sono parole di ricerca, non ne fanno parte).
   function identificazione(m) {
@@ -4951,7 +4966,7 @@ const Esporta = (function () {
       return {
         ente: x.emittente, ruolo: x.ruolo, documento: x.documento,
         letture: 'Densità letta: ' + x.densita_letta.map(lettura).join('; ') + paginaDensita(x.riferimento) + '.',
-        riferimento: x.riferimento, url: x.fornito_da_utente ? null : x.url, copiaFornita: Boolean(x.fornito_da_utente)
+        riferimento: riferimentoLeggibile(x.riferimento), url: x.fornito_da_utente ? null : x.url, copiaFornita: Boolean(x.fornito_da_utente)
       };
     });
   }
@@ -5063,6 +5078,7 @@ const Esporta = (function () {
       titolo: 'Scheda materiale: ' + m.nome,
       sottotitolo: m.famiglia,
       avvisoPersonale: m.personale ? DICITURA_PERSONALE : null,
+      avvisoTeorico: DICITURA_TEORICO,
       sezioni: sezioni,
       piede: 'Generata il ' + ist.data + ' alle ' + ist.ora + ' · app v' + ctx.appVersione + ' · Database v' + db.versione + ' del ' + db.data,
       nomeBase: nomeBaseFile(m, ist)
@@ -5102,6 +5118,7 @@ const Esporta = (function () {
   function aMarkdown(doc) {
     const out = ['# ' + mdTesto(doc.titolo), '*' + mdTesto(doc.sottotitolo) + '*'];
     if (doc.avvisoPersonale) out.push('> **' + mdTesto(doc.avvisoPersonale) + '**');
+    if (doc.avvisoTeorico) out.push('> **' + mdTesto(doc.avvisoTeorico) + '**');   // prima dei numeri; in fondo ripetuta nella sezione «Avvertenza»
     doc.sezioni.forEach(function (s) {
       out.push('## ' + mdTesto(s.titolo));
       s.blocchi.forEach(function (b) { out.push(mdBlocco(b)); });
@@ -5121,7 +5138,7 @@ const Esporta = (function () {
     COMPOSIZIONE_PARZIALE: COMPOSIZIONE_PARZIALE, DICITURA_TEORICO: DICITURA_TEORICO, DICITURA_PERSONALE: DICITURA_PERSONALE,
     AVVISO_PERSONALE_DENSITA: AVVISO_PERSONALE_DENSITA, COPIA_FORNITA: COPIA_FORNITA, MOTIVO_GENERICO: MOTIVO_GENERICO, TIPO_MARKDOWN: TIPO_MARKDOWN,
     conEtichetta: conEtichetta, etichettaAlias: etichettaAlias, nomeElemento: nomeElemento, valoreElemento: valoreElemento, lettura: lettura,
-    paginaDensita: paginaDensita, unitaCampo: unitaCampo, identificazione: identificazione, composizione: composizione, densitaUsata: densitaUsata,
+    paginaDensita: paginaDensita, unitaCampo: unitaCampo, riferimentoLeggibile: riferimentoLeggibile, identificazione: identificazione, composizione: composizione, densitaUsata: densitaUsata,
     fontiDensita: fontiDensita, righePesi: righePesi, motivoAssenza: motivoAssenza, nomeMateriale: nomeMateriale, istante: istante, nomeBaseFile: nomeBaseFile,
     documento: documento, aMarkdown: aMarkdown, markdown: markdown
   };
@@ -5133,7 +5150,7 @@ const Esporta = (function () {
 (function () {
   'use strict';
   // Versione dell'app: unico punto del codice, da aggiornare a ogni fase (schema 0.<fase>.<revisione>).
-  const APP_VERSIONE = '0.3.0';
+  const APP_VERSIONE = '0.4.0';
   const DB = JSON.parse(document.getElementById('db-materiali').textContent);
   const $ = function (id) { return document.getElementById(id); };
   const f = Motore.formatta;
@@ -5258,7 +5275,7 @@ const Esporta = (function () {
   // Tutte le fonti del materiale (riquadro «Fonti dei dati»)
   function fontiHTML(fonti) {
     const righe = fonti.map(function (x) {
-      const s = '<li><strong>' + esc(x.emittente) + '</strong>, ' + esc(x.ruolo) + ' — ' + esc(x.documento) + '. Riferimenti: ' + esc(x.riferimento) + '.';
+      const s = '<li><strong>' + esc(x.emittente) + '</strong>, ' + esc(x.ruolo) + ' — ' + esc(x.documento) + '. Riferimenti: ' + esc(Esporta.riferimentoLeggibile(x.riferimento)) + '.';
       if (x.fornito_da_utente) return s + ' <span class="piccolo">' + Esporta.COPIA_FORNITA + '</span></li>';
       return s + ' <a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Apri il documento</a></li>';
     });
@@ -5440,7 +5457,7 @@ const Esporta = (function () {
     }
     const u = r.unitaPeso;
     $('peso-grande').textContent = f(r.peso_totale, 5);
-    $('peso-etichetta').textContent = r.pezzi > 1 ? 'Peso totale (' + r.pezzi + ' pezzi)' : 'Peso teorico';
+    $('peso-etichetta').textContent = r.pezzi > 1 ? 'Peso teorico totale (' + r.pezzi + ' pezzi)' : 'Peso teorico';
     stT.textContent = r.pezzi > 1 ? 'Peso unitario: ' + f(r.peso_unitario, 5) + ' ' + u : '';
     const iv = $('peso-intervallo');
     if (r.peso_totale_min !== undefined) {

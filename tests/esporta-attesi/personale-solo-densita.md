@@ -4,6 +4,8 @@
 
 > **SCHEDA PERSONALE: dati inseriti dall'utente, non verificati su documenti**
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Composizione chimica
 
 Composizione non inserita.
@@ -41,7 +43,7 @@ Creata il 2026-02-02, modificata il 2026-02-02.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

@@ -2,6 +2,8 @@
 
 *Titanio*
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Identificazione
 
 - Altre: UNS R50400 · ASTM Grade II · CP Grade 2 · ATI 40
@@ -33,8 +35,8 @@ Fonti indipendenti per la densità: 1 (enti diversi; le schede dello stesso ente
 
 > Una sola fonte di densità.
 
-- **ATI (Allegheny Technologies)**, produttore — Pagina prodotto «ATI 40, CP Grade 2», sezione Product Specifications By Form. Densità letta: 4,51 g/cm³; 4,52 g/cm³, pagina web. Riferimenti: composizione (pagina web); densita (pagina web); designazioni (pagina web). <https://www.atimaterials.com/Products/ati-cp2>
-- **ATI (Allegheny Technologies)**, produttore — Technical Data Sheet ATI 30, CP Grade 1, ATI 40, CP Grade 2, ATI 55, CP Grade 3, ATI 70, CP Grade 4, version 1 (2/21/2012). Densità letta: 4,51 g/cm³, pag. 1. Riferimenti: densita p. 1; designazioni p. 1. <https://www.atimaterials.com/Products/Documents/datasheets/titanium/commerciallypure/ati_cp2_tds_en.pdf>
+- **ATI (Allegheny Technologies)**, produttore — Pagina prodotto «ATI 40, CP Grade 2», sezione Product Specifications By Form. Densità letta: 4,51 g/cm³; 4,52 g/cm³, pagina web. Riferimenti: composizione (pagina web); densità (pagina web); designazioni (pagina web). <https://www.atimaterials.com/Products/ati-cp2>
+- **ATI (Allegheny Technologies)**, produttore — Technical Data Sheet ATI 30, CP Grade 1, ATI 40, CP Grade 2, ATI 55, CP Grade 3, ATI 70, CP Grade 4, version 1 (2/21/2012). Densità letta: 4,51 g/cm³, pag. 1. Riferimenti: densità p. 1; designazioni p. 1. <https://www.atimaterials.com/Products/Documents/datasheets/titanium/commerciallypure/ati_cp2_tds_en.pdf>
 
 Data di verifica: 2026-11-13.
 
@@ -66,7 +68,7 @@ Data di verifica: 2026-11-13.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

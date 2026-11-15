@@ -4,6 +4,8 @@
 
 > **SCHEDA PERSONALE: dati inseriti dall'utente, non verificati su documenti**
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Identificazione
 
 - Designazioni: ZETA-7 · Sigla Y
@@ -64,7 +66,7 @@ Creata il 2026-01-02, modificata il 2026-03-04.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

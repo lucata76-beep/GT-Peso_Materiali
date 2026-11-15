@@ -2,6 +2,8 @@
 
 *Acciai da bonifica*
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Identificazione
 
 - Designazioni: EN C45E · W.Nr. 1.1191 · UNI C45 · AISI/SAE 1045 · DIN Ck45
@@ -34,7 +36,7 @@ Fonti indipendenti per la densità: 1 (enti diversi; le schede dello stesso ente
 
 > Una sola fonte di densità.
 
-- **Lucefin Group**, produttore e distributore (barre trafilate, pelate e rettificate) — Scheda dati C45E (ISO 683-1:2018), rev. 2024. Densità letta: 7,85 kg/dm³, pag. 3. Riferimenti: densita p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1. <https://www.lucefin.com/wp-content/uploads/2025/01/C45E.pdf>
+- **Lucefin Group**, produttore e distributore (barre trafilate, pelate e rettificate) — Scheda dati C45E (ISO 683-1:2018), rev. 2024. Densità letta: 7,85 kg/dm³, pag. 3. Riferimenti: densità p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1. <https://www.lucefin.com/wp-content/uploads/2025/01/C45E.pdf>
 
 Data di verifica: 2026-11-13.
 
@@ -62,7 +64,7 @@ Data di verifica: 2026-11-13.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

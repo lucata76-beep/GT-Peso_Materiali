@@ -80,6 +80,61 @@ test('i casi di riferimento coprono valore tipico, fonte unica, intervallo, alia
   assert.match(t('ti-gr2-parziale-tubo-quadro'), /> Composizione parziale: solo gli elementi riportati dal documento\./);
   assert.match(t('ti-gr2-parziale-tubo-quadro'), /> Calcolo con spigoli vivi: i raggi del tubo reale non sono considerati\./);
   assert.match(t('personale-completa'), /> \*\*SCHEDA PERSONALE: dati inseriti dall'utente, non verificati su documenti\*\*/);
+  assert.match(t('c45e-fonte-unica'), /\*Acciai da bonifica\*\n\n> \*\*Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza\.\*\*\n\n## Identificazione/);
+});
+
+// ---------------------------------------------------------------- nomi dei campi nei riferimenti (opzione A: il DB resta com'è, si mostra l'italiano)
+test('riferimentoLeggibile: solo le forme esatte «densita» e «nome_commerciale» seguite da « p. » o « (pagina web)», a inizio riferimento o dopo «; »', () => {
+  const r = (x) => Esporta.riferimentoLeggibile(x);
+  assert.equal(r('densita p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1'), 'densità p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1');
+  assert.equal(r('densita (pagina web); nome_commerciale (pagina web)'), 'densità (pagina web); nome commerciale (pagina web)');
+  assert.equal(r('composizione p. 2; nome_commerciale p. 1; densita p. 6'), 'composizione p. 2; nome commerciale p. 1; densità p. 6');
+  assert.equal(r('alias p. 1; corrispondenze p. 1 (pag. 61 del catalogo IMS)'), 'alias p. 1; corrispondenze p. 1 (pag. 61 del catalogo IMS)', 'nessun altro testo viene toccato');
+  for (const x of ['xdensita p. 3', 'densitaX p. 3', 'Densita p. 3', 'DENSITA p. 3', 'la densita media', 'densita', 'densita.', 'densità p. 3', 'nome_commerciale2 p. 1', 'nome_commerciale', 'x nome_commerciale p. 1', 'densita p3', 'densita  p. 3'])
+    assert.equal(r(x), x, `forma non esatta, invariata: «${x}»`);
+  assert.equal(r(undefined), 'undefined', 'non lancia (come String)');
+  assert.equal(Esporta.paginaDensita('densita p. 3; composizione p. 1'), ', pag. 3', 'la pagina si legge ancora dal riferimento originale del DB');
+});
+
+test('nei dati: 71 occorrenze (53 «densita» e 18 «nome_commerciale») in 57 fonti su 64, tutte coperte dalla mappa; il resto del riferimento resta identico', () => {
+  let nDens = 0, nNome = 0, fonti = 0, conMappa = 0;
+  for (const m of DB.materiali) for (const x of m.fonti) {
+    fonti++;
+    const grezzo = x.riferimento;
+    const leggibile = Esporta.riferimentoLeggibile(grezzo);
+    nDens += (grezzo.match(/\bdensita\b/g) || []).length;
+    nNome += (grezzo.match(/nome_commerciale/g) || []).length;
+    if (leggibile !== grezzo) conMappa++;
+    assert.doesNotMatch(leggibile, /densita|nome_commerciale/, `${x.id}: nel riferimento mostrato non restano i nomi interni dei campi`);
+    // tolta la mappa, torna identico: nessun altro carattere è stato toccato
+    assert.equal(leggibile.replace(/densità/g, 'densita').replace(/nome commerciale/g, 'nome_commerciale'), grezzo, `${x.id}: solo la mappa`);
+  }
+  assert.deepEqual([nDens, nNome, conMappa, fonti], [53, 18, 57, 64]);
+});
+
+test('file esportato: nei «Riferimenti» di ogni voce non compaiono «densita» né «nome_commerciale», e c\'è la forma italiana', () => {
+  let righe = 0;
+  for (const m of DB.materiali.concat([PERS_A, PERS_B])) {
+    const md = esporta(m, calcola(m, { forma: 'tonda', testi: FORME.tonda })).testo;
+    const senzaLink = md.replace(/<https?:\/\/[^\s<>]+>/g, '');
+    assert.doesNotMatch(senzaLink, /densita\b|nome\\?_commerciale/, `${m.id}: nome interno di un campo nel file`);
+    for (const x of Esporta.fontiDensita(m)) {
+      righe++;
+      assert.ok(md.includes(` Riferimenti: ${x.riferimento}. `), `${m.id}: riferimento di ${x.ente}`);
+      assert.match(x.riferimento, /^densità (p\. |\(pagina web\))|; densità (p\. |\(pagina web\))/, `${m.id}: «densità» con l'accento nel riferimento di ${x.ente}`);
+    }
+  }
+  assert.equal(righe, DB.materiali.reduce((n, m) => n + m.fonti.filter((x) => x.densita_letta).length, 0));
+  // nei testi di riferimento il riferimento accentato si legge così
+  assert.ok(atteso('c45e-fonte-unica').includes('Riferimenti: densità p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1.'));
+  assert.ok(atteso('1.2379-intervallo-alias-copia').includes('Riferimenti: densità p. 6; designazioni p. 2; nome commerciale p. 1; tag p. 1.'));
+  assert.ok(atteso('sn-elemento-puro').includes('Riferimenti: densità (pagina web); designazioni (pagina web).'));
+});
+
+test('l\'interfaccia mostra il riferimento con la mappa e non cita più il riferimento grezzo', () => {
+  const ui = html.slice(html.indexOf('// ESPORTA:FINE'));
+  assert.ok(ui.includes("'. Riferimenti: ' + esc(Esporta.riferimentoLeggibile(x.riferimento)) + '.'"));
+  assert.ok(!/esc\(x\.riferimento\)/.test(ui), 'nessun riferimento grezzo mostrato a schermo');
 });
 
 // ---------------------------------------------------------------- niente «NaN», «undefined», «null», «[object»; numeri uguali a quelli del Motore
@@ -152,7 +207,10 @@ test('ordine delle sezioni e identificazione: stessa struttura per tutte le 27 v
     assert.ok(md.indexOf(`# Scheda materiale: ${m.nome}`) === 0, m.id);
     assert.ok(md.includes(`\n*${m.famiglia}*\n`), `famiglia di ${m.id}`);
     assert.ok(md.includes(`Data di verifica: ${m.data_verifica}.`), `data di verifica di ${m.id}`);
-    assert.ok(md.includes('Peso teorico da densità nominale, senza tolleranze né raggi.'), m.id);
+    assert.equal(md.split('Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.').length - 1, 2, `${m.id}: la dicitura compare due volte, in alto e in «Avvertenza»`);
+    assert.ok(md.includes(`\n*${m.famiglia}*\n\n> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**\n\n## Identificazione\n`), `${m.id}: dicitura subito sotto titolo e famiglia, prima di ogni dato`);
+    assert.ok(md.includes('## Avvertenza\n\n> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**\n'), `${m.id}: dicitura anche nella sezione finale`);
+    assert.ok(md.indexOf('Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.') < md.indexOf('## Identificazione') && md.indexOf('Peso unitario') > md.indexOf('Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.'), `${m.id}: la dicitura precede i numeri`);
     assert.ok(md.endsWith(`*Generata il 2026-11-14 alle 21:35 · app v${APP} · Database v${DB.meta.versione} del ${DB.meta.data}*\n`), `piede di ${m.id}`);
     assert.doesNotMatch(md, /SCHEDA PERSONALE/, `${m.id}: una voce del database non è una scheda personale`);
   }
@@ -218,7 +276,7 @@ test('fonte della densità fornita dall\'utente: nessun link, solo la dicitura (
   for (const url of [null, 'https://example.org/copia-privata.pdf']) {   // la dicitura vince anche se per errore c'è un indirizzo
     m.fonti[0].url = url;
     const md = esporta(m, calcola(m, { forma: 'tonda', testi: FORME.tonda })).testo;
-    assert.ok(md.includes(`Riferimenti: ${m.fonti[0].riferimento}. ${Esporta.COPIA_FORNITA}\n`), `url ${url}`);
+    assert.ok(md.includes(`Riferimenti: densità p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1. ${Esporta.COPIA_FORNITA}\n`), `url ${url}`);
     assert.doesNotMatch(md, /<https?:|<null>|null|example\.org/);
     assert.equal(plain(Esporta.fontiDensita(m))[0].copiaFornita, true);
     assert.equal(plain(Esporta.fontiDensita(m))[0].url, null);
@@ -228,7 +286,7 @@ test('fonte della densità fornita dall\'utente: nessun link, solo la dicitura (
 test('i testi fissi che l\'utente legge nel file sono quelli scritti qui (non si confrontano con se stessi)', () => {
   assert.equal(Esporta.COPIA_FORNITA, 'Copia fornita da Luca: nessun link pubblico.');
   assert.equal(Esporta.COMPOSIZIONE_PARZIALE, 'Composizione parziale: solo gli elementi riportati dal documento.');
-  assert.equal(Esporta.DICITURA_TEORICO, 'Peso teorico da densità nominale, senza tolleranze né raggi.');
+  assert.equal(Esporta.DICITURA_TEORICO, 'Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.');
   assert.equal(Esporta.AVVISO_PERSONALE_DENSITA, 'Scheda personale: la densità e gli altri dati sono scritti da te e non sono verificati su documenti.');
   assert.equal(Esporta.TIPO_MARKDOWN, 'text/markdown');
 });
@@ -242,7 +300,7 @@ test('indirizzi non validi, testo su più righe e famiglia con segni: mai Markdo
   const righe = md.split('\n');
   assert.equal(righe[2], '*\\*Famiglia\\* \\_x\\_ \\<b\\>*');
   assert.ok(md.includes('- Nome commerciale: prima\n\\# titolo\n\\- voce\n1\\. uno\n\\> cita\n\\---\n'), 'ogni riga del testo è protetta, non solo la prima');
-  assert.ok(md.includes('Riferimenti: densita p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1. https://a b/\\*c\\*\n'), 'un indirizzo non valido non diventa un collegamento e i suoi segni sono protetti');
+  assert.ok(md.includes('Riferimenti: densità p. 3; composizione p. 1; designazioni p. 1,3; tag p. 1. https://a b/\\*c\\*\n'), 'un indirizzo non valido non diventa un collegamento e i suoi segni sono protetti');
   assert.doesNotMatch(md, /<https?:\/\/a b/);
   const j = JSON.parse(JSON.stringify(DB.materiali[0]));
   j.fonti[0].url = 'javascript:alert(1)';
@@ -318,6 +376,7 @@ test('scheda personale: dicitura obbligatoria subito sotto il titolo, nessun con
     const righe = md.split('\n');
     assert.equal(righe[0], `# Scheda materiale: ${m === PERS_A ? 'Lega personale \\<b\\>A\\</b\\>' : 'Solo densità'}`);
     assert.equal(righe[4], '> **SCHEDA PERSONALE: dati inseriti dall\'utente, non verificati su documenti**');
+    assert.equal(righe[6], '> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**', 'sotto la dicitura personale, quella del peso teorico');
     assert.equal(md.split('SCHEDA PERSONALE').length - 1, 1, 'la dicitura compare una volta sola');
     assert.doesNotMatch(md, /Fonti indipendenti|Una sola fonte|Valore tipico|Data di verifica|Riferimenti:|<https?:/);
     assert.match(md, /Creata il \d{4}-\d{2}-\d{2}, modificata il \d{4}-\d{2}-\d{2}\./);
@@ -470,6 +529,20 @@ test('la dicitura del file è quella a schermo (e c\'è una sola copia dei testi
   const m = html.match(/<p class="dicitura">([^<]*)<\/p>/);
   assert.ok(m, 'dicitura a schermo non trovata');
   assert.equal(m[1], Esporta.DICITURA_TEORICO);
+  assert.equal(Esporta.DICITURA_TEORICO, 'Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.');
+  assert.equal(html.split('Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.').length - 1, 2, 'la frase compare due volte nel codice: la dicitura a schermo e la costante dell\'esportazione');
+  assert.equal(html.includes('Peso teorico da densità nominale, senza tolleranze né raggi.'), false, 'la frase precedente non c\'è più');
+  // dichiara le tre cose richieste: densità nominale, spigoli vivi, nessuna tolleranza
+  assert.match(Esporta.DICITURA_TEORICO, /densità nominale/);
+  assert.match(Esporta.DICITURA_TEORICO, /spigoli vivi/);
+  assert.match(Esporta.DICITURA_TEORICO, /nessuna tolleranza/);
+  // sta subito sotto il riquadro del peso, prima dei pulsanti e dei dettagli
+  assert.match(html, /<\/div><\/div>\s*<p class="dicitura">[^<]*<\/p>\s*<div class="azioni-esporta">/);
+  assert.ok(html.indexOf('<p class="dicitura">') < html.indexOf('<div id="dettagli"'), 'la dicitura precede i dettagli');
+  // le altre due indicazioni «peso teorico» a schermo (il collaudo con browser verifica anche l'etichetta con più pezzi)
+  assert.ok(html.includes('<p class="sottotitolo">Peso teorico dei materiali</p>'));
+  assert.ok(html.includes('<p class="etichetta" id="peso-etichetta">Peso teorico</p>'));
+  assert.ok(html.includes("r.pezzi > 1 ? 'Peso teorico totale (' + r.pezzi + ' pezzi)' : 'Peso teorico'"));
   const ui = html.slice(html.indexOf('// ESPORTA:FINE'));
   for (const testo of ['function lettura(', 'function valoreElemento(', 'function nomeElemento(', 'function paginaDensita(', 'function etichettaAlias(', 'function conEtichetta(',
     'Una sola fonte di densità.', 'Fonti indipendenti per la densità', 'Copia fornita da Luca', 'Composizione parziale: solo', 'punto medio delle letture', 'scegli il materiale']) {
@@ -497,6 +570,7 @@ test('documento: stessa struttura per Markdown e (poi) PDF; nome base senza este
   assert.equal(d.ok, true);
   assert.equal(d.nomeBase, 'scheda_c45e_2026-11-14_2135');
   assert.equal(d.avvisoPersonale, null);
+  assert.equal(d.avvisoTeorico, 'Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.');
   assert.deepEqual(plain(d.sezioni.map((s) => s.titolo)), ['Identificazione', 'Composizione chimica', 'Densità', 'Pezzo', 'Calcolo', 'Avvertenza']);
   const tipi = new Set();
   for (const s of d.sezioni) for (const b of s.blocchi) tipi.add(b.t);

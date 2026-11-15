@@ -2,6 +2,8 @@
 
 *Acciai al carbonio*
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Identificazione
 
 - Designazioni: EN C45 · W.Nr. 1.0503 · AISI/SAE 1045
@@ -31,7 +33,7 @@ Fonti indipendenti per la densità: 1 (enti diversi; le schede dello stesso ente
 
 > Una sola fonte di densità.
 
-- **Ovako**, produttore — Steel Navigator, scheda C45 (PDF dal sito, rev. 30 Jan 2025). Densità letta: 7800 kg/m³ = 7,8 g/cm³ (valore tipico), pag. 6. Riferimenti: densita p. 6; composizione p. 1; designazioni p. 1. <https://steelnavigator.ovako.com/steel-grades/c45/pdf>
+- **Ovako**, produttore — Steel Navigator, scheda C45 (PDF dal sito, rev. 30 Jan 2025). Densità letta: 7800 kg/m³ = 7,8 g/cm³ (valore tipico), pag. 6. Riferimenti: densità p. 6; composizione p. 1; designazioni p. 1. <https://steelnavigator.ovako.com/steel-grades/c45/pdf>
 
 Data di verifica: 2026-11-14.
 
@@ -59,7 +61,7 @@ Data di verifica: 2026-11-14.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

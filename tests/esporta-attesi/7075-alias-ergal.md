@@ -2,6 +2,8 @@
 
 *Alluminio e leghe*
 
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
+
 ## Identificazione
 
 - Designazioni: EN AW-7075 (AlZn5,5MgCu)
@@ -33,9 +35,9 @@ Densità usata: **2,8 g/cm³** — letture dei documenti concordi.
 
 Fonti indipendenti per la densità: 2 (enti diversi; le schede dello stesso ente, anche in lingue diverse, contano una volta).
 
-- **Kaiser Aluminum**, produttore — Sheet Coil & Plate Alloy 7075, Technical Data, Rev. 05/06. Densità letta: 2,80 Mg/m³, pag. 2. Riferimenti: composizione p. 2; densita p. 2; designazioni p. 2. <https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1017/Kaiser_Aluminum_7075_Sheet_Coil_and_Plate.pdf>
-- **Kaiser Aluminum**, produttore — Rod & Bar Alloy 7075, Technical Data. Densità letta: 2,80 Mg/m³, pag. 2. Riferimenti: composizione p. 2; densita p. 2. <https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1028/Kaiser_Aluminum_7075_Rod_and_Bar.pdf>
-- **Wieland-Werke AG**, produttore — Information sheet for articles Wieland-A07 (EN AW-7075), 15.05.2025, vers. 6. Densità letta: 2,8 g/cm³, pag. 5. Riferimenti: densita p. 5; designazioni p. 2. <https://www.wieland.com/content/download/10433/file/Wieland-A07_EN.pdf>
+- **Kaiser Aluminum**, produttore — Sheet Coil & Plate Alloy 7075, Technical Data, Rev. 05/06. Densità letta: 2,80 Mg/m³, pag. 2. Riferimenti: composizione p. 2; densità p. 2; designazioni p. 2. <https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1017/Kaiser_Aluminum_7075_Sheet_Coil_and_Plate.pdf>
+- **Kaiser Aluminum**, produttore — Rod & Bar Alloy 7075, Technical Data. Densità letta: 2,80 Mg/m³, pag. 2. Riferimenti: composizione p. 2; densità p. 2. <https://online.kaiseraluminum.com/depot/PublicProductInformation/Document/1028/Kaiser_Aluminum_7075_Rod_and_Bar.pdf>
+- **Wieland-Werke AG**, produttore — Information sheet for articles Wieland-A07 (EN AW-7075), 15.05.2025, vers. 6. Densità letta: 2,8 g/cm³, pag. 5. Riferimenti: densità p. 5; designazioni p. 2. <https://www.wieland.com/content/download/10433/file/Wieland-A07_EN.pdf>
 
 Data di verifica: 2026-11-13.
 
@@ -64,7 +66,7 @@ Data di verifica: 2026-11-13.
 
 ## Avvertenza
 
-> **Peso teorico da densità nominale, senza tolleranze né raggi.**
+> **Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.**
 
 ---
 

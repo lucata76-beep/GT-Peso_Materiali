@@ -16,7 +16,9 @@ const impronta = (d) => createHash('sha256').update(JSON.stringify(d)).digest('h
 const PUBBLICATE = {
   1: { data: '2026-11-13', voci: 21, sha256: '49508d684cc439e2a65128ded7c883ed85b3bc0bcaea25d06a638f46e3478ef2' },
   2: { data: '2026-11-13', voci: 21, sha256: '8216be8048230adfbb6f8059e00c25cdc2f6f59620dd6f8e703988b2de4c1c46' },
-  3: { data: '2026-11-14', voci: 27, sha256: '1b2ea1c41a814ea691811fea91a68fcfaddd24171399c1baa2327269cc125792' }
+  3: { data: '2026-11-14', voci: 27, sha256: '1b2ea1c41a814ea691811fea91a68fcfaddd24171399c1baa2327269cc125792' },
+  // v4 (Fase 2d, 2026-11-14, commit ff8be8a, PR #4): in main dal merge della PR #4. Impronta calcolata sul DB di main (6094e9b) e identica a quella di ff8be8a.
+  4: { data: '2026-11-14', voci: 27, sha256: '9c6e309e7b59874080ebf33417e6557aa9cfd9eb12f4033f9081977e7f009e69' }
 };
 
 test('una versione già pubblicata non cambia contenuto: se la modifichi, alza la versione', () => {

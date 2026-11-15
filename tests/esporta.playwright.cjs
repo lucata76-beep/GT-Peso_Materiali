@@ -142,6 +142,42 @@ function leggiSchermo(page) {
     return out;
   });
 }
+// La dicitura «peso teorico»: a schermo (sottotitolo, etichetta del risultato, frase fissa subito sotto il riquadro del peso) e nel file (in alto sotto il titolo e nella sezione finale «Avvertenza»)
+const DICITURA = 'Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.';
+function leggiDicitura(page) {
+  return page.evaluate(() => {
+    const d = document.querySelector('.dicitura');
+    const r = d.getBoundingClientRect();
+    const peso = document.getElementById('peso-grande');
+    const sez = d.closest('section');
+    return {
+      n: document.querySelectorAll('.dicitura').length, testo: d.textContent, costante: Esporta.DICITURA_TEORICO,
+      visibile: d.offsetParent !== null && r.width > 0 && r.height > 0 && getComputedStyle(d).visibility === 'visible',
+      nelRisultato: Boolean(sez) && sez.getAttribute('aria-labelledby') === 't-risultato',
+      dopoPeso: Boolean(peso.compareDocumentPosition(d) & Node.DOCUMENT_POSITION_FOLLOWING),
+      // subito sotto il riquadro del peso: prima dei pulsanti di esportazione e dei dettagli, e senza altri elementi in mezzo
+      primaDiPulsanti: Boolean(d.compareDocumentPosition(document.querySelector('.azioni-esporta')) & Node.DOCUMENT_POSITION_FOLLOWING),
+      primaDeiDettagli: Boolean(d.compareDocumentPosition(document.getElementById('dettagli')) & Node.DOCUMENT_POSITION_FOLLOWING),
+      sottoIlRiquadro: d.previousElementSibling === document.querySelector('.peso-box'),
+      sopraIlNumero: r.top >= document.querySelector('.peso-box').getBoundingClientRect().bottom - 1,
+      etichetta: document.getElementById('peso-etichetta').textContent, sottotitolo: document.querySelector('.sottotitolo').textContent
+    };
+  });
+}
+function verificaDicituraSchermo(d, etichettaAttesa, nome) {
+  verifica(d.n === 1 && d.testo === DICITURA && d.costante === DICITURA, `${nome}: dicitura a schermo «${d.testo}» uguale alla costante dell'esportazione e alla frase attesa`);
+  verifica(d.visibile && d.nelRisultato && d.dopoPeso, `${nome}: dicitura visibile, nella sezione Risultato, dopo il peso (${JSON.stringify({ v: d.visibile, s: d.nelRisultato, p: d.dopoPeso })})`);
+  verifica(d.sottoIlRiquadro && d.sopraIlNumero && d.primaDiPulsanti && d.primaDeiDettagli, `${nome}: dicitura subito sotto il riquadro del peso, prima dei pulsanti e dei dettagli (${JSON.stringify({ sotto: d.sottoIlRiquadro, y: d.sopraIlNumero, pulsanti: d.primaDiPulsanti, dettagli: d.primaDeiDettagli })})`);
+  verifica(d.etichetta === etichettaAttesa, `${nome}: etichetta del risultato «${d.etichetta}» (attesa «${etichettaAttesa}»)`);
+  verifica(d.sottotitolo === 'Peso teorico dei materiali', `${nome}: sottotitolo «${d.sottotitolo}»`);
+}
+function verificaDicituraFile(md, nome) {
+  verifica(md.split(DICITURA).length - 1 === 2, `${nome}: la dicitura compare due volte nel file (in alto e in fondo)`);
+  verifica(md.split('\n## ')[0].endsWith('\n> **' + DICITURA + '**\n'), `${nome}: la dicitura è in alto, sotto titolo e famiglia, prima di ogni sezione`);
+  verifica(md.indexOf(DICITURA) < md.indexOf('Peso unitario'), `${nome}: la dicitura precede i numeri nel file`);
+  verifica(md.split('\n## ').pop().startsWith('Avvertenza\n\n> **' + DICITURA + '**\n'), `${nome}: la dicitura è nella sezione «Avvertenza», in grassetto e citata`);
+  verifica(md.match(/^## .*/gm).pop() === '## Avvertenza', `${nome}: «Avvertenza» è l'ultima sezione`);
+}
 const sezione = (md, titolo) => md.split(`## ${titolo}\n\n`)[1].split('\n\n## ')[0];
 // Il verso opposto: ciò che il file dice di composizione, pesi, volume e pezzi deve stare anche sullo schermo, riga per riga (e viceversa).
 function confrontaFileSchermo(s, md, mat, etichetta) {
@@ -154,7 +190,8 @@ function confrontaFileSchermo(s, md, mat, etichetta) {
   const passiMd = piano(sezione(md, 'Calcolo').split('### Formula e passaggi\n\n')[1]).split('\n\n')[0].split('\n').map((r) => r.replace(/^\d+\. /, ''));
   verifica(JSON.stringify(passiMd) === JSON.stringify(s.passi), `${etichetta}: formula e passaggi uguali a schermo e nel file`);
   if (mat && mat.fonti) {
-    verifica(s.fontiGenerali.length === mat.fonti.length && mat.fonti.every((x, i) => s.fontiGenerali[i].includes(`Riferimenti: ${x.riferimento}.`)), `${etichetta}: «Fonti dei dati» a schermo con un riferimento per ogni documento (${s.fontiGenerali.length}/${mat.fonti.length})`);
+    const leggibile = (r) => r.replace(/(^|; )densita(?= p\. | \(pagina web\))/g, '$1densità').replace(/(^|; )nome_commerciale(?= p\. | \(pagina web\))/g, '$1nome commerciale');
+    verifica(s.fontiGenerali.length === mat.fonti.length && mat.fonti.every((x, i) => s.fontiGenerali[i].includes(`Riferimenti: ${leggibile(x.riferimento)}.`)), `${etichetta}: «Fonti dei dati» a schermo con un riferimento per ogni documento (${s.fontiGenerali.length}/${mat.fonti.length})`);
   }
 }
 function confrontaSchermoFile(s, md, etichetta) {
@@ -201,6 +238,7 @@ async function casoMobile(browser, schema) {
   const dis = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('btn-scarica-md')); const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number); return { fg: rgb(cs.color), bg: rgb(cs.backgroundColor), stile: cs.borderTopStyle, bordo: rgb(cs.borderTopColor) }; });
   verifica(contrasto(dis.fg, dis.bg) >= 7, `pulsante disattivo: testo ${contrasto(dis.fg, dis.bg).toFixed(1)}:1 (minimo 7:1)`);
   verifica(dis.stile === 'dashed' && contrasto(dis.bordo, dis.bg) >= 3, `pulsante disattivo: bordo tratteggiato ${contrasto(dis.bordo, dis.bg).toFixed(1)}:1 (minimo 3:1)`);
+  verificaDicituraSchermo(await leggiDicitura(page), 'Peso teorico', 'schermata iniziale (senza risultato)');
   // un clic su un pulsante disattivo non fa nulla
   await page.evaluate(() => { document.getElementById('btn-scarica-md').click(); document.getElementById('btn-condividi-md').click(); });
   verifica(await nessunDownload(page, 400) && (await page.evaluate(() => window.__condivisioni.length)) === 0, 'pulsanti disattivi: nessun download e nessuna condivisione');
@@ -272,6 +310,11 @@ async function casoMobile(browser, schema) {
     verifica(/^scheda_[a-z0-9-]+_2026-11-14_2135\.md$/.test(f.nome), `${nomi[i]}: nome file ${f.nome}`);
     verifica(f.testo.includes('app v' + ver + ' · Database v' + dbF.meta.versione + ' del ' + dbF.meta.data), `${nomi[i]}: versioni nel piede`);
     verifica(f.testo.includes(await page.textContent('.dicitura')), `${nomi[i]}: dicitura del file = dicitura a schermo`);
+    const visibile = await page.evaluate(() => ({ scheda: document.getElementById('scheda').innerText, dettagli: document.getElementById('dettagli').innerText, fonti: (document.getElementById('det-fonti') || { textContent: '' }).textContent }));
+    verifica(!/densita\b|nome_commerciale/.test(visibile.scheda + visibile.dettagli + visibile.fonti) && !/densita\b|nome\\?_commerciale/.test(f.testo.replace(/<https?:\/\/[^\s<>]+>/g, '')), `${nomi[i]}: né a schermo né nel file compaiono «densita» o «nome_commerciale»`);
+    if (i < dbF.materiali.length) verifica(/(Riferimenti: |; )densità (p\. \d|\(pagina web\))/.test(visibile.fonti) && /(Riferimenti: |; )densità (p\. \d|\(pagina web\))/.test(f.testo), `${nomi[i]}: «Riferimenti: … densità p. N» con l'accento, a schermo e nel file`);
+    verificaDicituraSchermo(await leggiDicitura(page), pz === '1' ? 'Peso teorico' : `Peso teorico totale (${pz} pezzi)`, `${nomi[i]} (${pz} pz)`);
+    verificaDicituraFile(f.testo, nomi[i]);
     const pers = i >= dbF.materiali.length;
     verifica(f.testo.includes('SCHEDA PERSONALE: dati inseriti dall\'utente, non verificati su documenti') === pers, `${nomi[i]}: dicitura delle schede personali solo se personale`);
   }
@@ -295,6 +338,7 @@ async function casoMobile(browser, schema) {
   // --- «Azzera» e risultato che sparisce: i pulsanti tornano disattivi
   await page.click('#btn-azzera');
   verifica(await page.isDisabled('#btn-scarica-md') && await page.isDisabled('#btn-condividi-md') && await page.isHidden('#msg-esporta'), 'dopo «Azzera» i pulsanti sono disattivi e il messaggio è spento');
+  verificaDicituraSchermo(await leggiDicitura(page), 'Peso teorico', 'dopo «Azzera»');
 
   // --- il motivo dell'assenza di file è il testo mostrato sotto il peso
   const stati = [
@@ -350,7 +394,7 @@ async function casoCondivisione(browser, nome, opz, atteso) {
       const [d] = await Promise.all([page.waitForEvent('download'), page.click('#btn-condividi-md')]);
       const testo = fs.readFileSync(await d.path(), 'utf8');
       verifica(d.suggestedFilename() === 'scheda_c45e_2026-11-14_2135.md', `ripiego sul download: ${d.suggestedFilename()}`);
-      verifica(testo.startsWith('# Scheda materiale: C45E') && testo.includes('Peso teorico da densità nominale'), 'il file del ripiego è la scheda completa');
+      verifica(testo.startsWith('# Scheda materiale: C45E') && testo.includes('Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.'), 'il file del ripiego è la scheda completa');
       const m = await page.textContent('#msg-esporta');
       verifica(m.includes('Condivisione non riuscita (' + atteso.nomeErrore + ')') && m.includes('provo a scaricare il file'), `messaggio con il nome dell'errore: «${m}»`);
       verifica((await page.evaluate(() => window.__condivisioni.length)) === 1, 'una sola chiamata a share, poi il download');
@@ -374,6 +418,8 @@ async function casoDesktop(browser, schema) {
   await imposta(page, 'tubo', FORME.tubo);
   const f = await scarica(page);
   verifica(f.nome === 'scheda_inox-304-1-4301_2026-11-14_2135.md' && f.testo.includes('- Forma: Tubo tondo'), `download su desktop: ${f.nome}`);
+  verificaDicituraSchermo(await leggiDicitura(page), 'Peso teorico', 'desktop');
+  verificaDicituraFile(f.testo, 'desktop');
   verifica(errori.length === 0, 'nessun errore: ' + JSON.stringify(errori));
   await ctx.close();
 }

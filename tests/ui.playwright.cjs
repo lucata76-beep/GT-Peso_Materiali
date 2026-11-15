@@ -344,7 +344,7 @@ async function caso(browser, c) {
     verifica(dett.includes(parte), `dettagli contengono «${parte}»`);
   verifica(!/\)\)/.test(await page.textContent('#dettagli')), 'nessuna parentesi doppia nelle fonti');
   verifica(!/NaN|undefined|Infinity/.test(await page.evaluate(() => document.body.innerText)), 'nessun NaN/undefined a schermo (testo visibile)');
-  verifica((await page.textContent('.dicitura')).includes('senza tolleranze né raggi'), 'dicitura fissa presente');
+  verifica((await page.textContent('.dicitura')) === 'Peso teorico: densità nominale, spigoli vivi, nessuna tolleranza.', 'dicitura fissa presente: densità nominale, spigoli vivi, nessuna tolleranza');
 
   // --- aggiornamento mentre si scrive (nessun pulsante «Calcola»)
   await scrivi(page, '#c-L', '200');
@@ -385,7 +385,7 @@ async function caso(browser, c) {
   await scrivi(page, '#c-D', '100');
   await scrivi(page, '#c-L', '100');
   await scrivi(page, '#pezzi', '3');
-  verifica((await page.textContent('#peso-etichetta')).includes('3 pezzi'), 'etichetta «Peso totale (3 pezzi)»');
+  verifica((await page.textContent('#peso-etichetta')) === 'Peso teorico totale (3 pezzi)', 'etichetta «Peso teorico totale (3 pezzi)»');
   verifica((await page.textContent('#peso-stato')).includes('Peso unitario'), 'peso unitario mostrato');
   const tot = numero(await page.textContent('#peso-grande'));
   verifica(vicino(tot, 3 * atteso), 'totale = 3 × unitario');

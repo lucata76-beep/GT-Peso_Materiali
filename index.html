@@ -214,7 +214,10 @@
   }
   .btn.primario { background: var(--riempimento); color: var(--su-riempimento); border-color: var(--acc); }
   .btn:focus-visible, .btn:focus-within { outline: 3px solid var(--acc); outline-offset: 2px; }
-  .azioni-schede { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .azioni-schede, .azioni-esporta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .btn[hidden] { display: none; }
+  /* pulsante disattivo: resta leggibile (testo secondario, almeno 7:1) e si distingue dal bordo tratteggiato */
+  .btn:disabled, .btn.primario:disabled { color: var(--muted); background: var(--card); border: 2px dashed var(--line); cursor: not-allowed; }
   details + p { margin-top: 10px; }
   .badge-personale { display: inline-block; margin: 4px 0 8px; padding: 2px 10px; font-size: 0.9rem; font-weight: 600; border: 1.5px solid var(--acc); border-radius: 999px; }
   #editor h3 { margin-top: 0; }
@@ -370,6 +373,11 @@
       <p class="stato" id="peso-stato"></p>
       <p class="stato" id="peso-intervallo" hidden></p>
     </div></div>
+    <div class="azioni-esporta">
+      <button type="button" class="btn primario" id="btn-scarica-md" aria-describedby="peso-stato" disabled>Scarica scheda (.md)</button>
+      <button type="button" class="btn" id="btn-condividi-md" aria-describedby="peso-stato" hidden disabled>Condividi…</button>
+    </div>
+    <p class="piccolo" id="msg-esporta" role="status" aria-live="polite" hidden></p>
     <div id="dettagli" class="dettagli" hidden></div>
     <p class="dicitura">Peso teorico da densità nominale, senza tolleranze né raggi.</p>
   </section>
@@ -4836,13 +4844,296 @@ const Schede = (function () {
   };
 })();
 // SCHEDE:FINE
+
+// ESPORTA:INIZIO
+// Esportazione della scheda: funzioni pure, nessun accesso alla pagina.
+// I test (tests/esporta.test.mjs) eseguono esattamente questo blocco, estratto da index.html, insieme al motore.
+// Qui stanno i testi che la schermata e i file esportati hanno in comune: ognuno è scritto una volta sola e lo chiamano tutti
+// (schermo e Markdown; il PDF, nella fase successiva, userà lo stesso documento). I numeri sono quelli del Motore, nello stesso
+// formato: l'esportazione non ricalcola nulla e non aggiunge dati che non siano nel database o nella scheda personale.
+const Esporta = (function () {
+  'use strict';
+
+  const f = Motore.formatta;
+  const UNITA_EQUIVALENTI = ['g/cm³', 'kg/dm³', 'Mg/m³'];
+  const COMPOSIZIONE_PARZIALE = 'Composizione parziale: solo gli elementi riportati dal documento.';
+  const DICITURA_TEORICO = 'Peso teorico da densità nominale, senza tolleranze né raggi.';
+  const DICITURA_PERSONALE = 'SCHEDA PERSONALE: dati inseriti dall\'utente, non verificati su documenti';
+  const AVVISO_PERSONALE_DENSITA = 'Scheda personale: la densità e gli altri dati sono scritti da te e non sono verificati su documenti.';
+  const COPIA_FORNITA = 'Copia fornita da Luca: nessun link pubblico.';
+  const MOTIVO_GENERICO = 'Nessun risultato valido.';
+  const MAX_NOME_FILE = 30;
+  const TIPO_MARKDOWN = 'text/markdown';
+
+  // ---------------------------------------------------------------- testi comuni a schermo e file
+  // «EN» davanti a un valore che già comincia per «EN » (es. «EN AW-7075») non si ripete
+  function conEtichetta(etichetta, valore) {
+    return valore.toUpperCase().indexOf(etichetta.toUpperCase() + ' ') === 0 ? valore : etichetta + ' ' + valore;
+  }
+  function etichettaAlias(a) {
+    if (a.origine === 'produttore') return 'alias da produttore';
+    return a.una_sola_fonte ? 'alias non da produttore, una sola fonte' : 'alias non da produttore';
+  }
+  function nomeElemento(k) { return k === 'Altri_ciascuno' ? 'Altri (ciascuno)' : k === 'Altri_totale' ? 'Altri (totale)' : k; }
+  function valoreElemento(x) {
+    if (x === 'resto') return 'resto';
+    let s;
+    if (x.nominale !== undefined) s = f(x.nominale) + ' %';
+    else if (x.min !== undefined && x.max !== undefined) s = f(x.min) + '–' + f(x.max) + ' %';
+    else if (x.max !== undefined) s = 'max ' + f(x.max) + ' %';
+    else s = 'min ' + f(x.min) + ' %';
+    return x.nota ? s + ' (' + x.nota + ')' : s;
+  }
+  // Una lettura di densità come la riporta il documento; se l'unità non è equivalente a g/cm³ segue la conversione.
+  function lettura(r) {
+    const v = String(r.valore).replace('.', ',');
+    const tipico = r.tipico === true ? ' (valore tipico)' : '';
+    if (/^non indicata/.test(r.unita)) return v + ' (unità non indicata nel documento)' + tipico;
+    return v + ' ' + r.unita + (UNITA_EQUIVALENTI.indexOf(r.unita) >= 0 ? '' : ' = ' + f(r.g_cm3) + ' g/cm³') + tipico;
+  }
+  function paginaDensita(rif) {
+    const x = /densita (p\. [\d,]+|\(pagina web\))/.exec(rif);
+    return x ? ', ' + x[1].replace('p. ', 'pag. ').replace('(pagina web)', 'pagina web') : '';
+  }
+  function unitaCampo(id, unitaLunghezza) { return id === 'V' ? unitaLunghezza + '³' : unitaLunghezza; }
+
+  // Righe di identificazione, nell'ordine della scheda a schermo (i tag, che sono parole di ricerca, non ne fanno parte).
+  function identificazione(m) {
+    const d = m.designazioni;
+    const righe = [];
+    if (m.personale) {
+      if (d.altre.length) righe.push('Designazioni: ' + d.altre.join(' · '));
+      if (m.nome_commerciale) righe.push('Nome commerciale: ' + m.nome_commerciale);
+      return righe;
+    }
+    const des = [['EN', d.EN], ['W.Nr.', d.WNr], ['UNI', d.UNI], ['AISI/SAE', d.AISI_SAE], ['DIN', d.DIN]]
+      .filter(function (x) { return x[1]; }).map(function (x) { return conEtichetta(x[0], x[1]); });
+    if (des.length) righe.push('Designazioni: ' + des.join(' · '));
+    if (d.altre && d.altre.length) righe.push('Altre: ' + d.altre.join(' · '));
+    if (d.indicative && d.indicative.length) righe.push('Corrispondenze indicative (non sono identità): ' + d.indicative.join(' · '));
+    if (m.alias.length) righe.push('Alias: ' + m.alias.map(function (a) { return a.alias + ' (' + etichettaAlias(a) + ')'; }).join(' · '));
+    m.alias.forEach(function (a) { if (a.nota) righe.push('Nota su «' + a.alias + '»: ' + a.nota); });
+    if (m.nome_commerciale) righe.push('Nome commerciale: ' + m.nome_commerciale);
+    return righe;
+  }
+
+  // La composizione: null (non inserita), un elemento puro, oppure una lega con le righe già formattate.
+  function composizione(c) {
+    if (!c) return null;
+    if (c.tipo === 'elemento') return { tipo: 'elemento', simbolo: c.simbolo, riferimento: c.riferimento || '' };
+    return {
+      tipo: 'lega', riferimento: c.riferimento, parziale: Boolean(c.parziale), nota: c.nota || '',
+      righe: Object.keys(c.elementi).map(function (k) { return [nomeElemento(k), valoreElemento(c.elementi[k])]; })
+    };
+  }
+
+  // «Densità usata», come nel riquadro dei dettagli. Per le schede personali solo valore, spiegazione e avviso.
+  function densitaUsata(m, r) {
+    const valore = f(m.densita_g_cm3) + ' g/cm³';
+    if (m.personale) return { valore: valore, spiegazione: 'inserita da te.', avvisoPersonale: AVVISO_PERSONALE_DENSITA, intervallo: null, fontiIndipendenti: null, unaSolaFonte: null };
+    const iv = m.densita_intervallo_g_cm3;
+    const nInd = Motore.fontiIndipendenti(m.fonti, 'densita');   // enti diversi: le schede dello stesso ente contano una volta
+    return {
+      valore: valore,
+      spiegazione: (iv ? 'valore nominale: punto medio delle letture dei documenti.' : 'letture dei documenti concordi.') +
+        (Motore.densitaTipica(m.fonti) ? ' Valore tipico: così è dichiarato nei documenti letti.' : ''),
+      avvisoPersonale: null,
+      intervallo: iv ? 'Intervallo delle letture: ' + f(iv[0]) + '–' + f(iv[1]) + ' g/cm³. ' + m.nota_intervallo +
+        ' Con le letture estreme il peso totale sarebbe tra ' + f(r.peso_totale_min, 6) + ' e ' + f(r.peso_totale_max, 6) + ' ' + r.unitaPeso + '.' : null,
+      fontiIndipendenti: 'Fonti indipendenti per la densità: ' + nInd + ' (enti diversi; le schede dello stesso ente, anche in lingue diverse, contano una volta).',
+      unaSolaFonte: nInd === 1 ? 'Una sola fonte di densità.' : null
+    };
+  }
+
+  // Le fonti che dichiarano la densità, con il valore letto, la pagina e il link (o la dicitura se il documento è una copia fornita).
+  function fontiDensita(m) {
+    return (m.fonti || []).filter(function (x) { return x.densita_letta; }).map(function (x) {
+      return {
+        ente: x.emittente, ruolo: x.ruolo, documento: x.documento,
+        letture: 'Densità letta: ' + x.densita_letta.map(lettura).join('; ') + paginaDensita(x.riferimento) + '.',
+        riferimento: x.riferimento, url: x.fornito_da_utente ? null : x.url, copiaFornita: Boolean(x.fornito_da_utente)
+      };
+    });
+  }
+
+  // Pesi e volume. Il volume in mm³ segue su una riga a parte (`seguito`).
+  function righePesi(r) {
+    const u = r.unitaPeso;
+    return [
+      { id: 'unitario', etichetta: 'Peso unitario', valore: f(r.peso_unitario, 6) + ' ' + u },
+      { id: 'pezzi', etichetta: 'Pezzi', valore: String(r.pezzi) },
+      { id: 'totale', etichetta: 'Peso totale', valore: f(r.peso_totale, 6) + ' ' + u },
+      { id: 'volume', etichetta: 'Volume (un pezzo)', valore: f(r.volume_cm3, 6) + ' cm³', seguito: '= ' + f(r.volume_mm3, 9, true) + ' mm³' }
+    ];
+  }
+
+  // Perché non c'è un risultato: lo stesso testo che l'app mostra sotto il peso.
+  function motivoAssenza(m, v) {
+    const manca = [];
+    if (!m) manca.push('scegli il materiale');
+    if (v.mancanti.length) manca.push('inserisci ' + v.mancanti.map(function (id) { return id === 'pezzi' ? 'i pezzi' : id; }).join(', '));
+    if (v.conErrori.length) manca.push('correggi i campi segnalati');
+    if (v.errore) manca.push(v.errore.replace(/\.$/, ''));
+    return manca.length ? manca.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) + '.' : '';
+  }
+
+  // ---------------------------------------------------------------- nome del file e istante
+  function nomeMateriale(nome) {
+    const s = String(nome).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      .slice(0, MAX_NOME_FILE).replace(/-+$/, '');
+    return s || 'materiale';
+  }
+  // Data e ora locali di un Date: { data: 'AAAA-MM-GG', ora: 'HH:MM' }
+  function istante(d) {
+    const z = function (n) { return (n < 10 ? '0' : '') + n; };
+    return { data: d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()), ora: z(d.getHours()) + ':' + z(d.getMinutes()) };
+  }
+  // scheda_<materiale>_<AAAA-MM-GG>_<HHMM>, senza estensione
+  function nomeBaseFile(m, ist) {
+    return 'scheda_' + nomeMateriale(m.nome) + '_' + ist.data + '_' + ist.ora.replace(':', '');
+  }
+
+  // ---------------------------------------------------------------- il documento (lo stesso per Markdown e, poi, per il PDF)
+  // Un testo è una lista di parti: stringhe, { forte: '…' } (grassetto) o { url: '…' }.
+  // Blocchi: testo, avviso, libero (testo scritto dall'utente, anche su più righe), elenco (numerato o no), tabella.
+  function documento(ctx) {
+    const m = ctx && ctx.materiale;
+    const v = ctx && ctx.valutazione;
+    if (!m || !v || !v.risultato) return { ok: false, motivo: (v && motivoAssenza(m, v)) || MOTIVO_GENERICO };
+    const r = v.risultato;
+    const ist = ctx.istante;
+    const sezioni = [];
+    const sezione = function (titolo, blocchi) { sezioni.push({ titolo: titolo, blocchi: blocchi }); };
+    const testo = function (parti) { return { t: 'testo', s: parti }; };
+
+    const ident = identificazione(m);
+    if (ident.length) sezione('Identificazione', [{ t: 'elenco', voci: ident.map(function (x) { return [x]; }) }]);
+
+    const comp = composizione(m.composizione);
+    const bc = [];
+    if (!comp) bc.push(testo(['Composizione non inserita.']));
+    else if (comp.tipo === 'elemento') bc.push(testo(['Elemento puro: ', { forte: comp.simbolo }, '. ' + comp.riferimento]));
+    else {
+      bc.push(testo([comp.riferimento]));
+      if (comp.parziale) bc.push({ t: 'avviso', s: [COMPOSIZIONE_PARZIALE] });
+      bc.push({ t: 'tabella', intestazione: ['Elemento', 'Valore'], righe: comp.righe });
+      if (comp.nota) bc.push(testo([comp.nota]));
+    }
+    sezione('Composizione chimica', bc);
+
+    const dn = densitaUsata(m, r);
+    const bd = [testo(['Densità usata: ', { forte: dn.valore }, ' — ' + dn.spiegazione])];
+    if (m.personale) {
+      const di = m.densita_immessa;
+      if (di.unita !== 'g/cm³') bd.push(testo(['Valore scritto da te: ' + di.testo + ' ' + di.unita + '.']));
+    }
+    if (dn.avvisoPersonale) bd.push({ t: 'avviso', s: [dn.avvisoPersonale] });
+    if (dn.intervallo) bd.push(testo([dn.intervallo]));
+    if (dn.fontiIndipendenti) bd.push(testo([dn.fontiIndipendenti]));
+    if (dn.unaSolaFonte) bd.push({ t: 'avviso', s: [dn.unaSolaFonte] });
+    if (m.personale) {
+      if (m.fonte_testo) bd.push({ t: 'libero', etichetta: 'Fonte indicata da te', testo: m.fonte_testo });
+      if (m.note) bd.push({ t: 'libero', etichetta: 'Note', testo: m.note });
+      bd.push(testo(['Creata il ' + m.creata + ', modificata il ' + m.data_verifica + '.']));
+    } else {
+      bd.push({ t: 'elenco', voci: fontiDensita(m).map(function (x) {
+        return [{ forte: x.ente }, ', ' + x.ruolo + ' — ' + x.documento + '. ' + x.letture + ' Riferimenti: ' + x.riferimento + '. ', x.url ? { url: x.url } : COPIA_FORNITA];
+      }) });
+      bd.push(testo(['Data di verifica: ' + m.data_verifica + '.']));
+    }
+    sezione('Densità', bd);
+
+    const forma = Motore.FORME[r.forma];
+    const dim = forma.campi.map(function (c) { return [c[1] + ': ' + f(v.campi[c[0]].valore, 7) + ' ' + unitaCampo(c[0], r.unitaLunghezza)]; });
+    sezione('Pezzo', [{ t: 'elenco', voci: [['Forma: ' + r.nomeForma]].concat(dim, [['Pezzi: ' + r.pezzi]]) }]);
+
+    const pesi = righePesi(r).filter(function (x) { return x.id !== 'pezzi'; }).map(function (x) {
+      return [x.etichetta + ': ', { forte: x.valore }].concat(x.seguito ? [' (' + x.seguito + ')'] : []);
+    });
+    const bk = [{ t: 'elenco', voci: pesi }, { t: 'sotto', titolo: 'Formula e passaggi' },
+      { t: 'elenco', numerato: true, voci: r.passaggi.map(function (p) { return [p]; }) }];
+    r.avvisi.forEach(function (a) { bk.push({ t: 'avviso', s: [a] }); });
+    sezione('Calcolo', bk);
+
+    sezione('Avvertenza', [{ t: 'avviso', s: [{ forte: DICITURA_TEORICO }] }]);
+
+    const db = ctx.db;
+    return {
+      ok: true,
+      titolo: 'Scheda materiale: ' + m.nome,
+      sottotitolo: m.famiglia,
+      avvisoPersonale: m.personale ? DICITURA_PERSONALE : null,
+      sezioni: sezioni,
+      piede: 'Generata il ' + ist.data + ' alle ' + ist.ora + ' · app v' + ctx.appVersione + ' · Database v' + db.versione + ' del ' + db.data,
+      nomeBase: nomeBaseFile(m, ist)
+    };
+  }
+
+  // ---------------------------------------------------------------- Markdown
+  // Il testo scritto da chi usa l'app (o preso dal database) non deve mai diventare Markdown: si mettono la barra rovesciata davanti ai segni
+  // che ne hanno uno («&» solo se potrebbe formare un'entità, come «&amp;») e, a inizio riga, davanti a «-», «+», «=» e a «1.» (che altrimenti
+  // aprirebbero un elenco o un titolo).
+  function mdTesto(s) {
+    return String(s).split('\n').map(function (riga) {
+      return riga.replace(/[\\`*_\[\]<>|#~$]|&(?=#?[A-Za-z0-9]+;)/g, '\\$&').replace(/^(\s*)([-+=])/, '$1\\$2').replace(/^(\s*\d+)([.)])/, '$1\\$2');
+    }).join('\n');
+  }
+  function mdParti(parti) {
+    return parti.map(function (p) {
+      if (typeof p === 'string') return mdTesto(p);
+      if (p.forte !== undefined) return '**' + mdTesto(p.forte) + '**';
+      return /^https?:\/\/[^\s<>]+$/.test(p.url) ? '<' + p.url + '>' : mdTesto(p.url);
+    }).join('');
+  }
+  function mdBlocco(b) {
+    if (b.t === 'testo') return mdParti(b.s);
+    if (b.t === 'avviso') return '> ' + mdParti(b.s);
+    if (b.t === 'sotto') return '### ' + mdTesto(b.titolo);
+    if (b.t === 'libero') {
+      const righe = b.testo.split('\n').map(function (x) { return x.trim(); });
+      return mdTesto(b.etichetta) + ':\n\n' + righe.map(function (x, i) { return '> ' + mdTesto(x) + (i < righe.length - 1 ? '  ' : ''); }).join('\n');
+    }
+    if (b.t === 'elenco') return b.voci.map(function (v, i) { return (b.numerato ? (i + 1) + '. ' : '- ') + mdParti(v); }).join('\n');
+    if (b.t === 'tabella') {
+      return '| ' + b.intestazione.map(mdTesto).join(' | ') + ' |\n|---|---:|\n' + b.righe.map(function (r) { return '| ' + r.map(mdTesto).join(' | ') + ' |'; }).join('\n');
+    }
+    throw new Error('blocco sconosciuto: ' + b.t);
+  }
+  function aMarkdown(doc) {
+    const out = ['# ' + mdTesto(doc.titolo), '*' + mdTesto(doc.sottotitolo) + '*'];
+    if (doc.avvisoPersonale) out.push('> **' + mdTesto(doc.avvisoPersonale) + '**');
+    doc.sezioni.forEach(function (s) {
+      out.push('## ' + mdTesto(s.titolo));
+      s.blocchi.forEach(function (b) { out.push(mdBlocco(b)); });
+    });
+    out.push('---', '*' + mdTesto(doc.piede) + '*');
+    return out.join('\n\n') + '\n';
+  }
+
+  // La scheda in Markdown: { ok: true, testo, nomeFile, tipo } oppure { ok: false, motivo }.
+  function markdown(ctx) {
+    const d = documento(ctx);
+    if (!d.ok) return d;
+    return { ok: true, testo: aMarkdown(d), nomeFile: d.nomeBase + '.md', tipo: TIPO_MARKDOWN };
+  }
+
+  return {
+    COMPOSIZIONE_PARZIALE: COMPOSIZIONE_PARZIALE, DICITURA_TEORICO: DICITURA_TEORICO, DICITURA_PERSONALE: DICITURA_PERSONALE,
+    AVVISO_PERSONALE_DENSITA: AVVISO_PERSONALE_DENSITA, COPIA_FORNITA: COPIA_FORNITA, MOTIVO_GENERICO: MOTIVO_GENERICO, TIPO_MARKDOWN: TIPO_MARKDOWN,
+    conEtichetta: conEtichetta, etichettaAlias: etichettaAlias, nomeElemento: nomeElemento, valoreElemento: valoreElemento, lettura: lettura,
+    paginaDensita: paginaDensita, unitaCampo: unitaCampo, identificazione: identificazione, composizione: composizione, densitaUsata: densitaUsata,
+    fontiDensita: fontiDensita, righePesi: righePesi, motivoAssenza: motivoAssenza, nomeMateriale: nomeMateriale, istante: istante, nomeBaseFile: nomeBaseFile,
+    documento: documento, aMarkdown: aMarkdown, markdown: markdown
+  };
+})();
+// ESPORTA:FINE
 </script>
 
 <script>
 (function () {
   'use strict';
   // Versione dell'app: unico punto del codice, da aggiornare a ogni fase (schema 0.<fase>.<revisione>).
-  const APP_VERSIONE = '0.2.7';
+  const APP_VERSIONE = '0.3.0';
   const DB = JSON.parse(document.getElementById('db-materiali').textContent);
   const $ = function (id) { return document.getElementById(id); };
   const f = Motore.formatta;
@@ -4861,16 +5152,15 @@ const Schede = (function () {
   // finirebbero nella costante (testi) e un secondo azzeramento non li riporterebbe vuoti. Lo usano l'avvio e «Azzera».
   function statoIniziale() { return { materiale: null, forma: 'tonda', testi: tabella(), unitaL: 'mm', unitaP: 'kg', pezzi: '1' }; }
   const stato = statoIniziale();
-  const COMPOSIZIONE_PARZIALE = 'Composizione parziale: solo gli elementi riportati dal documento.';
+  const COMPOSIZIONE_PARZIALE = Esporta.COMPOSIZIONE_PARZIALE;
 
   $('versione').textContent = 'v' + APP_VERSIONE;
 
   // ------------------------------------------------------------------ ricerca del materiale
   let RIC = null;   // costruita da ricostruisciRicerca(): voci del database + schede personali
-  // «EN» davanti a un valore che già comincia per «EN » (es. «EN AW-7075») non si ripete
-  function conEtichetta(etichetta, valore) {
-    return valore.toUpperCase().indexOf(etichetta.toUpperCase() + ' ') === 0 ? valore : etichetta + ' ' + valore;
-  }
+  // Testi comuni a schermo e file esportati: stanno nel blocco ESPORTA e li chiamano tutti (nessuna copia qui).
+  const conEtichetta = Esporta.conEtichetta;
+  const etichettaAlias = Esporta.etichettaAlias;
   function riassunto(m) {
     if (m.personale) return 'Scheda personale · ' + f(m.densita_g_cm3) + ' g/cm³';
     const d = m.designazioni;
@@ -4953,47 +5243,34 @@ const Schede = (function () {
   });
 
   // ------------------------------------------------------------------ scheda del materiale
-  function nomeElemento(k) { return k === 'Altri_ciascuno' ? 'Altri (ciascuno)' : k === 'Altri_totale' ? 'Altri (totale)' : k; }
-  function valoreElemento(x) {
-    if (x === 'resto') return 'resto';
-    let s;
-    if (x.nominale !== undefined) s = f(x.nominale) + ' %';
-    else if (x.min !== undefined && x.max !== undefined) s = f(x.min) + '–' + f(x.max) + ' %';
-    else if (x.max !== undefined) s = 'max ' + f(x.max) + ' %';
-    else s = 'min ' + f(x.min) + ' %';
-    return x.nota ? s + ' (' + x.nota + ')' : s;
-  }
   function composizioneHTML(c) {
-    if (!c) return '<p class="piccolo">Composizione non inserita.</p>';
-    if (c.tipo === 'elemento') return '<p>Elemento puro: <strong>' + esc(c.simbolo) + '</strong>. <span class="piccolo">' + esc(c.riferimento || '') + '</span></p>';
-    let h = '<p class="piccolo">' + esc(c.riferimento) + '</p>';
-    if (c.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';
+    const k = Esporta.composizione(c);
+    if (!k) return '<p class="piccolo">Composizione non inserita.</p>';
+    if (k.tipo === 'elemento') return '<p>Elemento puro: <strong>' + esc(k.simbolo) + '</strong>. <span class="piccolo">' + esc(k.riferimento) + '</span></p>';
+    let h = '<p class="piccolo">' + esc(k.riferimento) + '</p>';
+    if (k.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';
     h += '<table class="comp"><tbody>';
-    Object.keys(c.elementi).forEach(function (k) { h += '<tr><td>' + esc(nomeElemento(k)) + '</td><td>' + esc(valoreElemento(c.elementi[k])) + '</td></tr>'; });
+    k.righe.forEach(function (r) { h += '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>'; });
     h += '</tbody></table>';
-    if (c.nota) h += '<p class="piccolo">' + esc(c.nota) + '</p>';
+    if (k.nota) h += '<p class="piccolo">' + esc(k.nota) + '</p>';
     return h;
   }
-  const UNITA_EQUIVALENTI = ['g/cm³', 'kg/dm³', 'Mg/m³'];
-  function lettura(r) {
-    const v = String(r.valore).replace('.', ',');
-    const tipico = r.tipico === true ? ' (valore tipico)' : '';
-    if (/^non indicata/.test(r.unita)) return v + ' (unità non indicata nel documento)' + tipico;
-    return v + ' ' + r.unita + (UNITA_EQUIVALENTI.indexOf(r.unita) >= 0 ? '' : ' = ' + f(r.g_cm3) + ' g/cm³') + tipico;
-  }
-  function paginaDensita(rif) {
-    const x = /densita (p\. [\d,]+|\(pagina web\))/.exec(rif);
-    return x ? ', ' + x[1].replace('p. ', 'pag. ').replace('(pagina web)', 'pagina web') : '';
-  }
-  function fontiHTML(fonti, soloDensita) {
-    const righe = fonti.filter(function (x) { return !soloDensita || x.densita_letta; }).map(function (x) {
-      let s = '<li><strong>' + esc(x.emittente) + '</strong>, ' + esc(x.ruolo) + ' — ' + esc(x.documento) + '.';
-      if (soloDensita) s += ' Densità letta: ' + x.densita_letta.map(lettura).map(esc).join('; ') + esc(paginaDensita(x.riferimento)) + '.';
-      else s += ' Riferimenti: ' + esc(x.riferimento) + '.';
-      if (x.fornito_da_utente) return s + ' <span class="piccolo">Copia fornita da Luca: nessun link pubblico.</span></li>';
+  // Tutte le fonti del materiale (riquadro «Fonti dei dati»)
+  function fontiHTML(fonti) {
+    const righe = fonti.map(function (x) {
+      const s = '<li><strong>' + esc(x.emittente) + '</strong>, ' + esc(x.ruolo) + ' — ' + esc(x.documento) + '. Riferimenti: ' + esc(x.riferimento) + '.';
+      if (x.fornito_da_utente) return s + ' <span class="piccolo">' + Esporta.COPIA_FORNITA + '</span></li>';
       return s + ' <a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Apri il documento</a></li>';
     });
     return '<ul class="fonti">' + righe.join('') + '</ul>';
+  }
+  // Le fonti che dichiarano la densità (riquadro dei dettagli del risultato)
+  function fontiDensitaHTML(m) {
+    return '<ul class="fonti">' + Esporta.fontiDensita(m).map(function (x) {
+      const s = '<li><strong>' + esc(x.ente) + '</strong>, ' + esc(x.ruolo) + ' — ' + esc(x.documento) + '. ' + esc(x.letture);
+      if (x.copiaFornita) return s + ' <span class="piccolo">' + Esporta.COPIA_FORNITA + '</span></li>';
+      return s + ' <a href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">Apri il documento</a></li>';
+    }).join('') + '</ul>';
   }
   function fonteDi(m, id) { return m.fonti.find(function (x) { return x.id === id; }); }
   function proveHTML(m, prove) {
@@ -5002,15 +5279,10 @@ const Schede = (function () {
       return esc((fo ? fo.emittente + ', ' + fo.documento : p.fonte) + ', pag. ' + p.pagina + ': «' + p.estratto + '»');
     }).join('; ');
   }
-  function etichettaAlias(a) {
-    if (a.origine === 'produttore') return 'alias da produttore';
-    return a.una_sola_fonte ? 'alias non da produttore, una sola fonte' : 'alias non da produttore';
-  }
   function renderSchedaPersonale(m, box) {
     let h = '<p><strong>' + esc(m.nome) + '</strong><br><span class="piccolo">' + esc(m.famiglia) + '</span></p>';
     h += '<p class="badge-personale">Scheda personale · inserita da te, non verificata su documenti</p>';
-    if (m.designazioni.altre.length) h += '<p class="piccolo">Designazioni: ' + m.designazioni.altre.map(esc).join(' · ') + '</p>';
-    if (m.nome_commerciale) h += '<p class="piccolo">Nome commerciale: ' + esc(m.nome_commerciale) + '</p>';
+    Esporta.identificazione(m).forEach(function (riga) { h += '<p class="piccolo">' + esc(riga) + '</p>'; });
     const di = m.densita_immessa;
     h += '<p>Densità: <strong>' + f(m.densita_g_cm3) + ' g/cm³</strong>' + (di.unita !== 'g/cm³' ? ' (inserita come ' + esc(di.testo) + ' ' + esc(di.unita) + ')' : '') + '</p>';
     h += '<details id="det-comp" open><summary>Composizione chimica</summary>' + composizioneHTML(m.composizione) + '</details>';
@@ -5032,22 +5304,14 @@ const Schede = (function () {
     const box = $('scheda');
     if (!m) { box.hidden = true; box.innerHTML = ''; return; }
     if (m.personale) { renderSchedaPersonale(m, box); return; }
-    const d = m.designazioni;
-    const des = [['EN', d.EN], ['W.Nr.', d.WNr], ['UNI', d.UNI], ['AISI/SAE', d.AISI_SAE], ['DIN', d.DIN]]
-      .filter(function (x) { return x[1]; }).map(function (x) { return esc(conEtichetta(x[0], x[1])); });
     const iv = m.densita_intervallo_g_cm3;
     let h = '<p><strong>' + esc(m.nome) + '</strong><br><span class="piccolo">' + esc(m.famiglia) + '</span></p>';
     if (m.tag.length) h += '<ul class="tag" aria-label="Tag verificati">' + m.tag.map(function (t) { return '<li>' + esc(t.tag) + '</li>'; }).join('') + '</ul>';
-    if (des.length) h += '<p class="piccolo">Designazioni: ' + des.join(' · ') + '</p>';
-    if (d.altre && d.altre.length) h += '<p class="piccolo">Altre: ' + d.altre.map(esc).join(' · ') + '</p>';
-    if (d.indicative && d.indicative.length) h += '<p class="piccolo">Corrispondenze indicative (non sono identità): ' + d.indicative.map(esc).join(' · ') + '</p>';
-    if (m.alias.length) h += '<p class="piccolo">Alias: ' + m.alias.map(function (a) { return esc(a.alias) + ' (' + etichettaAlias(a) + ')'; }).join(' · ') + '</p>';
-    m.alias.forEach(function (a) { if (a.nota) h += '<p class="piccolo">Nota su «' + esc(a.alias) + '»: ' + esc(a.nota) + '</p>'; });
-    if (m.nome_commerciale) h += '<p class="piccolo">Nome commerciale: ' + esc(m.nome_commerciale) + '</p>';
+    Esporta.identificazione(m).forEach(function (riga) { h += '<p class="piccolo">' + esc(riga) + '</p>'; });
     h += '<p>Densità nominale: <strong>' + f(m.densita_g_cm3) + ' g/cm³</strong>' + (iv ? ' (letture dei documenti: ' + f(iv[0]) + '–' + f(iv[1]) + ')' : '') + (Motore.densitaTipica(m.fonti) ? ' · valore tipico' : '') + '</p>';
     if (m.composizione.parziale) h += '<p class="avviso">' + COMPOSIZIONE_PARZIALE + '</p>';
     h += '<details id="det-comp" open><summary>Composizione chimica</summary>' + composizioneHTML(m.composizione) + '</details>';
-    let fonti = fontiHTML(m.fonti, false);
+    let fonti = fontiHTML(m.fonti);
     if (m.tag.length) {
       fonti += '<h3>Tag: dove sono documentati</h3><ul class="prove">' +
         m.tag.map(function (t) { return '<li><strong>' + esc(t.tag) + '</strong> — ' + proveHTML(m, t.prove) + '</li>'; }).join('') + '</ul>';
@@ -5117,7 +5381,7 @@ const Schede = (function () {
   });
 
   // ------------------------------------------------------------------ dimensioni
-  function unitaCampo(id) { return id === 'V' ? stato.unitaL + '³' : stato.unitaL; }
+  function unitaCampo(id) { return Esporta.unitaCampo(id, stato.unitaL); }
   function renderCampi() {
     const box = $('campi');
     box.textContent = '';
@@ -5147,30 +5411,16 @@ const Schede = (function () {
 
   // ------------------------------------------------------------------ risultato
   function dettagliHTML(m, r) {
-    const u = r.unitaPeso;
-    const iv = m.densita_intervallo_g_cm3;
-    const nInd = Motore.fontiIndipendenti(m.fonti, 'densita');   // enti diversi: le schede dello stesso ente contano una volta
-    let h = '<h3>Pesi e volume</h3><dl>' +
-      '<dt>Peso unitario</dt><dd>' + f(r.peso_unitario, 6) + ' ' + u + '</dd>' +
-      '<dt>Pezzi</dt><dd>' + r.pezzi + '</dd>' +
-      '<dt>Peso totale</dt><dd>' + f(r.peso_totale, 6) + ' ' + u + '</dd>' +
-      '<dt>Volume (un pezzo)</dt><dd>' + f(r.volume_cm3, 6) + ' cm³</dd>' +
-      '<dt></dt><dd>= ' + f(r.volume_mm3, 9, true) + ' mm³</dd></dl>';
-    if (m.personale) {
-      h += '<h3>Densità usata</h3><p><strong>' + f(m.densita_g_cm3) + ' g/cm³</strong> — inserita da te.</p>' +
-        '<p class="avviso">Scheda personale: la densità e gli altri dati sono scritti da te e non sono verificati su documenti.</p>';
-    } else {
-      h += '<h3>Densità usata</h3><p><strong>' + f(m.densita_g_cm3) + ' g/cm³</strong> — ' +
-        (iv ? 'valore nominale: punto medio delle letture dei documenti.' : 'letture dei documenti concordi.') +
-        (Motore.densitaTipica(m.fonti) ? ' Valore tipico: così è dichiarato nei documenti letti.' : '') + '</p>';
-      if (iv) {
-        h += '<p>Intervallo delle letture: ' + f(iv[0]) + '–' + f(iv[1]) + ' g/cm³. ' + esc(m.nota_intervallo) +
-          ' Con le letture estreme il peso totale sarebbe tra ' + f(r.peso_totale_min, 6) + ' e ' + f(r.peso_totale_max, 6) + ' ' + u + '.</p>';
-      }
-      h += '<p class="piccolo">Fonti indipendenti per la densità: ' + nInd + ' (enti diversi; le schede dello stesso ente, anche in lingue diverse, contano una volta).</p>';
-      if (nInd === 1) h += '<p class="avviso">Una sola fonte di densità.</p>';
-      h += fontiHTML(m.fonti, true);
-    }
+    let h = '<h3>Pesi e volume</h3><dl>' + Esporta.righePesi(r).map(function (x) {
+      return '<dt>' + esc(x.etichetta) + '</dt><dd>' + esc(x.valore) + '</dd>' + (x.seguito ? '<dt></dt><dd>' + esc(x.seguito) + '</dd>' : '');
+    }).join('') + '</dl>';
+    const d = Esporta.densitaUsata(m, r);
+    h += '<h3>Densità usata</h3><p><strong>' + esc(d.valore) + '</strong> — ' + esc(d.spiegazione) + '</p>';
+    if (d.avvisoPersonale) h += '<p class="avviso">' + esc(d.avvisoPersonale) + '</p>';
+    if (d.intervallo) h += '<p>' + esc(d.intervallo) + '</p>';
+    if (d.fontiIndipendenti) h += '<p class="piccolo">' + esc(d.fontiIndipendenti) + '</p>';
+    if (d.unaSolaFonte) h += '<p class="avviso">' + esc(d.unaSolaFonte) + '</p>';
+    if (!m.personale) h += fontiDensitaHTML(m);
     h += '<h3>Formula e passaggi</h3><ol class="passaggi">' + r.passaggi.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>';
     r.avvisi.forEach(function (a) { h += '<p class="avviso">' + esc(a) + '</p>'; });
     return h;
@@ -5185,12 +5435,7 @@ const Schede = (function () {
       $('dettagli').hidden = true;
       $('dettagli').innerHTML = '';
       $('barra').hidden = true;
-      const manca = [];
-      if (!m) manca.push('scegli il materiale');
-      if (v.mancanti.length) manca.push('inserisci ' + v.mancanti.map(function (id) { return id === 'pezzi' ? 'i pezzi' : id; }).join(', '));
-      if (v.conErrori.length) manca.push('correggi i campi segnalati');
-      if (v.errore) manca.push(v.errore.replace(/\.$/, ''));
-      stT.textContent = manca.length ? manca.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) + '.' : '';
+      stT.textContent = Esporta.motivoAssenza(m, v);
       return;
     }
     const u = r.unitaPeso;
@@ -5226,7 +5471,64 @@ const Schede = (function () {
     const p = v.pezzi;
     interpretazione('pezzi', p, p.stato === 'ok' ? (p.valore === 1 ? 'pezzo' : 'pezzi') : '', 'pezzi');
     renderRisultato(v, m);
+    ultimo = { m: m, v: v };
+    aggiornaEsporta();
   }
+
+  // ------------------------------------------------------------------ esportazione della scheda (Markdown)
+  // I pulsanti sono attivi solo con un risultato valido. Una sola funzione di consegna, chiamata in modo SINCRONO dentro il clic: «Condividi»
+  // vale solo con l'attivazione dell'utente, e un'attesa (await, setTimeout) prima di share() potrebbe farla scadere. Il file si costruisce
+  // nel clic, subito prima di consegnarlo: data e ora del nome sono quelle del clic. Contenuto e nome vengono dal blocco ESPORTA.
+  let ultimo = null;   // { m, v }: materiale e calcolo mostrati ora (lo stesso oggetto che disegna la schermata)
+  function messaggioEsporta(testo) { const el = $('msg-esporta'); el.textContent = testo || ''; el.hidden = !testo; }
+  function aggiornaEsporta() {
+    const ok = Boolean(ultimo && ultimo.v.risultato);
+    $('btn-scarica-md').disabled = !ok;
+    $('btn-condividi-md').disabled = !ok;
+    messaggioEsporta('');
+  }
+  function preparaScheda() {
+    if (!ultimo) return null;
+    const r = Esporta.markdown({ materiale: ultimo.m, valutazione: ultimo.v, appVersione: APP_VERSIONE, db: DB.meta, istante: Esporta.istante(new Date()) });
+    return r.ok ? new File([r.testo], r.nomeFile, { type: r.tipo }) : null;
+  }
+  function scaricaFile(file) {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url; a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);   // l'URL resta valido a lungo: il salvataggio può partire dopo il clic
+  }
+  let condivisioneInCorso = false;   // WebKit rifiuta un secondo share() mentre il primo è aperto (InvalidStateError): un doppio tocco non deve scaricare
+  function consegna(come) {
+    if (come === 'condividi' && condivisioneInCorso) return;
+    const file = preparaScheda();
+    if (!file) return;
+    if (come !== 'condividi') { scaricaFile(file); messaggioEsporta('Scarico avviato: ' + file.name + '.'); return; }
+    let promessa;
+    try { promessa = navigator.share({ files: [file] }); } catch (e) { promessa = Promise.reject(e); }
+    condivisioneInCorso = true;
+    Promise.resolve(promessa).then(function () { condivisioneInCorso = false; messaggioEsporta('Condivisione conclusa: ' + file.name + '.'); }, function (e) {
+      condivisioneInCorso = false;
+      if (e && e.name === 'AbortError') { messaggioEsporta(''); return; }   // l'utente ha annullato: nessun messaggio, nessun download
+      messaggioEsporta('Condivisione non riuscita (' + (e && e.name ? e.name : 'errore') + '): provo a scaricare il file.');
+      scaricaFile(file);
+    });
+  }
+  // «Condividi…» compare solo se il browser accetta DAVVERO questo file (canShare con un file dello stesso tipo) e il puntatore è touch:
+  // sul PC, dove l'icona di condivisione di Windows o macOS non serve, resta nascosto.
+  function puoCondividere() {
+    try {
+      if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') return false;
+      if (!window.matchMedia || !window.matchMedia('(pointer: coarse)').matches) return false;
+      return navigator.canShare({ files: [new File(['prova'], 'scheda.md', { type: Esporta.TIPO_MARKDOWN })] }) === true;
+    } catch (e) { return false; }
+  }
+  $('btn-scarica-md').addEventListener('click', function () { consegna('scarica'); });
+  $('btn-condividi-md').addEventListener('click', function () { consegna('condividi'); });
+  $('btn-condividi-md').hidden = !puoCondividere();
 
 
   // ------------------------------------------------------------------ schede personali (scritte da chi usa l'app)
